@@ -11,10 +11,29 @@ import {
   COMMON_PHRASES,
 } from '@/data/grammar';
 import { AudioSpeaker } from '@/components/AudioSpeaker';
-import { BookOpen, Sparkles, MessageSquare, Compass, Bookmark, Clock, ArrowRight } from 'lucide-react';
+import { GrammarExerciseRunner } from '@/components/GrammarExerciseRunner';
+import {
+  BookOpen,
+  Sparkles,
+  MessageSquare,
+  Compass,
+  Bookmark,
+  Brain,
+  ArrowRight,
+  Flame,
+} from 'lucide-react';
 
 export default function GrammarPage() {
-  const [activeTab, setActiveTab] = useState<'cases' | 'rules' | 'verbs' | 'phrases'>('cases');
+  const [activeTab, setActiveTab] = useState<'cases' | 'rules' | 'verbs' | 'phrases' | 'drills'>('cases');
+  const [drillCategory, setDrillCategory] = useState<'all' | 'cases' | 'vocative' | 'prepositions' | 'locative' | 'verbs' | 'time'>('all');
+
+  const handleStartDrill = (category: 'all' | 'cases' | 'vocative' | 'prepositions' | 'locative' | 'verbs' | 'time') => {
+    setDrillCategory(category);
+    setActiveTab('drills');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-8 pb-24">
@@ -33,7 +52,7 @@ export default function GrammarPage() {
             Gramatikos ir Žodyno Gidas
           </h1>
           <p className="mt-2 text-base text-slate-600 max-w-2xl font-medium">
-            Akademinė lietuvių kalbos programa (1–4 skyriai): 7 linksniai, šauksmininkas, vietininkas, prielinksniai, laiko reiškimas ir veiksmažodžiai.
+            Akademinė lietuvių kalbos programa (1–4 skyriai): 7 linksniai, šauksmininkas, vietininkas, prielinksniai, laiko reiškimas ir interaktyvios užduotys.
           </p>
         </div>
 
@@ -90,16 +109,40 @@ export default function GrammarPage() {
             <MessageSquare className="h-4 w-4 text-rose-500" />
             <span>Frazės ({COMMON_PHRASES.length})</span>
           </button>
+
+          {/* NEW 5TH TAB: INTERACTIVE DRILLS */}
+          <button
+            type="button"
+            onClick={() => handleStartDrill('all')}
+            className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'drills'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-emerald-700 font-extrabold bg-emerald-100/60 hover:bg-emerald-100'
+            }`}
+          >
+            <Brain className="h-4 w-4" />
+            <span>Užduotys • Drills</span>
+          </button>
         </div>
 
-        {/* TAB 1: 7 LINK尽量 / NOUN CASES */}
+        {/* TAB 1: 7 LINKSNIAI / NOUN CASES */}
         {activeTab === 'cases' && (
           <div className="flex flex-col gap-6 animate-pop">
-            <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-900 text-sm font-semibold flex items-center gap-3">
-              <span className="text-2xl">💡</span>
-              <span>
-                Lietuvių kalbos daiktavardžiai turi 7 linksnius. Linksnis rodo žodžio vaidmenį sakinyje ir keičia jo galūnę!
-              </span>
+            <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-900 text-sm font-semibold flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">💡</span>
+                <span>
+                  Lietuvių kalbos daiktavardžiai turi 7 linksnius. Linksnis rodo žodžio vaidmenį sakinyje ir keičia jo galūnę!
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleStartDrill('cases')}
+                className="hidden sm:flex text-xs font-black text-emerald-800 bg-white hover:bg-emerald-100 border border-emerald-300 py-1.5 px-3 rounded-xl transition-all items-center gap-1.5 shrink-0"
+              >
+                <span>⚡ Test Cases</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -158,10 +201,34 @@ export default function GrammarPage() {
                         {item.examples.translation}
                       </p>
                     </div>
-                    <AudioSpeaker text={item.examples.sampleSentence} size="sm" />
+                    <AudioSpeaker text={item.examples.sampleSentence} size="sm" as="button" />
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Interactive Callout Banner at bottom of Cases */}
+            <div className="mt-4 rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 p-6 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="h-4 w-4 text-emerald-200" />
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-100">
+                    Interactive Drill
+                  </span>
+                </div>
+                <h4 className="text-lg font-black">Test your knowledge of the 7 Noun Cases</h4>
+                <p className="text-xs text-emerald-100 font-medium mt-1">
+                  Practice identifying Genitive of origin, Accusative direct objects, and Instrumental transports.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleStartDrill('cases')}
+                className="btn-3d bg-white text-emerald-900 hover:bg-emerald-50 py-3 px-5 rounded-2xl text-xs font-black shrink-0 flex items-center gap-2 shadow-sm"
+              >
+                <span>PRACTICE NOUN CASES</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         )}
@@ -171,13 +238,24 @@ export default function GrammarPage() {
           <div className="flex flex-col gap-8 animate-pop">
             {/* 1. Šauksmininkas */}
             <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 text-xs font-black uppercase">
-                  2 skyrius
-                </span>
-                <h3 className="text-xl font-black text-slate-900">
-                  Daiktavardžių vienaskaitos šauksmininkas (Vocative)
-                </h3>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 text-xs font-black uppercase">
+                    2 skyrius
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900">
+                    Daiktavardžių vienaskaitos šauksmininkas (Vocative)
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleStartDrill('vocative')}
+                  className="text-xs font-black text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 py-1.5 px-3 rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  <span>⚡ Test Vocative</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
               </div>
               <p className="text-xs text-slate-500 mb-4 font-medium">
                 Vartojamas kreipiantis į asmenį:
@@ -198,13 +276,24 @@ export default function GrammarPage() {
 
             {/* 2. Vietininkas */}
             <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-1 rounded-xl bg-cyan-100 text-cyan-700 text-xs font-black uppercase">
-                  3 skyrius
-                </span>
-                <h3 className="text-xl font-black text-slate-900">
-                  Vienaskaitos vietininkas (Locative – Kur?)
-                </h3>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-xl bg-cyan-100 text-cyan-700 text-xs font-black uppercase">
+                    3 skyrius
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900">
+                    Vienaskaitos vietininkas (Locative – Kur?)
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleStartDrill('locative')}
+                  className="text-xs font-black text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 py-1.5 px-3 rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  <span>⚡ Test Locative</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
               </div>
               <p className="text-xs text-slate-500 mb-4 font-medium">
                 Atsako į klausimą „Kur?“ (mieste, šalyje, pastate ar gatvėje):
@@ -225,13 +314,24 @@ export default function GrammarPage() {
 
             {/* 3. Prielinksniai */}
             <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-black uppercase">
-                  2, 3 ir 4 skyriai
-                </span>
-                <h3 className="text-xl font-black text-slate-900">
-                  Svarbiausi prielinksniai ir linksniai
-                </h3>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-black uppercase">
+                    2, 3 ir 4 skyriai
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900">
+                    Svarbiausi prielinksniai ir linksniai
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleStartDrill('prepositions')}
+                  className="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 py-1.5 px-3 rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  <span>⚡ Test &quot;į vs pas&quot;</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 {PREPOSITION_RULES.map((p, i) => (
@@ -255,13 +355,24 @@ export default function GrammarPage() {
 
             {/* 4. Laiko reiškimas */}
             <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-700 text-xs font-black uppercase">
-                  4 skyrius
-                </span>
-                <h3 className="text-xl font-black text-slate-900">
-                  Laiko reiškimas galininku ir pusvalandžiai
-                </h3>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-700 text-xs font-black uppercase">
+                    4 skyrius
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900">
+                    Laiko reiškimas galininku ir pusvalandžiai
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleStartDrill('time')}
+                  className="text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 py-1.5 px-3 rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  <span>⚡ Test Time & Half-Hours</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 {TIME_EXPRESSION_RULES.map((t, i) => (
@@ -306,6 +417,27 @@ export default function GrammarPage() {
                 </div>
               ))}
             </div>
+
+            {/* Verb Practice Callout */}
+            <div className="mt-2 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-amber-100">
+                  Interactive Practice
+                </span>
+                <h4 className="text-lg font-black mt-0.5">Test Present Tense Conjugations</h4>
+                <p className="text-xs text-amber-100 font-medium mt-1">
+                  Conjugate &quot;būti / nebūti&quot;, &quot;gyventi&quot;, &quot;kalbėti&quot;, and &quot;dirbti&quot; with immediate feedback.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleStartDrill('verbs')}
+                className="btn-3d bg-white text-amber-900 hover:bg-amber-50 py-3 px-5 rounded-2xl text-xs font-black shrink-0 flex items-center gap-2 shadow-sm"
+              >
+                <span>PRACTICE VERBS</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -331,6 +463,13 @@ export default function GrammarPage() {
                 <AudioSpeaker text={item.lt} size="sm" as="button" />
               </div>
             ))}
+          </div>
+        )}
+
+        {/* TAB 5: INTERACTIVE GRAMMAR DRILLS */}
+        {activeTab === 'drills' && (
+          <div className="animate-pop">
+            <GrammarExerciseRunner key={drillCategory} initialCategory={drillCategory} />
           </div>
         )}
       </div>
