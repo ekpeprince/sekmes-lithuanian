@@ -52,12 +52,35 @@ export default function DashboardPage() {
 
         {/* Right Column: Daily Goals, Phrase of Day, Quests, Amber League */}
         <div className="hidden lg:flex flex-col gap-5 sticky top-24">
+          {/* Daily Goal Card */}
+          <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+                Daily Goal • Dienos tikslas
+              </span>
+              <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                <Zap className="h-3.5 w-3.5 fill-amber-500" />
+                {progress.xp % dailyXpTarget} / {dailyXpTarget} XP
+              </span>
+            </div>
+
+            <div className="h-3.5 w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+              <div
+                className="h-full rounded-full bg-amber-400 transition-all duration-300"
+                style={{ width: `${dailyXpProgress || 5}%` }}
+              />
+            </div>
+            <p className="text-[11px] font-medium text-slate-400 mt-2">
+              Earn {dailyXpTarget} XP daily to build long-term fluency memory.
+            </p>
+          </div>
 
           {/* Amber League Standing Card */}
           <AmberLeagueCard />
 
           {/* Daily Quests Card */}
           <DailyQuestsCard />
+
 
           {/* Phrase of the Day Card */}
           <div className="rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 p-5 shadow-xs">
