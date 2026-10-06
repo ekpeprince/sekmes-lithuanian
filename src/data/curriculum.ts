@@ -1,778 +1,770 @@
 import { Unit, Lesson } from '@/types/lesson';
 
 export const UNITS: Unit[] = [
+  // 1 SKYRIUS: KOKS JŪSŲ VARDAS?
   {
     id: 'unit-1',
     number: 1,
-    title: 'Foundations & Introductions',
-    subtitle: 'Pradžia ir Pasisveikinimai',
-    description: 'Master core greetings, polite words, the verb "būti" (to be), and introducing where you come from.',
-    color: '#059669', // Emerald / Green Duolingo vibe
+    title: '1 skyrius: Koks jūsų vardas?',
+    subtitle: 'Pasisveikinimai, susipažinimas ir šalys',
+    description: 'Pasisveikinti, atsisveikinti, padėkoti ir atsiprašyti. Veiksmažodis būti / nebūti ir šalys su gyventojais.',
+    color: '#059669',
     accentColor: '#10b981',
     lessons: [
       {
         id: 'lesson-1',
         unitId: 'unit-1',
-        title: 'Greetings & Polite Words',
-        description: 'Learn everyday greetings, polite expressions, and farewells in Lithuanian.',
+        title: 'Pasisveikinimai ir mandagumo frazės',
+        description: 'Labas rytas, Laba diena, Atsiprašau! – Nieko tokio!, Ačiū. – Prašom / Nėra už ką.',
         xpReward: 20,
         order: 1,
         exercises: [
           {
             id: 'u1-l1-e1',
             type: 'multiple_choice',
-            prompt: 'How do you say "Good morning" in Lithuanian?',
-            audioText: 'Labas rytas',
-            options: ['Labas rytas', 'Laba diena', 'Labas vakaras', 'Ačiū'],
-            correctAnswer: 'Labas rytas',
-            explanation: '"Labas rytas" literally translates to "Good morning" (rytas = morning).'
+            prompt: 'Ką atsakyti, kai kitas žmogus sako „Atsiprašau!“?',
+            audioText: 'Atsiprašau! – Nieko tokio!',
+            options: ['Nieko tokio! / Nieko!', 'Labas vakaras!', 'Viso gero!', 'Ačiū'],
+            correctAnswer: 'Nieko tokio! / Nieko!',
+            explanation: 'Į atsiprašymą lietuviškai mandagiai atsakoma: „Nieko tokio!“, „Nieko!“ arba „Prašom!“.'
           },
           {
             id: 'u1-l1-e2',
             type: 'match_pairs',
-            prompt: 'Match the Lithuanian polite phrases with their English meanings:',
-            audioText: 'Ačiū ir prašom',
+            prompt: 'Sujunkite mandagumo ir atsisveikinimo frazes:',
+            audioText: 'Ačiū, prašom, iki pasimatymo, iki rytojaus',
             pairs: [
-              { id: 'p1', lithuanian: 'Ačiū', english: 'Thank you' },
-              { id: 'p2', lithuanian: 'Prašom', english: 'You are welcome / Please' },
-              { id: 'p3', lithuanian: 'Atsiprašau', english: 'Excuse me / Sorry' },
-              { id: 'p4', lithuanian: 'Iki pasimatymo', english: 'See you later / Goodbye' }
+              { id: 'p1', lithuanian: 'Labas rytas!', english: 'Good morning!' },
+              { id: 'p2', lithuanian: 'Nėra už ką.', english: 'Not at all / Don\'t mention it.' },
+              { id: 'p3', lithuanian: 'Iki pasimatymo!', english: 'See you later / Goodbye!' },
+              { id: 'p4', lithuanian: 'Iki rytojaus!', english: 'See you tomorrow!' }
             ],
-            explanation: '"Ačiū" is the universal word for thanks, while "Prašom" is used both for "please" and "you\'re welcome".'
+            explanation: '„Nėra už ką“ yra populiarus atsakymas į „Ačiū“ (panašiai kaip „Prašom“).'
           },
           {
             id: 'u1-l1-e3',
-            type: 'word_bank_order',
-            prompt: 'Assemble the sentence: "Good afternoon, thank you!"',
-            audioText: 'Laba diena, ačiū!',
-            words: ['diena', 'Laba', 'ačiū', 'Labas', 'rytas'],
-            correctSequence: ['Laba', 'diena', 'ačiū'],
-            explanation: '"Laba diena" means "Good afternoon / Good day". "Laba" is feminine agreeing with "diena" (day).'
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite ir sudėkite atsisveikinimo frazę:',
+            targetSentence: 'Viso gero ir iki rytojaus',
+            audioText: 'Viso gero ir iki rytojaus',
+            words: ['gero', 'Viso', 'iki', 'ir', 'rytojaus', 'Labas'],
+            correctSequence: ['Viso', 'gero', 'ir', 'iki', 'rytojaus'],
+            translationHint: 'Goodbye and see you tomorrow'
           },
           {
             id: 'u1-l1-e4',
-            type: 'multiple_choice',
-            prompt: 'What does "Labas vakaras" mean?',
-            audioText: 'Labas vakaras',
-            options: ['Good evening', 'Good morning', 'Good night', 'Hello friend'],
-            correctAnswer: 'Good evening',
-            explanation: '"Vakaras" means evening, so "Labas vakaras" is "Good evening".'
-          },
-          {
-            id: 'u1-l1-e5',
-            type: 'dialogue_fill',
-            prompt: 'Complete the friendly farewell conversation:',
-            audioText: 'Iki pasimatymo! Viso gero!',
-            dialogue: [
-              { speaker: 'Eglė', text: 'Ačiū už pagalbą! Iki pasimatymo!' },
-              { speaker: 'Lukas', text: 'Prašom! ___ gero!', isBlank: true, blankPrefix: '', blankSuffix: 'gero!' }
-            ],
-            options: ['Viso', 'Labas', 'Ačiū', 'Rytas'],
-            correctAnswer: 'Viso',
-            explanation: '"Viso gero" is a common polite way to say goodbye (all the best).'
+            type: 'speaking_pronounce',
+            prompt: 'Aiškiai ištarkite mandagią dienos frazę:',
+            targetPhrase: 'Laba diena, ačiū labai!',
+            phoneticHint: 'Lah-bah dyeh-nah, ah-chyoo lah-by',
+            translation: 'Good afternoon, thank you very much!',
+            acceptableVariations: ['laba diena ačiū labai', 'laba diena aciu labai']
           }
         ]
       },
       {
         id: 'lesson-2',
         unitId: 'unit-1',
-        title: 'Identity & The Verb "būti"',
-        description: 'Conjugate the essential verb "būti" (to be) in present tense and state who you are.',
+        title: 'Susipažinimas ir veiksmažodis „būti / nebūti“',
+        description: 'Mano vardas yra..., Kokia jūsų pavardė?, esu/esi/yra, studentas vs dėstytojas.',
         xpReward: 25,
         order: 2,
         exercises: [
           {
             id: 'u1-l2-e1',
-            type: 'fill_in_the_blank',
-            prompt: 'Fill in the blank with the correct form of "būti":',
-            audioText: 'Aš esu studentas',
-            sentenceWithBlank: 'Aš ___ studentas.',
+            type: 'dialogue_fill',
+            prompt: 'Užbaikite Rasos ir Jono susipažinimo pokalbį:',
+            audioText: 'Labas rytas. Mano vardas yra Rasa. Labai malonu! Aš esu Jonas.',
+            dialogue: [
+              { speaker: 'Rasa', avatar: '👩', text: 'Labas rytas. Mano vardas yra Rasa.' },
+              {
+                speaker: 'Jonas',
+                avatar: '👨',
+                text: '',
+                isBlank: true,
+                blankPrefix: 'Labai malonu! Aš ',
+                blankSuffix: ' Jonas.'
+              },
+              { speaker: 'Rasa', avatar: '👩', text: 'Man taip pat labai malonu!' }
+            ],
             options: ['esu', 'esi', 'yra', 'esame'],
             correctAnswer: 'esu',
-            explanation: 'The 1st person singular ("aš" = I) uses "esu": Aš esu (I am).'
+            explanation: '1-asis asmuo (Aš) reikalauja formos „esu“ (Aš esu Jonas).'
           },
           {
             id: 'u1-l2-e2',
-            type: 'match_pairs',
-            prompt: 'Match each pronoun with its present tense conjugation of "būti":',
-            audioText: 'Aš esu, tu esi, mes esame, jūs esate',
-            pairs: [
-              { id: 'p1', lithuanian: 'Aš', english: 'esu (I am)' },
-              { id: 'p2', lithuanian: 'Tu', english: 'esi (You are - sing.)' },
-              { id: 'p3', lithuanian: 'Jis / Ji', english: 'yra (He / She is)' },
-              { id: 'p4', lithuanian: 'Mes', english: 'esame (We are)' }
-            ],
-            explanation: 'Notice how Lithuanian verbs change their endings systematically with personal pronouns.'
+            type: 'fill_in_the_blank',
+            prompt: 'Pasirinkite teisingą neiginį:',
+            audioText: 'Ne, aš nesu dėstytojas. Aš esu studentas.',
+            sentenceWithBlank: 'Ne, aš ___ dėstytojas. Aš esu studentas.',
+            options: ['nesu', 'nesi', 'nėra', 'nesame'],
+            correctAnswer: 'nesu',
+            explanation: 'Neiginys nuo „aš esu“ yra „aš nesu“.'
           },
           {
             id: 'u1-l2-e3',
             type: 'word_bank_order',
-            prompt: 'Form the sentence: "You are very kind (polite/plural)"',
-            audioText: 'Jūs esate labai malonus',
-            words: ['esate', 'Jūs', 'labai', 'esu', 'malonus'],
-            correctSequence: ['Jūs', 'esate', 'labai', 'malonus'],
-            explanation: '"Jūs esate" is used for plural "you" or when addressing someone with polite respect.'
+            prompt: 'Sudėkite klausimą: „Kokia jūsų pavardė?“',
+            audioText: 'Kokia jūsų pavardė?',
+            words: ['pavardė', 'Kokia', 'jūsų', 'vardas', 'kas'],
+            correctSequence: ['Kokia', 'jūsų', 'pavardė'],
+            explanation: 'Klausiant moteriškos giminės daiktavardžio „pavardė“ vartojamas įvardis „Kokia“.'
           },
           {
             id: 'u1-l2-e4',
-            type: 'multiple_choice',
-            prompt: 'Select the correct sentence for "She is a doctor":',
-            audioText: 'Ji yra gydytoja',
-            options: ['Ji yra gydytoja', 'Ji esu gydytoja', 'Ji esi gydytoja', 'Ji esame gydytoja'],
-            correctAnswer: 'Ji yra gydytoja',
-            explanation: '3rd person (jis/ji) takes "yra" for both singular and plural.'
+            type: 'listening_multiple_choice',
+            prompt: 'Pasiklausykite administratorės ir studento pokalbio:',
+            audioDialogue: 'Administratorė: Kokia jūsų pavardė? Studentas: Mano pavardė Belovas. Koks jūsų vardas? Olegas.',
+            question: 'Koks yra studento vardas ir pavardė pagal garso įrašą?',
+            options: ['Olegas Belovas', 'Petras Švažas', 'Andrius Belovas', 'Jonas Povilas'],
+            correctAnswer: 'Olegas Belovas',
+            explanation: 'Studentas pasako: „Mano pavardė Belovas, vardas Olegas“.'
           },
           {
             id: 'u1-l2-e5',
-            type: 'dialogue_fill',
-            prompt: 'Complete the introductions dialog:',
-            audioText: 'Ar tu esi studentas? Taip, aš esu studentas.',
-            dialogue: [
-              { speaker: 'Mantas', text: 'Labas! Ar tu ___ mokytojas?' },
-              { speaker: 'Rūta', text: 'Ne, aš esu studentė!' }
-            ],
-            options: ['esi', 'esu', 'yra', 'esate'],
-            correctAnswer: 'esi',
-            explanation: 'With "tu" (informal you), the correct verb form is always "esi".'
+            type: 'speaking_pronounce',
+            prompt: 'Ištarkite mandagų susipažinimo atsakymą:',
+            targetPhrase: 'Man taip pat labai malonu!',
+            phoneticHint: 'Mahn teyp paht lah-by mah-loh-nuo',
+            translation: 'Nice to meet you too!',
+            acceptableVariations: ['man taip pat labai malonu', 'man taip pat malonu']
           }
         ]
       },
       {
         id: 'lesson-3',
         unitId: 'unit-1',
-        title: 'Origins & Cities (Genitive with "iš")',
-        description: 'Express where you come from using the preposition "iš" + Genitive case (Kilmininkas).',
+        title: 'Šalys, tautybės ir gyventojai',
+        description: 'Lietuva (lietuvis/lietuvė), Anglija (anglas), Vokietija (vokietis), Ukraina, Prancūzija.',
         xpReward: 25,
         order: 3,
         exercises: [
           {
             id: 'u1-l3-e1',
-            type: 'fill_in_the_blank',
-            prompt: 'Choose the correct form to say "I am from Vilnius":',
-            audioText: 'Aš esu iš Vilniaus',
-            sentenceWithBlank: 'Aš esu iš ___.',
-            options: ['Vilniaus', 'Vilnius', 'Vilniuje', 'Vilnių'],
-            correctAnswer: 'Vilniaus',
-            explanation: 'The preposition "iš" (from) always requires the Genitive case: Vilnius -> Vilniaus.'
+            type: 'match_pairs',
+            prompt: 'Sujunkite šalis su jų gyventojais (vyrais):',
+            audioText: 'Lietuva, Vokietija, Anglija, Prancūzija',
+            pairs: [
+              { id: 'c1', lithuanian: 'Lietuva', english: 'lietuvis' },
+              { id: 'c2', lithuanian: 'Vokietija', english: 'vokietis' },
+              { id: 'c3', lithuanian: 'Anglija', english: 'anglas' },
+              { id: 'c4', lithuanian: 'Prancūzija', english: 'prancūzas' }
+            ],
+            explanation: 'Vyriškosios giminės tautybių galūnės dažniausiai yra -as arba -is.'
           },
           {
             id: 'u1-l3-e2',
-            type: 'word_bank_order',
-            prompt: 'Construct the sentence: "I am from Kaunas"',
-            audioText: 'Aš esu iš Kauno',
-            words: ['esu', 'iš', 'Aš', 'Kauno', 'Kaunas', 'Vilniaus'],
-            correctSequence: ['Aš', 'esu', 'iš', 'Kauno'],
-            explanation: 'Kaunas ends in "-as", which in the Genitive case becomes "-o": Kaunas -> Kauno.'
+            type: 'fill_in_the_blank',
+            prompt: 'Lina gyvena Lietuvoje. Ji yra...',
+            audioText: 'Lina yra lietuvė',
+            sentenceWithBlank: 'Lina yra ___.',
+            options: ['lietuvė', 'lietuvis', 'lietuva', 'lietuviškai'],
+            correctAnswer: 'lietuvė',
+            explanation: 'Moteriškosios giminės tautybės galūnė: lietuvė, anglė, vokietė, prancūzė.'
           },
           {
             id: 'u1-l3-e3',
-            type: 'match_pairs',
-            prompt: 'Match country/city names with their "iš" (from) forms:',
-            audioText: 'Iš Lietuvos, iš Kauno, iš Klaipėdos',
-            pairs: [
-              { id: 'p1', lithuanian: 'Lietuva (Lithuania)', english: 'iš Lietuvos' },
-              { id: 'p2', lithuanian: 'Kaunas', english: 'iš Kauno' },
-              { id: 'p3', lithuanian: 'Klaipėda', english: 'iš Klaipėdos' },
-              { id: 'p4', lithuanian: 'Vilnius', english: 'iš Vilniaus' }
-            ],
-            explanation: 'Feminine names in "-a" take "-os" (Lietuva -> Lietuvos, Klaipėda -> Klaipėdos).'
+            type: 'multiple_choice',
+            prompt: 'Kaip vadinamas gyventojas iš Ispanijos (vyras)?',
+            audioText: 'Ispanas',
+            options: ['ispanas', 'ispanė', 'ispanija', 'ispaniškai'],
+            correctAnswer: 'ispanas',
+            explanation: 'Ispanija -> ispanas (vyras), ispanė (moteris).'
           },
           {
             id: 'u1-l3-e4',
-            type: 'multiple_choice',
-            prompt: 'How do you ask someone "Where are you from?" in Lithuanian?',
-            audioText: 'Iš kur tu esi?',
-            options: ['Iš kur tu esi?', 'Kur tu gyveni?', 'Kas tu esi?', 'Kaip sekasi?'],
-            correctAnswer: 'Iš kur tu esi?',
-            explanation: '"Iš kur" means "From where", making "Iš kur tu esi?" the direct question.'
-          },
-          {
-            id: 'u1-l3-e5',
-            type: 'dialogue_fill',
-            prompt: 'Complete the conversational origin exchange:',
-            audioText: 'Iš kur tu esi? Aš esu iš Kauno.',
-            dialogue: [
-              { speaker: 'Tomas', text: 'Labas! Iš kur tu esi?' },
-              { speaker: 'Gabrielė', text: 'Labas, Tomai! Aš esu iš ___.' }
-            ],
-            options: ['Lietuvos', 'Lietuva', 'Lietuvoje', 'Lietuvą'],
-            correctAnswer: 'Lietuvos',
-            explanation: 'After "iš", the country "Lietuva" declines into the Genitive case "Lietuvos".'
-          }
-        ]
-      },
-      {
-        id: 'lesson-4',
-        unitId: 'unit-1',
-        title: 'Addressing People (Šauksmininkas)',
-        description: 'Call out names properly using the Lithuanian Vocative case (Šauksmininkas).',
-        xpReward: 30,
-        order: 4,
-        exercises: [
-          {
-            id: 'u1-l4-e1',
-            type: 'multiple_choice',
-            prompt: 'How do you call a person named "Tomas" directly?',
-            audioText: 'Tomai!',
-            options: ['Tomai!', 'Tomas!', 'Tomo!', 'Tomui!'],
-            correctAnswer: 'Tomai!',
-            explanation: 'Masculine names ending in "-as" change to "-ai!" in the Vocative case (Tomas -> Tomai!).'
-          },
-          {
-            id: 'u1-l4-e2',
-            type: 'fill_in_the_blank',
-            prompt: 'Address Jonas politely:',
-            audioText: 'Labas rytas, Jonai!',
-            sentenceWithBlank: 'Labas rytas, ___!',
-            options: ['Jonai', 'Jonas', 'Jono', 'Jonui'],
-            correctAnswer: 'Jonai',
-            explanation: 'Just like Tomas, "Jonas" becomes "Jonai!" when calling or addressing him.'
-          },
-          {
-            id: 'u1-l4-e3',
-            type: 'match_pairs',
-            prompt: 'Match standard names with their Vocative (direct calling) forms:',
-            audioText: 'Vardai ir šauksmininkas',
-            pairs: [
-              { id: 'p1', lithuanian: 'Lukas (-as)', english: 'Lukai!' },
-              { id: 'p2', lithuanian: 'Rytis (-ys)', english: 'Ryti!' },
-              { id: 'p3', lithuanian: 'Kęstutis (-is)', english: 'Kęstuti!' },
-              { id: 'p4', lithuanian: 'Lina (-a)', english: 'Lina!' }
-            ],
-            explanation: 'Names in -as become -ai; names in -is/-ys lose the -s; feminine names in -a usually stay the same!'
-          },
-          {
-            id: 'u1-l4-e4',
-            type: 'word_bank_order',
-            prompt: 'Assemble: "Hello, Tomas! How are you?"',
-            audioText: 'Labas, Tomai! Kaip sekasi?',
-            words: ['Tomai', 'sekasi', 'Labas', 'Kaip', 'Tomas'],
-            correctSequence: ['Labas', 'Tomai', 'Kaip', 'sekasi'],
-            explanation: '"Kaip sekasi?" means "How are you doing?" and "Tomai!" is the vocative address.'
-          },
-          {
-            id: 'u1-l4-e5',
-            type: 'dialogue_fill',
-            prompt: 'Respond to a greeting with proper vocative address:',
-            audioText: 'Sveika, Lina! Kaip sekasi?',
-            dialogue: [
-              { speaker: 'Dominykas', text: 'Labas, Lina! Kaip gyveni?' },
-              { speaker: 'Lina', text: 'Ačiū, puikiai! O tu, ___?' }
-            ],
-            options: ['Dominykai', 'Dominykas', 'Dominyko', 'Dominyką'],
-            correctAnswer: 'Dominykai',
-            explanation: 'Lina addresses Dominykas using the vocative ending "-ai": Dominykai!'
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite ir sudėkite sakinį:',
+            targetSentence: 'Ana yra studentė iš Ukrainos',
+            audioText: 'Ana yra studentė iš Ukrainos',
+            words: ['Ana', 'studentė', 'yra', 'iš', 'Ukrainos', 'Lietuvos'],
+            correctSequence: ['Ana', 'yra', 'studentė', 'iš', 'Ukrainos'],
+            translationHint: 'Ana is a student from Ukraine'
           }
         ]
       }
     ]
   },
+
+  // 2 SKYRIUS: ČIA MANO DRAUGAS
   {
     id: 'unit-2',
     number: 2,
-    title: 'Daily Life & Navigation',
-    subtitle: 'Kavinėje ir Mieste',
-    description: 'Order food and drinks (Accusative / Galininkas) and navigate locations (Locative / Vietininkas).',
-    color: '#2563eb', // Royal Blue
-    accentColor: '#3b82f6',
+    title: '2 skyrius: Čia mano draugas',
+    subtitle: 'Savijauta, kilmė, kalbos ir šauksmininkas',
+    description: 'Paklausti „Kaip sekasi?“, pasakyti iš kur esate (iš + Kilmininkas), kalbos su -iškai ir šauksmininkas (Tomai!).',
+    color: '#0284c7',
+    accentColor: '#38bdf8',
     lessons: [
+      {
+        id: 'lesson-4',
+        unitId: 'unit-2',
+        title: 'Kaip sekasi? ir Supažindinimas',
+        description: 'Ačiū, gerai / puikiai / šiaip sau / blogai. Čia mano draugas Paulius / draugė Alicija.',
+        xpReward: 25,
+        order: 1,
+        exercises: [
+          {
+            id: 'u2-l4-e1',
+            type: 'multiple_choice',
+            prompt: 'Ką reiškia atsakymas „Šiaip sau“ į klausimą „Kaip sekasi?“?',
+            audioText: 'Kaip sekasi? – Šiaip sau.',
+            options: ['So-so (neither good nor bad)', 'Excellent / Great', 'Very bad', 'Good morning'],
+            correctAnswer: 'So-so (neither good nor bad)',
+            explanation: '„Šiaip sau“ reiškia vidutinišką savijautą (so-so).'
+          },
+          {
+            id: 'u2-l4-e2',
+            type: 'dialogue_fill',
+            prompt: 'Supažindinkite savo draugą:',
+            audioText: 'Čia mano draugas Paulius. Malonu, aš Edvardas.',
+            dialogue: [
+              { speaker: 'Jūs', avatar: '🙋‍♂️', text: 'Čia mano draugas Paulius.' },
+              {
+                speaker: 'Edvardas',
+                avatar: '👨',
+                text: '',
+                isBlank: true,
+                blankPrefix: 'Malonu. Aš ',
+                blankSuffix: '.'
+              }
+            ],
+            options: ['Edvardas', 'Edvardui', 'Edvardo', 'Edvarde'],
+            correctAnswer: 'Edvardas',
+            explanation: 'Prisistatant sakoma Vardininko forma: „Aš Edvardas“.'
+          },
+          {
+            id: 'u2-l4-e3',
+            type: 'match_pairs',
+            prompt: 'Sujunkite prašymus ir atsakymus:',
+            audioText: 'Prašom pakartoti, prašom kalbėti lėčiau, ar aišku?',
+            pairs: [
+              { id: 'req1', lithuanian: 'Prašom pakartoti!', english: 'Please repeat!' },
+              { id: 'req2', lithuanian: 'Prašom kalbėti lėčiau!', english: 'Please speak slower!' },
+              { id: 'req3', lithuanian: 'Ar aišku?', english: 'Is it clear?' },
+              { id: 'req4', lithuanian: 'Taip, aišku.', english: 'Yes, it is clear.' }
+            ],
+            explanation: 'Šios frazės yra būtinos pradedant kalbėti lietuviškai.'
+          },
+          {
+            id: 'u2-l4-e4',
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite ir sudėkite prašymą:',
+            targetSentence: 'Prašom pakartoti ir kalbėti lėčiau',
+            audioText: 'Prašom pakartoti ir kalbėti lėčiau',
+            words: ['pakartoti', 'Prašom', 'ir', 'kalbėti', 'lėčiau', 'aišku'],
+            correctSequence: ['Prašom', 'pakartoti', 'ir', 'kalbėti', 'lėčiau'],
+            translationHint: 'Please repeat and speak slower'
+          }
+        ]
+      },
       {
         id: 'lesson-5',
         unitId: 'unit-2',
-        title: 'Ordering at a Café (Galininkas)',
-        description: 'Order food and drinks using the Accusative case for direct objects.',
+        title: 'Iš kur jūs esate? (iš + Kilmininkas)',
+        description: 'Kilmė: iš Vokietijos, iš Hamburgo, iš Vilniaus, iš Latvijos, iš Rygos.',
         xpReward: 30,
-        order: 5,
+        order: 2,
         exercises: [
           {
             id: 'u2-l5-e1',
             type: 'fill_in_the_blank',
-            prompt: 'Order coffee politely ("One coffee, please"):',
-            audioText: 'Prašau vieną kavą',
-            sentenceWithBlank: 'Prašau vieną ___.',
-            options: ['kavą', 'kava', 'kavoje', 'kavos'],
-            correctAnswer: 'kavą',
-            explanation: '"Kava" (coffee) takes the nasal vowel ending "-ą" in the Accusative case (direct object): kavą.'
+            prompt: 'Parašykite teisingą galūnę po prielinksnio „iš“ (Vokietija):',
+            audioText: 'Aš esu iš Vokietijos, iš Hamburgo',
+            sentenceWithBlank: 'Aš esu iš ___, iš Hamburgo.',
+            options: ['Vokietijos', 'Vokietija', 'Vokietijoje', 'Vokietijai'],
+            correctAnswer: 'Vokietijos',
+            explanation: 'Prielinksnis „iš“ reikalauja Kilmininko linksnio: Vokietija -> iš Vokietijos (-a -> -os).'
           },
           {
             id: 'u2-l5-e2',
-            type: 'match_pairs',
-            prompt: 'Match drinks with their ordering forms (Accusative case):',
-            audioText: 'Kava, arbata, sultys, vanduo',
-            pairs: [
-              { id: 'p1', lithuanian: 'Kava', english: 'Prašau kavą (Coffee)' },
-              { id: 'p2', lithuanian: 'Arbata', english: 'Prašau arbatą (Tea)' },
-              { id: 'p3', lithuanian: 'Pienas', english: 'Prašau pieną (Milk)' },
-              { id: 'p4', lithuanian: 'Sumuštinis', english: 'Prašau sumuštinį (Sandwich)' }
-            ],
-            explanation: 'Nouns ending in -a take -ą, while masculine nouns in -is take -į in the accusative case.'
+            type: 'multiple_choice',
+            prompt: 'Kokia yra žodžio „Vilnius“ forma po prielinksnio „iš“?',
+            audioText: 'Aš esu iš Vilniaus',
+            options: ['iš Vilniaus', 'iš Vilniuje', 'iš Vilnių', 'iš Vilniui'],
+            correctAnswer: 'iš Vilniaus',
+            explanation: 'Vyriškosios giminės galūnė -ius Kilmininke tampa -iaus: Vilnius -> iš Vilniaus.'
           },
           {
             id: 'u2-l5-e3',
-            type: 'word_bank_order',
-            prompt: 'Assemble the phrase: "I would like tea with lemon, please"',
-            audioText: 'Norėčiau arbatos su citrina, prašau',
-            words: ['arbatos', 'Norėčiau', 'citrina', 'prašau', 'su', 'kavą'],
-            correctSequence: ['Norėčiau', 'arbatos', 'su', 'citrina', 'prašau'],
-            explanation: '"Norėčiau" (I would like) takes genitive "arbatos", followed by preposition "su" (with).'
+            type: 'match_pairs',
+            prompt: 'Sujunkite šalis ir miestus su jų Kilmininko formomis:',
+            audioText: 'Iš Monako, iš Čilės, iš Rygos, iš Panevėžio',
+            pairs: [
+              { id: 'g1', lithuanian: 'Monakas', english: 'iš Monako (-as -> -o)' },
+              { id: 'g2', lithuanian: 'Čilė', english: 'iš Čilės (-ė -> -ės)' },
+              { id: 'g3', lithuanian: 'Ryga', english: 'iš Rygos (-a -> -os)' },
+              { id: 'g4', lithuanian: 'Panevėžys', english: 'iš Panevėžio (-ys -> -io)' }
+            ],
+            explanation: 'Taisyklė: -as -> -o, -ė -> -ės, -a -> -os, -ys/-is -> -io.'
           },
           {
             id: 'u2-l5-e4',
-            type: 'multiple_choice',
-            prompt: 'How do you ask for the bill in a café?',
-            audioText: 'Sąskaitą, prašau',
-            options: ['Sąskaitą, prašau', 'Kiek kainuoja kava?', 'Ar turite meniu?', 'Labas rytas'],
-            correctAnswer: 'Sąskaitą, prašau',
-            explanation: '"Sąskaita" (bill/check) in the accusative case is "Sąskaitą, prašau" (The check, please).'
+            type: 'speaking_pronounce',
+            prompt: 'Pasiteiraukite kito asmens kilmės:',
+            targetPhrase: 'Iš kur jūs esate?',
+            phoneticHint: 'Eesh koor yoos eh-sah-teh',
+            translation: 'Where are you from? (formal / plural)',
+            acceptableVariations: ['iš kur jūs esate', 'is kur jus esate']
           }
         ]
       },
       {
         id: 'lesson-6',
         unitId: 'unit-2',
-        title: 'Where Is It? (Locative / Vietininkas)',
-        description: 'Describe locations and where people live or are staying using the "-e / -yje" endings.',
-        xpReward: 35,
-        order: 6,
+        title: 'Kalbos su -iškai ir Šauksmininkas (Vocative)',
+        description: 'Veiksmažodis kalbėti, kalbos su -iškai, kreipiniai: Tomai!, Pauliau!, pone Jonai!',
+        xpReward: 30,
+        order: 3,
         exercises: [
           {
             id: 'u2-l6-e1',
-            type: 'fill_in_the_blank',
-            prompt: 'Say "I live in Vilnius":',
-            audioText: 'Aš gyvenu Vilniuje',
-            sentenceWithBlank: 'Aš gyvenu ___.',
-            options: ['Vilniuje', 'Vilnius', 'Vilniaus', 'Vilnių'],
-            correctAnswer: 'Vilniuje',
-            explanation: 'Words ending in "-ius" decline to "-iuje" in the Locative case: Vilnius -> Vilniuje.'
+            type: 'multiple_choice',
+            prompt: 'Kaip kreiptis į draugą vardu Tomas (Šauksmininkas)?',
+            audioText: 'Tomai, ar tu kalbi lietuviškai?',
+            options: ['Tomai!', 'Tomas!', 'Tomui!', 'Tome!'],
+            correctAnswer: 'Tomai!',
+            explanation: 'Vyriškosios giminės vardai su galūne -as Šauksmininke įgyja galūnę -ai (Tomas -> Tomai!).'
           },
           {
             id: 'u2-l6-e2',
-            type: 'match_pairs',
-            prompt: 'Match location questions with answers:',
-            audioText: 'Kur tu gyveni? Kur yra kavinė?',
-            pairs: [
-              { id: 'p1', lithuanian: 'Kaunas (in Kaunas)', english: 'Kaune' },
-              { id: 'p2', lithuanian: 'Klaipėda (in Klaipėda)', english: 'Klaipėdoje' },
-              { id: 'p3', lithuanian: 'Viešbutis (in the hotel)', english: 'Viešbutyje' },
-              { id: 'p4', lithuanian: 'Kavinė (in the cafe)', english: 'Kavinėje' }
-            ],
-            explanation: 'Locative case answers "Kur?" (Where?). -as becomes -e, -a becomes -oje, -ė becomes -ėje.'
+            type: 'fill_in_the_blank',
+            prompt: 'Kreipimasis į Paulių: „Labas, ___!“',
+            audioText: 'Labas, Pauliau!',
+            sentenceWithBlank: 'Labas, ___!',
+            options: ['Pauliau', 'Paulius', 'Pauliui', 'Paulie'],
+            correctAnswer: 'Pauliau',
+            explanation: 'Vardai su galūne -us Šauksmininke virsta -au: Paulius -> Pauliau!'
           },
           {
             id: 'u2-l6-e3',
-            type: 'word_bank_order',
-            prompt: 'Translate: "We are at the hotel right now"',
-            audioText: 'Mes esame viešbutyje dabar',
-            words: ['esame', 'viešbutyje', 'Mes', 'dabar', 'esu', 'Kaune'],
-            correctSequence: ['Mes', 'esame', 'viešbutyje', 'dabar'],
-            explanation: '"Mes esame" (we are) + "viešbutyje" (in the hotel) + "dabar" (now).'
+            type: 'match_pairs',
+            prompt: 'Sujunkite vardus su jų Šauksmininko formomis:',
+            audioText: 'Tomai, Baliau, Egle, pone Jonai',
+            pairs: [
+              { id: 'v1', lithuanian: 'Tomas (-as)', english: 'Tomai!' },
+              { id: 'v2', lithuanian: 'Paulius (-us)', english: 'Pauliau!' },
+              { id: 'v3', lithuanian: 'Eglė (-ė)', english: 'Egle!' },
+              { id: 'v4', lithuanian: 'Ponas Jonas', english: 'Pone Jonai!' }
+            ],
+            explanation: 'Žodis „ponas“ Šauksmininke turi ypatingą formą: „pone“ (Pone Jonai!).'
           },
           {
             id: 'u2-l6-e4',
-            type: 'dialogue_fill',
-            prompt: 'Complete the directions exchange:',
-            audioText: 'Kur yra kavinė? Kavinė yra centre.',
-            dialogue: [
-              { speaker: 'Turistas', text: 'Atsiprašau, kur yra kavinė?' },
-              { speaker: 'Vilnietis', text: 'Kavinė yra senamiesčio ___.' }
-            ],
-            options: ['centre', 'centras', 'centro', 'centrą'],
-            correctAnswer: 'centre',
-            explanation: 'Centras -> centre in the Locative case (in the center).'
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite ir sudėkite sakinį apie kalbas:',
+            targetSentence: 'Ar tu kalbi lietuviškai ir angliškai',
+            audioText: 'Ar tu kalbi lietuviškai ir angliškai',
+            words: ['kalbi', 'Ar', 'tu', 'lietuviškai', 'angliškai', 'ir', 'vokiškai'],
+            correctSequence: ['Ar', 'tu', 'kalbi', 'lietuviškai', 'ir', 'angliškai'],
+            translationHint: 'Do you speak Lithuanian and English?'
+          },
+          {
+            id: 'u2-l6-e5',
+            type: 'speaking_pronounce',
+            prompt: 'Ištarkite atsakymą apie kalbėjimą:',
+            targetPhrase: 'Taip, aš truputį kalbu lietuviškai',
+            phoneticHint: 'Teyp, ash troo-poo-tee kahl-boo lyeh-too-vish-key',
+            translation: 'Yes, I speak a little bit of Lithuanian',
+            acceptableVariations: ['taip aš truputį kalbu lietuviškai', 'taip as truputi kalbu lietuviskai']
           }
         ]
       }
     ]
   },
+
+  // 3 SKYRIUS: KOKS TAVO ADRESAS?
   {
     id: 'unit-3',
-
     number: 3,
-    title: 'Numbers, Shopping & Café',
-    subtitle: 'Skaičiai, Parduotuvė ir Kavinė',
-    description: 'Count numbers 1–100, ask "Kiek kainuoja?", order pastries and coffee, and pay cash or card.',
+    title: '3 skyrius: Koks tavo adresas?',
+    subtitle: 'Miestas, gyvenamoji vieta, vietininkas ir skaičiai',
+    description: 'Pasakyti, kas kur gyvena (Vietininkas: Vilniuje, Kaune), prielinksnis prie + Kilmininkas, adresas ir skaičiai 0–300.',
     color: '#d97706',
     accentColor: '#f59e0b',
     lessons: [
       {
         id: 'lesson-7',
         unitId: 'unit-3',
-        title: 'Numbers & Prices',
-        description: 'Learn numbers 1 to 20, tens up to 100, and asking how much things cost in Euros.',
-        xpReward: 25,
+        title: 'Kur tu gyveni? (Vienaskaitos Vietininkas)',
+        description: 'Vietininkas (Locative – Kur?): Kaune, Vilniuje, centre, bendrabutyje, Lietuvoje, Trakuose.',
+        xpReward: 30,
         order: 1,
         exercises: [
           {
             id: 'u3-l7-e1',
-            type: 'multiple_choice',
-            prompt: 'How do you ask "How much does it cost?" in Lithuanian?',
-            audioText: 'Kiek tai kainuoja?',
-            options: ['Kiek tai kainuoja?', 'Kur tai yra?', 'Kas čia yra?', 'Kada atsidaro?'],
-            correctAnswer: 'Kiek tai kainuoja?',
-            explanation: '"Kiek" means how much/many, and "kainuoja" is 3rd person of verb kainuoti (to cost).'
+            type: 'fill_in_the_blank',
+            prompt: 'Įrašykite žodžio „Vilnius“ Vietininko formą:',
+            audioText: 'Aš gyvenu Vilniuje',
+            sentenceWithBlank: 'Aš gyvenu ___.',
+            options: ['Vilniuje', 'Vilnius', 'Vilniaus', 'Vilnių'],
+            correctAnswer: 'Vilniuje',
+            explanation: 'Žodžiai su galūne -ius Vietininke virsta -iuje: Vilnius -> Vilniuje.'
           },
           {
             id: 'u3-l7-e2',
-            type: 'audio_dictation',
-            prompt: 'Listen and write/tap the phrase you hear:',
-            targetSentence: 'Tai kainuoja penkis eurus',
-            audioText: 'Tai kainuoja penkis eurus',
-            words: ['kainuoja', 'Tai', 'penkis', 'eurus', 'dešimt', 'yra'],
-            correctSequence: ['Tai', 'kainuoja', 'penkis', 'eurus'],
-            translationHint: 'It costs five euros (accusative plural: penkis eurus)'
+            type: 'multiple_choice',
+            prompt: 'Kokia yra žodžio „Kaunas“ Vietininko forma (Kur?)?',
+            audioText: 'Mes gyvename Kaune',
+            options: ['Kaune', 'Kaunas', 'Kauno', 'Kaunui'],
+            correctAnswer: 'Kaune',
+            explanation: 'Galūnė -as Vietininke keičiama į -e: Kaunas -> Kaune.'
           },
           {
             id: 'u3-l7-e3',
-            type: 'speaking_pronounce',
-            prompt: 'Pronounce the phrase aloud clearly:',
-            targetPhrase: 'Kiek kainuoja kava?',
-            phoneticHint: 'Kyehk kai-nuo-ya kah-vah',
-            translation: 'How much does coffee cost?',
-            acceptableVariations: ['kiek kainuoja kava', 'kiek kainoja kava']
+            type: 'match_pairs',
+            prompt: 'Sujunkite vietovardžius su jų Vietininko formomis:',
+            audioText: 'Lietuvoje, Trakuose, bendrabutyje, aikštėje',
+            pairs: [
+              { id: 'loc1', lithuanian: 'Lietuva (-a)', english: 'Lietuvoje (-oje)' },
+              { id: 'loc2', lithuanian: 'aikštė (-ė)', english: 'aikštėje (-ėje)' },
+              { id: 'loc3', lithuanian: 'bendrabutis (-is)', english: 'bendrabutyje (-yje)' },
+              { id: 'loc4', lithuanian: 'Trakai (daugiskaita)', english: 'Trakuose (-uose)' }
+            ],
+            explanation: 'Daugiskaitiniai vietovardžiai (-ai) Vietininke įgyja galūnę -uose: Trakai -> Trakuose.'
           },
           {
             id: 'u3-l7-e4',
-            type: 'match_pairs',
-            prompt: 'Match numbers with their Lithuanian words:',
-            audioText: 'Vienas, du, trys, keturi, penki',
-            pairs: [
-              { id: 'num-1', lithuanian: 'Vienas', english: 'One (1)' },
-              { id: 'num-2', lithuanian: 'Du', english: 'Two (2)' },
-              { id: 'num-5', lithuanian: 'Penki', english: 'Five (5)' },
-              { id: 'num-10', lithuanian: 'Dešimt', english: 'Ten (10)' }
-            ],
-            explanation: 'Cardinal numbers in Lithuanian have gender agreement (vienas vyras / viena moteris, du / dvi).'
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite ir sudėkite sakinį:',
+            targetSentence: 'Aš gyvenu ir dirbu Vilniuje centre',
+            audioText: 'Aš gyvenu ir dirbu Vilniuje centre',
+            words: ['Vilniuje', 'Aš', 'dirbu', 'ir', 'centre', 'gyvenu', 'Kaune'],
+            correctSequence: ['Aš', 'gyvenu', 'ir', 'dirbu', 'Vilniuje', 'centre'],
+            translationHint: 'I live and work in Vilnius, in the center'
           },
           {
             id: 'u3-l7-e5',
-            type: 'listening_multiple_choice',
-            prompt: 'Listen to the shopkeeper speaking:',
-            audioDialogue: 'Kava kainuoja du eurus, o arbata – vieną eurą.',
-            question: 'How much does tea cost according to the audio?',
-            options: ['One euro (1€)', 'Two euros (2€)', 'Three euros (3€)', 'Free'],
-            correctAnswer: 'One euro (1€)',
-            explanation: '"arbata – vieną eurą" means tea is 1 euro.'
+            type: 'speaking_pronounce',
+            prompt: 'Paklauskite pašnekovo, kur jis gyvena:',
+            targetPhrase: 'Kur tu gyveni ir studijuoji?',
+            phoneticHint: 'Koor too gyee-veh-nee eer stoo-dee-yuo-yee',
+            translation: 'Where do you live and study?',
+            acceptableVariations: ['kur tu gyveni ir studijuoji']
           }
         ]
       },
       {
         id: 'lesson-8',
         unitId: 'unit-3',
-        title: 'At the Vilnius Café',
-        description: 'Order espresso, traditional tea, curd cake (varškės pyragas), and ask for the bill.',
-        xpReward: 25,
+        title: 'Miesto pastatai ir prielinksnis „prie + Kilmininkas“',
+        description: 'Bankas prie pašto, kavinė prie stoties, ligoninė, vaistinė, knygynas, biblioteka.',
+        xpReward: 30,
         order: 2,
         exercises: [
           {
             id: 'u3-l8-e1',
             type: 'dialogue_fill',
-            prompt: 'Complete the barista dialogue:',
-            audioText: 'Laba diena! Norėčiau kavos su pienu, prašom.',
+            prompt: 'Paklauskite kelio iki banko:',
+            audioText: 'Atsiprašau, kur yra bankas? Bankas yra prie pašto.',
             dialogue: [
-              { speaker: 'Barista (Ona)', avatar: '👩‍💼', text: 'Laba diena! Ko norėtumėte?' },
+              { speaker: 'Praeivis', avatar: '🚶', text: 'Atsiprašau, kur yra bankas?' },
               {
-                speaker: 'You (Klientas)',
-                avatar: '🙋‍♂️',
+                speaker: 'Vilnietis',
+                avatar: '🙋',
                 text: '',
                 isBlank: true,
-                blankPrefix: 'Norėčiau ',
-                blankSuffix: ', prašom.'
+                blankPrefix: 'Bankas yra prie ',
+                blankSuffix: '.'
               }
             ],
-            options: ['kavos su pienu', 'kava su pienas', 'kavai pienas', 'kavoje pieno'],
-            correctAnswer: 'kavos su pienu',
-            explanation: '"Norėčiau" requires Genitive: kava -> kavos! "Su" requires Instrumental: pienas -> pienu.'
+            options: ['pašto', 'paštas', 'pašte', 'paštui'],
+            correctAnswer: 'pašto',
+            explanation: 'Prielinksnis „prie“ (near) reikalauja Kilmininko linksnio: paštas -> prie pašto.'
           },
           {
             id: 'u3-l8-e2',
-            type: 'audio_dictation',
-            prompt: 'Listen to the customer asking for the bill:',
-            targetSentence: 'Ar galiu gauti sąskaitą?',
-            audioText: 'Ar galiu gauti sąskaitą?',
-            words: ['Ar', 'galiu', 'gauti', 'sąskaitą', 'prašom', 'arbatą'],
-            correctSequence: ['Ar', 'galiu', 'gauti', 'sąskaitą'],
-            translationHint: 'May I get the bill? (sąskaita in Accusative: sąskaitą)'
+            type: 'match_pairs',
+            prompt: 'Sujunkite miesto įstaigas su jų reikšmėmis:',
+            audioText: 'Vaistinė, knygynas, stotis, ligoninė',
+            pairs: [
+              { id: 'b1', lithuanian: 'Vaistinė', english: 'Pharmacy' },
+              { id: 'b2', lithuanian: 'Ligoninė', english: 'Hospital' },
+              { id: 'b3', lithuanian: 'Knygynas', english: 'Bookstore' },
+              { id: 'b4', lithuanian: 'Stotis', english: 'Station (bus/train)' }
+            ],
+            explanation: 'Miesto žodynas pagal 3 skyrių.'
           },
           {
             id: 'u3-l8-e3',
-            type: 'speaking_pronounce',
-            prompt: 'Politely say this order to the barista:',
-            targetPhrase: 'Prašom vieną kavą ir pyragą',
-            phoneticHint: 'Prah-shohm vyeh-nah kah-vah eer pee-rah-gah',
-            translation: 'One coffee and cake, please',
-            acceptableVariations: ['prašom vieną kavą ir pyragą', 'prasom viena kava ir pyraga']
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite ir sudėkite sakinį apie kavinę:',
+            targetSentence: 'Kavinė yra arti prie stoties',
+            audioText: 'Kavinė yra arti prie stoties',
+            words: ['Kavinė', 'arti', 'yra', 'prie', 'stoties', 'toli'],
+            correctSequence: ['Kavinė', 'yra', 'arti', 'prie', 'stoties'],
+            translationHint: 'The cafe is near, next to the station'
           },
           {
             id: 'u3-l8-e4',
-            type: 'multiple_choice',
-            prompt: 'How do you say "Can I pay by card?" in Lithuanian?',
-            audioText: 'Ar galima mokėti kortele?',
-            options: [
-              'Ar galima mokėti kortele?',
-              'Ar turi kortelę?',
-              'Kur yra bankomatas?',
-              'Kiek kainuoja kortelė?'
-            ],
-            correctAnswer: 'Ar galima mokėti kortele?',
-            explanation: '"Ar galima" = Is it possible?, "mokėti" = to pay, "kortele" = by card (Instrumental).'
+            type: 'listening_multiple_choice',
+            prompt: 'Pasiklausykite vilniečio atsakymo:',
+            audioDialogue: 'Universitetas yra toli, prie didelio parko.',
+            question: 'Kur yra universitetas pagal įrašą?',
+            options: ['Toli, prie parko', 'Arti, prie banko', 'Centre, prie pašto', 'Stotyje'],
+            correctAnswer: 'Toli, prie parko',
+            explanation: 'Vilnietis pasako: „Universitetas yra toli, prie didelio parko“.'
           }
         ]
       },
       {
         id: 'lesson-9',
         unitId: 'unit-3',
-        title: 'At the Farmers Market',
-        description: 'Buy fresh apples, Lithuanian honey (medus), bread, and navigate the market counter.',
-        xpReward: 25,
+        title: 'Adresas, telefono numeris ir skaičiai (0–300)',
+        description: 'Parko gatvė 4-10, telefono numeris 867741216, skaičiai: 0, 10, 20, 100, 200, 300.',
+        xpReward: 30,
         order: 3,
         exercises: [
           {
             id: 'u3-l9-e1',
-            type: 'match_pairs',
-            prompt: 'Match grocery items with their Lithuanian words:',
-            audioText: 'Duona, pienas, obuoliai, medus',
-            pairs: [
-              { id: 'g1', lithuanian: 'Duona', english: 'Bread (Rye bread)' },
-              { id: 'g2', lithuanian: 'Obuoliai', english: 'Apples' },
-              { id: 'g3', lithuanian: 'Medus', english: 'Honey' },
-              { id: 'g4', lithuanian: 'Sūris', english: 'Cheese' }
+            type: 'multiple_choice',
+            prompt: 'Kaip lietuviškai perskaityti adreso numerį „Parko gatvė 4-10“?',
+            audioText: 'Parko gatvė keturi, dešimt',
+            options: [
+              'Parko gatvė keturi, dešimt',
+              'Parko gatvė keturiolika',
+              'Parko gatvė keturiasdešimt',
+              'Parko gatvė nulis, keturi'
             ],
-            explanation: 'Black rye bread (juoda ruginė duona) and curd cheese (varškės sūris) are national staples.'
+            correctAnswer: 'Parko gatvė keturi, dešimt',
+            explanation: 'Adresuose brūkšnelis tarp namo ir buto skaitomas: namo numeris, buto numeris (keturi, dešimt).'
           },
           {
             id: 'u3-l9-e2',
-            type: 'word_bank_order',
-            prompt: 'Assemble: "Please give me one kilogram of apples"',
-            audioText: 'Prašom vieną kilogramą obuolių',
-            words: ['Prašom', 'kilogramą', 'vieną', 'obuolių', 'duoną', 'eina'],
-            correctSequence: ['Prašom', 'vieną', 'kilogramą', 'obuolių'],
-            explanation: 'Quantities take Genitive plural: "obuolių" (of apples).'
+            type: 'match_pairs',
+            prompt: 'Sujunkite skaičius su žodžiais:',
+            audioText: 'Dešimt, dvidešimt, penkiasdešimt, šimtas',
+            pairs: [
+              { id: 'num1', lithuanian: '10', english: 'Dešimt' },
+              { id: 'num2', lithuanian: '20', english: 'Dvidešimt' },
+              { id: 'num3', lithuanian: '100', english: 'Šimtas' },
+              { id: 'num4', lithuanian: '200', english: 'Du šimtai' }
+            ],
+            explanation: 'Skaičiai: 100 – šimtas, 200 – du šimtai, 300 – trys šimtai.'
           },
           {
             id: 'u3-l9-e3',
-            type: 'speaking_pronounce',
-            prompt: 'Ask the vendor for fresh honey:',
-            targetPhrase: 'Ar šis medus yra šviežias?',
-            phoneticHint: 'Ahr shees meh-doos ee-rah shvyeh-zhyahs',
-            translation: 'Is this honey fresh?',
-            acceptableVariations: ['ar šis medus yra šviežias', 'ar sis medus yra sviezias']
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite ir sudėkite adreso sakinį:',
+            targetSentence: 'Mano adresas yra Gedimino prospektas dešimt',
+            audioText: 'Mano adresas yra Gedimino prospektas dešimt',
+            words: ['adresas', 'Mano', 'yra', 'Gedimino', 'prospektas', 'dešimt', 'penki'],
+            correctSequence: ['Mano', 'adresas', 'yra', 'Gedimino', 'prospektas', 'dešimt'],
+            translationHint: 'My address is Gediminas Avenue 10'
           },
           {
             id: 'u3-l9-e4',
-            type: 'listening_multiple_choice',
-            prompt: 'Listen to the market merchant:',
-            audioDialogue: 'Viskas kartu kainuoja septynis eurus.',
-            question: 'How much is everything together?',
-            options: ['Seven euros (7€)', 'Six euros (6€)', 'Eight euros (8€)', 'Ten euros (10€)'],
-            correctAnswer: 'Seven euros (7€)',
-            explanation: '"septynis eurus" = 7 euros.'
+            type: 'speaking_pronounce',
+            prompt: 'Pasiteiraukite pašnekovo telefono numerio:',
+            targetPhrase: 'Koks yra jūsų telefono numeris?',
+            phoneticHint: 'Kohks ee-rah yoo-soo teh-leh-foh-noh noo-meh-rees',
+            translation: 'What is your telephone number?',
+            acceptableVariations: ['koks yra jūsų telefono numeris', 'koks yra jusu telefono numeris']
           }
         ]
       }
     ]
   },
+
+  // 4 SKYRIUS: KADA IR KUR SUSITINKAME?
   {
     id: 'unit-4',
     number: 4,
-    title: 'Travel, City & Directions',
-    subtitle: 'Kelionės, Vilnius ir Kryptys',
-    description: 'Ask for directions in Vilnius, take trolleybuses, find Gediminas Castle, and check into hotels.',
+    title: '4 skyrius: Kada ir kur susitinkame?',
+    subtitle: 'Susitikimai, laikas, savaitės dienos ir kryptys',
+    description: 'Prielinksniai į ir pas + Galininkas, laiko reiškimas galininku (pirmadienį, penktą valandą), pusvalandžiai (pusė aštuntos).',
     color: '#6366f1',
     accentColor: '#8b5cf6',
     lessons: [
       {
         id: 'lesson-10',
         unitId: 'unit-4',
-        title: 'Directions in Vilnius',
-        description: 'Ask where landmarks are, and understand straight (tiesiai), right (į dešinę), left (į kairę).',
+        title: 'Kada susitinkame? (Savaitės dienos ir laikas)',
+        description: 'Dienos galininku: pirmadienį, antradienį, penktadienį; rytą, vakarą; Gero savaitgalio!',
         xpReward: 30,
         order: 1,
         exercises: [
           {
             id: 'u4-l10-e1',
             type: 'multiple_choice',
-            prompt: 'How do you ask "Where is Gediminas Castle?" in Lithuanian?',
-            audioText: 'Atsiprašau, kur yra Gedimino pilis?',
-            options: [
-              'Atsiprašau, kur yra Gedimino pilis?',
-              'Kas yra Gedimino pilis?',
-              'Kaip važiuoja pilis?',
-              'Kur važiuoja Gediminas?'
-            ],
-            correctAnswer: 'Atsiprašau, kur yra Gedimino pilis?',
-            explanation: 'Gediminas becomes "Gedimino" (Genitive possessive: castle of Gediminas).'
+            prompt: 'Kokia forma atsakoma į klausimą „Kada susitinkame?“ (penktadienis)?',
+            audioText: 'Susitinkame penktadienį',
+            options: ['penktadienį', 'penktadienis', 'penktadienio', 'penktadieniui'],
+            correctAnswer: 'penktadienį',
+            explanation: 'Savaitės diena, atsakant į klausimą „Kada?“, reiškiama Galininko linksniu (-į).'
           },
           {
             id: 'u4-l10-e2',
             type: 'match_pairs',
-            prompt: 'Match direction commands with English:',
-            audioText: 'Tiesiai, į kairę, į dešinę, čia pat',
+            prompt: 'Sujunkite savaitės dienas su jų reikšmėmis:',
+            audioText: 'Pirmadienis, trečiadienis, penktadienis, sekmadienis',
             pairs: [
-              { id: 'dir-1', lithuanian: 'Tiesiai', english: 'Straight ahead' },
-              { id: 'dir-2', lithuanian: 'Į kairę', english: 'To the left' },
-              { id: 'dir-3', lithuanian: 'Į dešinę', english: 'To the right' },
-              { id: 'dir-4', lithuanian: 'Netoli / Čia pat', english: 'Nearby / Right here' }
+              { id: 'd1', lithuanian: 'Pirmadienis', english: 'Monday' },
+              { id: 'd2', lithuanian: 'Trečiadienis', english: 'Wednesday' },
+              { id: 'd3', lithuanian: 'Penktadienis', english: 'Friday' },
+              { id: 'd4', lithuanian: 'Sekmadienis', english: 'Sunday' }
             ],
-            explanation: 'Preposition "į" (into/to) takes the Accusative case: kairė -> kairę, dešinė -> dešinę.'
+            explanation: 'Dienų pavadinimai sudaryti pagal skaitvardžius: pirmas -> pirmadienis, antras -> antradienis...'
           },
           {
             id: 'u4-l10-e3',
             type: 'audio_dictation',
-            prompt: 'Listen to the pedestrian give directions:',
-            targetSentence: 'Eikite tiesiai ir po to į dešinę',
-            audioText: 'Eikite tiesiai ir po to į dešinę',
-            words: ['tiesiai', 'Eikite', 'ir', 'į', 'dešinę', 'po', 'to', 'kairę'],
-            correctSequence: ['Eikite', 'tiesiai', 'ir', 'po', 'to', 'į', 'dešinę'],
-            translationHint: 'Walk straight ahead and then to the right'
+            prompt: 'Pasiklausykite savaitgalio palinkėjimo:',
+            targetSentence: 'Gero savaitgalio ir iki pirmadienio',
+            audioText: 'Gero savaitgalio ir iki pirmadienio',
+            words: ['savaitgalio', 'Gero', 'iki', 'ir', 'pirmadienio', 'rytojaus'],
+            correctSequence: ['Gero', 'savaitgalio', 'ir', 'iki', 'pirmadienio'],
+            translationHint: 'Have a good weekend and see you Monday!'
           },
           {
             id: 'u4-l10-e4',
             type: 'speaking_pronounce',
-            prompt: 'Ask someone politely on the street:',
-            targetPhrase: 'Atsiprašau, ar stotis yra toli?',
-            phoneticHint: 'Ah-tsih-prah-show, ahr stoh-tees ee-rah toh-lee',
-            translation: 'Excuse me, is the train/bus station far?',
-            acceptableVariations: ['atsiprašau ar stotis yra toli', 'atsiprasau ar stotis yra toli']
+            prompt: 'Ištarkite susitarimo frazę:',
+            targetPhrase: 'Kada susitinkame? Susitinkame rytoj.',
+            phoneticHint: 'Kah-dah soo-see-tihn-kah-meh? Soo-see-tihn-kah-meh ree-toy.',
+            translation: 'When do we meet? We meet tomorrow.',
+            acceptableVariations: ['kada susitinkame susitinkame rytoj']
           }
         ]
       },
       {
         id: 'lesson-11',
         unitId: 'unit-4',
-        title: 'Public Transport & Tickets',
-        description: 'Ride Vilnius buses, trolleybuses, buy tickets (bilietas), and locate the correct bus stop.',
-        xpReward: 30,
+        title: 'Kelintą valandą? ir Pusvalandžiai',
+        description: 'Valandos galininku (penktą valandą), pusė + Kilmininkas (pusę aštuntos = 7:30, pusę dešimtos = 9:30).',
+        xpReward: 35,
         order: 2,
         exercises: [
           {
             id: 'u4-l11-e1',
             type: 'multiple_choice',
-            prompt: 'What does "Stotelė" mean in Lithuanian?',
-            audioText: 'Autobuso stotelė',
-            options: ['Bus stop / Station stop', 'Ticket booth', 'Airport', 'Taxi driver'],
-            correctAnswer: 'Bus stop / Station stop',
-            explanation: '"Stotelė" is a stop (e.g. Autobusų stotelė). A major train/bus station is "stotis".'
+            prompt: 'Kiek valandų reiškia lietuviškas laiko pasakymas „pusę aštuntos“?',
+            audioText: 'Susitinkame pusę aštuntos',
+            options: ['7:30 (half past seven / pusė aštuntos)', '8:30', '7:00', '8:00'],
+            correctAnswer: '7:30 (half past seven / pusė aštuntos)',
+            explanation: 'Lietuviškai pusvalandžiai reiškiami konstrukcija „pusė + ateinančios valandos Kilmininkas“: pusė aštuntos = 7:30.'
           },
           {
             id: 'u4-l11-e2',
             type: 'dialogue_fill',
-            prompt: 'Complete the bus ticket purchase dialogue:',
-            audioText: 'Laba diena! Vieną vienkartinį bilietą, prašau.',
+            prompt: 'Atsakykite į klausimą apie laiką:',
+            audioText: 'Kelintą valandą susitinkame? Susitinkame šeštą valandą.',
             dialogue: [
-              { speaker: 'Keleivis (Passenger)', avatar: '🧑', text: 'Laba diena!' },
+              { speaker: 'Tomas', avatar: '🙋‍♂️', text: 'Kelintą valandą susitinkame?' },
               {
-                speaker: 'Keleivis (Passenger)',
-                avatar: '🧑',
+                speaker: 'Paulius',
+                avatar: '🙋‍♂️',
                 text: '',
                 isBlank: true,
-                blankPrefix: 'Vieną ',
-                blankSuffix: ', prašau.'
-              },
-              { speaker: 'Vairuotojas (Driver)', avatar: '🚌', text: 'Prašom, vienas euras.' }
+                blankPrefix: 'Susitinkame ',
+                blankSuffix: ' valandą.'
+              }
             ],
-            options: ['bilietą', 'bilietas', 'bilietui', 'biliete'],
-            correctAnswer: 'bilietą',
-            explanation: 'Accusative singular for masculine noun "bilietas" is "bilietą" (answers Ką?).'
+            options: ['šeštą', 'šešta', 'šeštas', 'šeši'],
+            correctAnswer: 'šeštą',
+            explanation: 'Atsakant „kelintą valandą?“ vartojamas Galininkas: šeštą valandą (at 6 o\'clock).'
           },
           {
             id: 'u4-l11-e3',
-            type: 'listening_multiple_choice',
-            prompt: 'Listen to the automated transit announcement:',
-            audioDialogue: 'Kitas sustojimas – Katedros aikštė.',
-            question: 'What is the next stop announced on the speaker?',
-            options: [
-              'Cathedral Square (Katedros aikštė)',
-              'Train Station (Geležinkelio stotis)',
-              'Airport (Oro uostas)',
-              'Old Town (Senamiestis)'
-            ],
-            correctAnswer: 'Cathedral Square (Katedros aikštė)',
-            explanation: '"Kitas sustojimas" = Next stop, "Katedros aikštė" = Cathedral Square.'
+            type: 'audio_dictation',
+            prompt: 'Pasiklausykite susitarimo laiko:',
+            targetSentence: 'Susitinkame kavinėje pusę dešimtos',
+            audioText: 'Susitinkame kavinėje pusę dešimtos',
+            words: ['kavinėje', 'Susitinkame', 'pusę', 'dešimtos', 'penktą', 'stotyje'],
+            correctSequence: ['Susitinkame', 'kavinėje', 'pusę', 'dešimtos'],
+            translationHint: 'We meet in the cafe at 9:30'
           },
           {
             id: 'u4-l11-e4',
-            type: 'speaking_pronounce',
-            prompt: 'Say this to confirm the route:',
-            targetPhrase: 'Ar šis autobusas važiuoja į centrą?',
-            phoneticHint: 'Ahr shees ow-toh-boo-sahs vah-zhyuo-yah ee tsehn-trah',
-            translation: 'Does this bus go to the city center?',
-            acceptableVariations: [
-              'ar šis autobusas važiuoja į centrą',
-              'ar sis autobusas vaziuoja i centra'
-            ]
+            type: 'listening_multiple_choice',
+            prompt: 'Pasiklausykite pranešimo apie susitikimą:',
+            audioDialogue: 'Atsiprašau, aš skubu. Mūsų susitikimas yra penktą valandą.',
+            question: 'Kelintą valandą vyksta susitikimas?',
+            options: ['Penktą valandą (5:00)', 'Šeštą valandą (6:00)', 'Ketvirtą valandą (4:00)', 'Pusę penkių (4:30)'],
+            correctAnswer: 'Penktą valandą (5:00)',
+            explanation: 'Pašnekovas pasako: „Mūsų susitikimas yra penktą valandą“.'
           }
         ]
       },
       {
         id: 'lesson-12',
         unitId: 'unit-4',
-        title: 'Hotel & Vilnius Old Town',
-        description: 'Check in, ask for your key (raktas), WiFi password, and explore the cobblestone Senamiestis.',
+        title: 'Kur einame? (Prielinksniai į ir pas + Galininkas)',
+        description: 'į (į vietą/pastatą: į universitetą, į teatrą) vs pas (pas asmenį: pas draugą, pas Paulių, pas gydytoją).',
         xpReward: 35,
         order: 3,
         exercises: [
           {
             id: 'u4-l12-e1',
-            type: 'dialogue_fill',
-            prompt: 'Check in at the hotel reception:',
-            audioText: 'Laba diena! Turiu rezervaciją pavarde Kazlauskas.',
-            dialogue: [
-              { speaker: 'Administratorė', avatar: '🏨', text: 'Sveiki atvykę į Vilnių! Kuo galiu padėti?' },
-              {
-                speaker: 'Svečias (Guest)',
-                avatar: '🧳',
-                text: '',
-                isBlank: true,
-                blankPrefix: 'Laba diena! Turiu ',
-                blankSuffix: '.'
-              }
-            ],
-            options: ['rezervaciją', 'rezervacija', 'rezervacijoje', 'rezervacijos'],
-            correctAnswer: 'rezervaciją',
-            explanation: 'The verb "turėti" (to have) requires the Accusative case: rezervacija -> rezervaciją.'
+            type: 'fill_in_the_blank',
+            prompt: 'Pasirinkite teisingą prielinksnį (vieta ar asmuo?): „Einame ___ teatrą.“',
+            audioText: 'Šiandien mes einame į teatrą',
+            sentenceWithBlank: 'Šiandien mes einame ___ teatrą.',
+            options: ['į', 'pas', 'prie', 'iš'],
+            correctAnswer: 'į',
+            explanation: 'Keliaujant į pastatą ar vietą vartojamas prielinksnis „į“ (į teatrą, į universitetą).'
           },
           {
             id: 'u4-l12-e2',
-            type: 'audio_dictation',
-            prompt: 'Listen to the receptionist give you the room keys:',
-            targetSentence: 'Čia yra jūsų kambario raktas',
-            audioText: 'Čia yra jūsų kambario raktas',
-            words: ['yra', 'Čia', 'jūsų', 'kambario', 'raktas', 'bilietas', 'stalas'],
-            correctSequence: ['Čia', 'yra', 'jūsų', 'kambario', 'raktas'],
-            translationHint: 'Here is your room key (kambario raktas)'
+            type: 'multiple_choice',
+            prompt: 'Kuris sakinys teisingas keliaujant pas žmogų (pas asmenį)?',
+            audioText: 'Rytoj mes einame pas draugą Paulių',
+            options: [
+              'Rytoj mes einame pas Paulių.',
+              'Rytoj mes einame į Paulių.',
+              'Rytoj mes einame prie Pauliaus.',
+              'Rytoj mes einame iš Pauliaus.'
+            ],
+            correctAnswer: 'Rytoj mes einame pas Paulių.',
+            explanation: 'Keliaujant pas asmenį ar specialistą vartojamas prielinksnis „pas + Galininkas“: pas Paulių, pas gydytoją.'
           },
           {
             id: 'u4-l12-e3',
-            type: 'speaking_pronounce',
-            prompt: 'Ask for the wireless internet password:',
-            targetPhrase: 'Koks yra belaidžio interneto slaptažodis?',
-            phoneticHint: 'Kohks ee-rah beh-ly-jyo een-ter-neh-toh slahp-tah-zhoh-dees',
-            translation: 'What is the Wi-Fi password?',
-            acceptableVariations: [
-              'koks yra belaidžio interneto slaptažodis',
-              'koks yra belaPathio interneto slaptazodis',
-              'koks yra belaidzio interneto slaptazodis'
-            ]
+            type: 'dialogue_fill',
+            prompt: 'Kvietimas į svečius:',
+            audioText: 'Kviečiu į svečius! Ačiū! Būtinai ateisiu!',
+            dialogue: [
+              { speaker: 'Draugas', avatar: '🙋‍♂️', text: 'Kviečiu į svečius!' },
+              {
+                speaker: 'Jūs',
+                avatar: '🙋',
+                text: '',
+                isBlank: true,
+                blankPrefix: 'Ačiū! Būtinai ',
+                blankSuffix: '!'
+              }
+            ],
+            options: ['ateisiu', 'einu', 'buvau', 'kalbu'],
+            correctAnswer: 'ateisiu',
+            explanation: 'Mandagus atsakymas: „Ačiū! Būtinai ateisiu!“ (I will definitely come!).'
           },
           {
             id: 'u4-l12-e4',
             type: 'match_pairs',
-            prompt: 'Match hotel and city amenities:',
-            audioText: 'Raktas, liftas, pusryčiai, senamiestis',
+            prompt: 'Sujunkite prielinksnius į ir pas su tinkamais žodžiais:',
+            audioText: 'Į kavinę, pas gydytoją, į Vilnių, pas Tomą',
             pairs: [
-              { id: 'h1', lithuanian: 'Raktas', english: 'Room key' },
-              { id: 'h2', lithuanian: 'Pusryčiai', english: 'Breakfast' },
-              { id: 'h3', lithuanian: 'Liftas', english: 'Elevator' },
-              { id: 'h4', lithuanian: 'Senamiestis', english: 'Old Town (Vilnius)' }
+              { id: 'prep1', lithuanian: 'į (į vietą)', english: 'į kavinę / į universitetą' },
+              { id: 'prep2', lithuanian: 'pas (pas asmenį)', english: 'pas draugą / pas Tomą' },
+              { id: 'prep3', lithuanian: 'į (į miestą)', english: 'į Vilnių / į Kauną' },
+              { id: 'prep4', lithuanian: 'pas (pas specialistą)', english: 'pas gydytoją / pas dėstytoją' }
             ],
-            explanation: 'Vilnius Old Town (Senamiestis) is a UNESCO World Heritage site known for Baroque architecture.'
+            explanation: 'Pagrindinė 4 skyriaus taisyklė: į + vieta, pas + asmuo (abu reikalauja Galininko).'
+          },
+          {
+            id: 'u4-l12-e5',
+            type: 'speaking_pronounce',
+            prompt: 'Pakvieskite draugus į svečius:',
+            targetPhrase: 'Kviečiu į svečius šį savaitgalį!',
+            phoneticHint: 'Kvyeh-chyoo ee sveh-chyoos shee sah-veyt-gah-lee',
+            translation: 'I invite you over this weekend!',
+            acceptableVariations: ['kviečiu į svečius šį savaitgalį', 'kvieciu i svecius si savaitgali']
           }
         ]
       }
     ]
   }
 ];
-
 
 export function getLessonById(lessonId: string): Lesson | undefined {
   for (const unit of UNITS) {

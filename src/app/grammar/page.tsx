@@ -1,15 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { NOUN_CASES, BUTI_CONJUGATION, COMMON_PHRASES } from '@/data/grammar';
+import {
+  NOUN_CASES,
+  VOCATIVE_RULES,
+  LOCATIVE_RULES,
+  PREPOSITION_RULES,
+  TIME_EXPRESSION_RULES,
+  VERB_CONJUGATIONS,
+  COMMON_PHRASES,
+} from '@/data/grammar';
 import { AudioSpeaker } from '@/components/AudioSpeaker';
-import { BookOpen, Sparkles, MessageSquare, Compass } from 'lucide-react';
+import { BookOpen, Sparkles, MessageSquare, Compass, Bookmark, Clock, ArrowRight } from 'lucide-react';
 
 export default function GrammarPage() {
-  const [activeTab, setActiveTab] = useState<'cases' | 'verbs' | 'phrases'>('cases');
+  const [activeTab, setActiveTab] = useState<'cases' | 'rules' | 'verbs' | 'phrases'>('cases');
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-8">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-8 pb-24">
       <div className="mx-auto max-w-4xl">
         {/* Title Header */}
         <div className="mb-8">
@@ -18,66 +26,79 @@ export default function GrammarPage() {
               <BookOpen className="h-5 w-5" />
             </span>
             <span className="text-xs font-black uppercase tracking-wider text-emerald-600">
-              Grammar & Vocabulary Cheat Sheet
+              Lithuanian A1 Curriculum Reference • Žinynas
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Lietuvių Kalbos Pagrindai
+            Gramatikos ir Žodyno Gidas
           </h1>
           <p className="mt-2 text-base text-slate-600 max-w-2xl font-medium">
-            Everything you need to master Lithuanian A1: the 7 noun declensions (linksniai), verb conjugations, and essential survival phrases.
+            Akademinė lietuvių kalbos programa (1–4 skyriai): 7 linksniai, šauksmininkas, vietininkas, prielinksniai, laiko reiškimas ir veiksmažodžiai.
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 p-1.5 bg-slate-200/80 rounded-2xl max-w-md mb-8">
+        <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-200/80 rounded-2xl mb-8">
           <button
             type="button"
             onClick={() => setActiveTab('cases')}
-            className={`flex-1 py-2.5 px-3 rounded-xl font-extrabold text-sm transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
               activeTab === 'cases'
                 ? 'bg-white text-slate-900 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Compass className="h-4 w-4 text-emerald-600" />
-            <span>Noun Cases</span>
+            <span>7 Linksniai</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('rules')}
+            className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'rules'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Bookmark className="h-4 w-4 text-sky-600" />
+            <span>Taisyklės (1–4 sk.)</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('verbs')}
-            className={`flex-1 py-2.5 px-3 rounded-xl font-extrabold text-sm transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
               activeTab === 'verbs'
                 ? 'bg-white text-slate-900 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Sparkles className="h-4 w-4 text-amber-500" />
-            <span>Verb &quot;būti&quot;</span>
+            <span>Veiksmažodžiai</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('phrases')}
-            className={`flex-1 py-2.5 px-3 rounded-xl font-extrabold text-sm transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
               activeTab === 'phrases'
                 ? 'bg-white text-slate-900 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <MessageSquare className="h-4 w-4 text-sky-500" />
-            <span>Phrases</span>
+            <MessageSquare className="h-4 w-4 text-rose-500" />
+            <span>Frazės ({COMMON_PHRASES.length})</span>
           </button>
         </div>
 
-        {/* TAB 1: NOUN CASES */}
+        {/* TAB 1: 7 LINK尽量 / NOUN CASES */}
         {activeTab === 'cases' && (
           <div className="flex flex-col gap-6 animate-pop">
             <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-900 text-sm font-semibold flex items-center gap-3">
               <span className="text-2xl">💡</span>
               <span>
-                Lithuanian nouns have 7 cases that change the word ending depending on what the noun does in the sentence! Below are the essential A1 cases.
+                Lietuvių kalbos daiktavardžiai turi 7 linksnius. Linksnis rodo žodžio vaidmenį sakinyje ir keičia jo galūnę!
               </span>
             </div>
 
@@ -98,43 +119,42 @@ export default function GrammarPage() {
                           {item.abbreviation}
                         </span>
                         <h3 className="font-black text-lg text-slate-800">
-                          {item.name} ({item.lithuanianName})
+                          {item.lithuanianName}
                         </h3>
                       </div>
+                      <span className="text-xs font-bold text-slate-400">
+                        {item.name}
+                      </span>
                     </div>
 
-                    <div className="text-xs font-black text-slate-500 mb-2">
-                      Question: <span className="text-slate-800 font-bold">{item.question}</span>
-                    </div>
-
-                    <p className="text-xs font-medium text-slate-600 mb-4 leading-relaxed">
+                    {/* Question and purpose */}
+                    <p className="text-sm font-extrabold text-slate-700 mb-1">
+                      Klausimas: <span className="text-emerald-600">{item.question}</span>
+                    </p>
+                    <p className="text-xs text-slate-500 mb-4 leading-relaxed font-medium">
                       {item.purpose}
                     </p>
 
-                    {/* Endings breakdown */}
-                    <div className="space-y-2 rounded-2xl bg-slate-50 p-3 border border-slate-100 text-xs">
-                      <div>
-                        <strong className="text-slate-700">Masculine: </strong>
-                        <span className="text-slate-600">{item.examples.masculine.base} → </span>
-                        <span className="font-extrabold text-emerald-700">{item.examples.masculine.changed}</span>
-                        <span className="block text-[11px] text-slate-400 mt-0.5">({item.examples.masculine.rule})</span>
+                    {/* Rules Box */}
+                    <div className="rounded-2xl bg-slate-50 p-3 border border-slate-100 flex flex-col gap-2 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-500">Vyriškoji g. (m):</span>
+                        <span className="font-mono font-bold text-slate-800">{item.examples.masculine.changed}</span>
                       </div>
-                      <div className="border-t border-slate-200/60 pt-2">
-                        <strong className="text-slate-700">Feminine: </strong>
-                        <span className="text-slate-600">{item.examples.feminine.base} → </span>
-                        <span className="font-extrabold text-emerald-700">{item.examples.feminine.changed}</span>
-                        <span className="block text-[11px] text-slate-400 mt-0.5">({item.examples.feminine.rule})</span>
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-500">Moteriškoji g. (f):</span>
+                        <span className="font-mono font-bold text-slate-800">{item.examples.feminine.changed}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Sample Sentence */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-xs font-extrabold text-slate-800">
-                        &quot;{item.examples.sampleSentence}&quot;
+                  {/* Sample Sentence with Audio */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="text-xs font-black text-slate-800">
+                        {item.examples.sampleSentence}
                       </p>
-                      <p className="text-[11px] font-medium text-slate-500 italic">
+                      <p className="text-[11px] text-slate-400 font-medium">
                         {item.examples.translation}
                       </p>
                     </div>
@@ -146,115 +166,171 @@ export default function GrammarPage() {
           </div>
         )}
 
-        {/* TAB 2: VERB "BŪTI" */}
-        {activeTab === 'verbs' && (
-          <div className="flex flex-col gap-6 animate-pop">
+        {/* TAB 2: TEXTBOOK CHAPTER RULES */}
+        {activeTab === 'rules' && (
+          <div className="flex flex-col gap-8 animate-pop">
+            {/* 1. Šauksmininkas */}
             <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900">
-                    The Verb &quot;Būti&quot; (To Be)
-                  </h3>
-                  <p className="text-xs font-semibold text-slate-500">
-                    The most fundamental irregular verb in Lithuanian language.
-                  </p>
-                </div>
-                <AudioSpeaker text="Aš esu, tu esi, jis yra" size="md" />
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 text-xs font-black uppercase">
+                  2 skyrius
+                </span>
+                <h3 className="text-xl font-black text-slate-900">
+                  Daiktavardžių vienaskaitos šauksmininkas (Vocative)
+                </h3>
               </div>
+              <p className="text-xs text-slate-500 mb-4 font-medium">
+                Vartojamas kreipiantis į asmenį:
+              </p>
 
-              {/* Present Tense Table */}
-              <div className="mb-6">
-                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-600 mb-2">
-                  Esamasis Laikas (Present Tense)
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {BUTI_CONJUGATION.present.map((row, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 font-bold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600 text-sm">{row.pronoun}</span>
-                        <span className="text-emerald-700 font-extrabold text-base">{row.form}</span>
-                        <span className="text-xs text-slate-400 font-medium">({row.english})</span>
-                      </div>
-                      <AudioSpeaker text={`${row.pronoun} ${row.form}`} size="sm" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {VOCATIVE_RULES.map((r, i) => (
+                  <div key={i} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-black text-rose-600 block">{r.ending}</span>
+                      <span className="text-xs font-bold text-slate-700">{r.example}</span>
                     </div>
-                  ))}
-                </div>
+                    <span className="text-[10px] text-slate-400 font-medium">{r.rule}</span>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Past Tense Table */}
-              <div className="mb-6">
-                <h4 className="text-xs font-black uppercase tracking-wider text-amber-600 mb-2">
-                  Būtasis Kartinis Laikas (Past Tense - was/were)
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {BUTI_CONJUGATION.past.map((row, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-amber-50/60 border border-amber-200/80 font-bold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600 text-sm">{row.pronoun}</span>
-                        <span className="text-amber-700 font-extrabold text-base">{row.form}</span>
-                        <span className="text-xs text-slate-400 font-medium">({row.english})</span>
-                      </div>
-                      <AudioSpeaker text={`${row.pronoun} ${row.form}`} size="sm" />
-                    </div>
-                  ))}
-                </div>
+            {/* 2. Vietininkas */}
+            <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-1 rounded-xl bg-cyan-100 text-cyan-700 text-xs font-black uppercase">
+                  3 skyrius
+                </span>
+                <h3 className="text-xl font-black text-slate-900">
+                  Vienaskaitos vietininkas (Locative – Kur?)
+                </h3>
               </div>
+              <p className="text-xs text-slate-500 mb-4 font-medium">
+                Atsako į klausimą „Kur?“ (mieste, šalyje, pastate ar gatvėje):
+              </p>
 
-              {/* Future Tense Table */}
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-sky-600 mb-2">
-                  Būsimasis Laikas (Future Tense - will be)
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {BUTI_CONJUGATION.future.map((row, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-sky-50/60 border border-sky-200/80 font-bold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600 text-sm">{row.pronoun}</span>
-                        <span className="text-sky-700 font-extrabold text-base">{row.form}</span>
-                        <span className="text-xs text-slate-400 font-medium">({row.english})</span>
-                      </div>
-                      <AudioSpeaker text={`${row.pronoun} ${row.form}`} size="sm" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {LOCATIVE_RULES.map((r, i) => (
+                  <div key={i} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-black text-cyan-600 block">{r.ending}</span>
+                      <span className="text-xs font-bold text-slate-700">{r.example}</span>
                     </div>
-                  ))}
-                </div>
+                    <span className="text-[10px] text-slate-400 font-medium">{r.rule}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. Prielinksniai */}
+            <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-black uppercase">
+                  2, 3 ir 4 skyriai
+                </span>
+                <h3 className="text-xl font-black text-slate-900">
+                  Svarbiausi prielinksniai ir linksniai
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                {PREPOSITION_RULES.map((p, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-black text-emerald-700">{p.preposition}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{p.chapter}</span>
+                    </div>
+                    <p className="text-xs text-slate-600 font-medium mb-2">{p.purpose}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.examples.map((ex, j) => (
+                        <span key={j} className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-slate-800">
+                          {ex}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. Laiko reiškimas */}
+            <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-700 text-xs font-black uppercase">
+                  4 skyrius
+                </span>
+                <h3 className="text-xl font-black text-slate-900">
+                  Laiko reiškimas galininku ir pusvalandžiai
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                {TIME_EXPRESSION_RULES.map((t, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <h5 className="text-xs font-black text-slate-800 mb-2">{t.category}</h5>
+                    <div className="flex flex-col gap-1">
+                      {t.examples.map((ex, j) => (
+                        <span key={j} className="text-xs font-bold text-slate-600">
+                          • {ex}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 3: ESSENTIAL PHRASES */}
-        {activeTab === 'phrases' && (
-          <div className="flex flex-col gap-4 animate-pop">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {COMMON_PHRASES.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl bg-white border-2 border-slate-200 p-4 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 transition-all"
-                >
-                  <div>
-                    <h4 className="font-extrabold text-slate-900 text-base">
-                      {item.lt}
-                    </h4>
-                    <p className="text-xs font-semibold text-emerald-600">
-                      {item.en}
-                    </p>
-                    <p className="text-[11px] font-medium text-slate-400 mt-0.5">
-                      {item.note}
-                    </p>
+        {/* TAB 3: VEIKSMAŽODŽIAI / VERBS */}
+        {activeTab === 'verbs' && (
+          <div className="flex flex-col gap-6 animate-pop">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {Object.entries(VERB_CONJUGATIONS).map(([key, item]) => (
+                <div key={key} className="rounded-3xl bg-white border-2 border-slate-200 p-5 shadow-xs">
+                  <h3 className="font-black text-lg text-slate-900 mb-3 border-b border-slate-100 pb-2">
+                    {item.title}
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {item.present.map((row, i) => (
+                      <div key={i} className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-500">{row.pronoun}</span>
+                        <div className="text-right">
+                          <span className="font-mono font-black text-emerald-600 block">{row.form}</span>
+                          {row.negative && (
+                            <span className="font-mono text-[10px] text-rose-500 block">({row.negative})</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <AudioSpeaker text={item.lt} size="sm" />
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* TAB 4: AUTENTIŠKOS FRAZĖS / PHRASES */}
+        {activeTab === 'phrases' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 animate-pop">
+            {COMMON_PHRASES.map((item, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl bg-white border-2 border-slate-200 p-4 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 transition-colors"
+              >
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 leading-snug">
+                    {item.lt}
+                  </h4>
+                  <p className="text-xs font-bold text-emerald-700 mt-0.5">
+                    {item.en}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">
+                    {item.note}
+                  </p>
+                </div>
+                <AudioSpeaker text={item.lt} size="sm" as="button" />
+              </div>
+            ))}
           </div>
         )}
       </div>
