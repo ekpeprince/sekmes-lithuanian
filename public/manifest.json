@@ -1,18 +1,74 @@
 {
-  "name": "Sėkmės! – Mokykis lietuvių kalbos",
+  "name": "Sėkmės! – Learn Lithuanian (A1)",
   "short_name": "Sėkmės!",
-  "description": "Learn Lithuanian with interactive gamified lessons, AI conversation partner, and authentic audio.",
+  "description": "Gamified interactive A1 Lithuanian language course with AI conversation partner, grammar bank, and native audio.",
   "start_url": "/",
+  "id": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "background_color": "#f7fafc",
   "theme_color": "#059669",
+  "categories": ["education", "language", "games"],
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ],
-  "categories": ["education", "language"]
+  "shortcuts": [
+    {
+      "name": "Learn Lithuanian",
+      "short_name": "Learn",
+      "description": "Continue your learning path",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Tutor Conversation",
+      "short_name": "AI Tutor",
+      "description": "Practice conversational Lithuanian with AI",
+      "url": "/tutor",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Practice Gym",
+      "short_name": "Practice",
+      "description": "Speed drills and flashcards",
+      "url": "/practice",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Amber League",
+      "short_name": "League",
+      "description": "Check your weekly tournament ranking",
+      "url": "/leaderboard",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

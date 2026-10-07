@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- App Rounded Squircle Background -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bgGrad)" stroke="url(#goldGrad)" stroke-width="12" filter="url(#shadow)"/>
+
+  <!-- Center Lithuanian Flag Shield -->
+  <g filter="url(#shadow)">
+    <!-- Shield Border / Amber Rim -->
+    <rect x="120" y="120" width="272" height="272" rx="48" fill="#f59e0b" stroke="#ffffff" stroke-width="6"/>
+
+    <!-- Clip Path for Tricolor Stripes -->
+    <clipPath id="shieldClip">
+      <rect x="126" y="126" width="260" height="260" rx="42"/>
+    </clipPath>
+
+    <!-- Flag Stripes -->
+    <g clip-path="url(#shieldClip)">
+      <!-- Yellow -->
+      <rect x="126" y="126" width="260" height="87" fill="#FDB913"/>
+      <!-- Green -->
+      <rect x="126" y="213" width="260" height="87" fill="#006A44"/>
+      <!-- Red -->
+      <rect x="126" y="300" width="260" height="87" fill="#C1272D"/>
+    </g>
+  </g>
+
+  <!-- Sparkle Accent Top Right -->
+  <path d="M410 70 L420 95 L445 105 L420 115 L410 140 L400 115 L375 105 L400 95 Z" fill="#fde68a"/>
+</svg>

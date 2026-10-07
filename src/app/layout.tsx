@@ -4,11 +4,21 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/context/GameContext';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 
 export const metadata: Metadata = {
   title: 'Sėkmės – Learn Lithuanian (A1 Gamified Course)',
   description: 'Duolingo-style gamified interactive web app for learning Lithuanian vocabulary, verb conjugations, noun cases, and AI conversations.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -41,6 +51,7 @@ export default function RootLayout({
                 {children}
               </main>
             </div>
+            <PwaInstallPrompt />
           </GameProvider>
         </AuthProvider>
       </body>
