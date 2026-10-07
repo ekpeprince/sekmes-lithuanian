@@ -48,34 +48,60 @@ function computeSimilarity(target: string, actual: string): number {
   return Math.min(1.0, matches / targetWords.length);
 }
 
+interface SpeechRecognitionEventLike {
+  results: {
+    length: number;
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
+
+function getSpeechRecognitionClass(): SpeechRecognitionCtor | null {
+  if (typeof window === 'undefined') return null;
+  const win = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  };
+  return win.SpeechRecognition || win.webkitSpeechRecognition || null;
+}
+
 export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   exercise,
   spokenText,
   onSpoken,
   isChecked,
-  isCorrect,
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayingModelAudio, setIsPlayingModelAudio] = useState(false);
   const [transcript, setTranscript] = useState<string>('');
   const [score, setScore] = useState<number | null>(null);
-  const [speechSupported, setSpeechSupported] = useState(true);
+  const [speechSupported, setSpeechSupported] = useState<boolean>(() => Boolean(getSpeechRecognitionClass()));
   const [cantSpeakNow, setCantSpeakNow] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(10);
 
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Check Web Speech API support
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setSpeechSupported(false);
-    }
-
     return () => {
       // Clean up any active timers and speech recognition on unmount
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -121,8 +147,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     if (isChecked || isRecording) return;
     sounds.playClick();
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = getSpeechRecognitionClass();
 
     if (!SpeechRecognition) {
       setSpeechSupported(false);
@@ -155,7 +180,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
         });
       }, 1000);
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEventLike) => {
         let currentTranscript = '';
         for (let i = 0; i < event.results.length; ++i) {
           currentTranscript += event.results[i][0].transcript;
@@ -355,6 +380,12 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Bandykite dar kartą (Pabandyti iš naujo)</span>
             </button>
+          )}
+
+          {!speechSupported && (
+            <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+              Balso atpažinimas šioje naršyklėje nepalaikomas. Galite paklausyti tarimo ir paspausti „Negaliu dabar kalbėti“.
+            </div>
           )}
 
           {/* Can't speak right now fallback */}

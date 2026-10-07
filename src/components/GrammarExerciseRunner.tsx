@@ -1,20 +1,16 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { GrammarExerciseItem, GRAMMAR_EXERCISES } from '@/data/grammar';
+import { GRAMMAR_EXERCISES } from '@/data/grammar';
 import { AudioSpeaker } from './AudioSpeaker';
 import { sounds } from '@/lib/audio';
 import {
   CheckCircle2,
   XCircle,
-  Sparkles,
   Flame,
-  RotateCcw,
   ArrowRight,
   BookOpen,
-  HelpCircle,
   Shuffle,
-  Volume2,
 } from 'lucide-react';
 
 interface GrammarExerciseRunnerProps {
@@ -41,20 +37,18 @@ export const GrammarExerciseRunner: React.FC<GrammarExerciseRunnerProps> = ({
   const [streak, setStreak] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
-  const [shuffleKey, setShuffleKey] = useState(0);
+  const [shuffleOrder, setShuffleOrder] = useState<number[] | null>(null);
 
   // Filter exercises by category
+  const baseExercises = useMemo(() => {
+    if (selectedCategory === 'all') return GRAMMAR_EXERCISES;
+    return GRAMMAR_EXERCISES.filter((ex) => ex.category === selectedCategory);
+  }, [selectedCategory]);
+
   const filteredExercises = useMemo(() => {
-    let list = GRAMMAR_EXERCISES;
-    if (selectedCategory !== 'all') {
-      list = list.filter((ex) => ex.category === selectedCategory);
-    }
-    // Return items based on shuffle state
-    if (shuffleKey > 0) {
-      return [...list].sort(() => 0.5 - Math.random());
-    }
-    return list;
-  }, [selectedCategory, shuffleKey]);
+    if (!shuffleOrder) return baseExercises;
+    return shuffleOrder.map((idx) => baseExercises[idx]).filter(Boolean);
+  }, [baseExercises, shuffleOrder]);
 
   // Clamp current index
   const safeIndex = Math.min(currentIndex, Math.max(0, filteredExercises.length - 1));
@@ -99,6 +93,7 @@ export const GrammarExerciseRunner: React.FC<GrammarExerciseRunnerProps> = ({
   const handleCategoryChange = (catId: string) => {
     sounds.playClick();
     setSelectedCategory(catId);
+    setShuffleOrder(null);
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsChecked(false);
@@ -106,7 +101,12 @@ export const GrammarExerciseRunner: React.FC<GrammarExerciseRunnerProps> = ({
 
   const handleShuffle = () => {
     sounds.playClick();
-    setShuffleKey((prev) => prev + 1);
+    const indices = Array.from({ length: baseExercises.length }, (_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    setShuffleOrder(indices);
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsChecked(false);

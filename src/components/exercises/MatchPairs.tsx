@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MatchPairsExercise } from '@/types/lesson';
 import { sounds } from '@/lib/audio';
 import { Check } from 'lucide-react';
@@ -12,39 +12,57 @@ interface MatchPairsProps {
   isChecked: boolean;
 }
 
+function shufflePairs<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 export const MatchPairs: React.FC<MatchPairsProps> = ({
   exercise,
   onAllMatched,
   onMistake,
 }) => {
-  const [shuffledLt, setShuffledLt] = useState<{ id: string; text: string }[]>([]);
-  const [shuffledEn, setShuffledEn] = useState<{ id: string; text: string }[]>([]);
+  const [prevExerciseId, setPrevExerciseId] = useState(exercise.id);
+  const [shuffledLt, setShuffledLt] = useState(() =>
+    shufflePairs(exercise.pairs.map((p) => ({ id: p.id, text: p.lithuanian })))
+  );
+  const [shuffledEn, setShuffledEn] = useState(() =>
+    shufflePairs(exercise.pairs.map((p) => ({ id: p.id, text: p.english })))
+  );
 
   const [selectedLt, setSelectedLt] = useState<string | null>(null);
   const [selectedEn, setSelectedEn] = useState<string | null>(null);
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [mismatchIds, setMismatchIds] = useState<{ ltId: string; enId: string } | null>(null);
 
-  // Shuffle columns once on mount
-  useEffect(() => {
-    const ltItems = exercise.pairs.map(p => ({ id: p.id, text: p.lithuanian }));
-    const enItems = exercise.pairs.map(p => ({ id: p.id, text: p.english }));
-
-    setShuffledLt([...ltItems].sort(() => Math.random() - 0.5));
-    setShuffledEn([...enItems].sort(() => Math.random() - 0.5));
+  if (exercise.id !== prevExerciseId) {
+    setPrevExerciseId(exercise.id);
+    setShuffledLt(shufflePairs(exercise.pairs.map((p) => ({ id: p.id, text: p.lithuanian }))));
+    setShuffledEn(shufflePairs(exercise.pairs.map((p) => ({ id: p.id, text: p.english }))));
     setMatchedIds([]);
     setSelectedLt(null);
     setSelectedEn(null);
     setMismatchIds(null);
-  }, [exercise]);
+  }
 
-  // Check matching whenever both are selected
-  useEffect(() => {
-    if (selectedLt && selectedEn) {
-      if (selectedLt === selectedEn) {
-        // Matched!
+  const handleLtClick = (id: string, text: string) => {
+    if (matchedIds.includes(id) || mismatchIds) return;
+    sounds.playClick();
+    sounds.speak(text);
+
+    if (selectedLt === id) {
+      setSelectedLt(null);
+      return;
+    }
+
+    if (selectedEn) {
+      if (selectedEn === id) {
         sounds.playSuccess();
-        const nextMatched = [...matchedIds, selectedLt];
+        const nextMatched = [...matchedIds, id];
         setMatchedIds(nextMatched);
         setSelectedLt(null);
         setSelectedEn(null);
@@ -53,9 +71,8 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
           onAllMatched();
         }
       } else {
-        // Mismatched!
         sounds.playError();
-        setMismatchIds({ ltId: selectedLt, enId: selectedEn });
+        setMismatchIds({ ltId: id, enId: selectedEn });
         onMistake();
         setTimeout(() => {
           setSelectedLt(null);
@@ -63,20 +80,44 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
           setMismatchIds(null);
         }, 700);
       }
+    } else {
+      setSelectedLt(id);
     }
-  }, [selectedLt, selectedEn, matchedIds, exercise.pairs.length, onAllMatched, onMistake]);
-
-  const handleLtClick = (id: string, text: string) => {
-    if (matchedIds.includes(id) || mismatchIds) return;
-    sounds.playClick();
-    sounds.speak(text);
-    setSelectedLt(prev => (prev === id ? null : id));
   };
 
   const handleEnClick = (id: string) => {
     if (matchedIds.includes(id) || mismatchIds) return;
     sounds.playClick();
-    setSelectedEn(prev => (prev === id ? null : id));
+
+    if (selectedEn === id) {
+      setSelectedEn(null);
+      return;
+    }
+
+    if (selectedLt) {
+      if (selectedLt === id) {
+        sounds.playSuccess();
+        const nextMatched = [...matchedIds, id];
+        setMatchedIds(nextMatched);
+        setSelectedLt(null);
+        setSelectedEn(null);
+
+        if (nextMatched.length === exercise.pairs.length) {
+          onAllMatched();
+        }
+      } else {
+        sounds.playError();
+        setMismatchIds({ ltId: selectedLt, enId: id });
+        onMistake();
+        setTimeout(() => {
+          setSelectedLt(null);
+          setSelectedEn(null);
+          setMismatchIds(null);
+        }, 700);
+      }
+    } else {
+      setSelectedEn(id);
+    }
   };
 
   return (

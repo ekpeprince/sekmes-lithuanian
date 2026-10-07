@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Target, Gift, Check, Sparkles } from 'lucide-react';
+import { Target, Check } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { DEFAULT_QUESTS } from '@/lib/storage';
 

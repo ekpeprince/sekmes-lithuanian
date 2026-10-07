@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, Mic, User as UserIcon, LogOut, Cloud, ChevronDown } from 'lucide-react';
+import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, User as UserIcon, LogOut, Cloud, ChevronDown } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { sounds } from '@/lib/audio';
@@ -119,6 +119,7 @@ export const Navbar: React.FC = () => {
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
                     {user.photoURL ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={user.photoURL} alt="User" className="h-6 w-6 rounded-full" />
                     ) : (
                       (user.displayName || user.email || 'U').charAt(0).toUpperCase()

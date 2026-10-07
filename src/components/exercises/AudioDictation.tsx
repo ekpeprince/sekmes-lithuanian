@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Volume2, Snail, Keyboard, Sparkles } from 'lucide-react';
 import { AudioDictationExercise } from '@/types/lesson';
 import { sounds } from '@/lib/audio';
@@ -22,22 +22,13 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
   typedAnswer = '',
   onTypedChange,
   isChecked,
-  isCorrect,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSlowPlaying, setIsSlowPlaying] = useState(false);
   const [useKeyboard, setUseKeyboard] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
-  // Auto-play speech on first mount of exercise
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handlePlay(false);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [exercise.id]);
-
-  const handlePlay = (slow: boolean = false) => {
+  const handlePlay = useCallback((slow: boolean = false) => {
     if (slow) {
       setIsSlowPlaying(true);
     } else {
@@ -51,7 +42,15 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
         setIsSlowPlaying(false);
       },
     });
-  };
+  }, [exercise.targetSentence]);
+
+  // Auto-play speech on first mount of exercise
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handlePlay(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [handlePlay]);
 
   // Remaining available tokens from word bank
   const getRemainingTokens = () => {

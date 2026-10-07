@@ -5,20 +5,14 @@ import Link from 'next/link';
 import {
   Dumbbell,
   Heart,
-  Sparkles,
   Trophy,
   Play,
-  RotateCcw,
   Zap,
   Layers,
   Target,
   CheckCircle2,
-  XCircle,
-  Volume2,
   Clock,
-  ArrowRight,
   Flame,
-  Shuffle,
 } from 'lucide-react';
 import { UNITS } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
@@ -93,14 +87,17 @@ export default function PracticePage() {
     let timer: NodeJS.Timeout;
     if (drillActive && drillTimeLeft > 0) {
       timer = setInterval(() => {
-        setDrillTimeLeft((prev) => prev - 1);
+        setDrillTimeLeft((prev) => {
+          if (prev <= 1) {
+            setDrillActive(false);
+            setDrillFinished(true);
+            sounds.playLevelComplete();
+            saveSpeedDrillScoreVal(drillScore);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (drillActive && drillTimeLeft === 0) {
-      // Finished drill!
-      setDrillActive(false);
-      setDrillFinished(true);
-      sounds.playLevelComplete();
-      saveSpeedDrillScoreVal(drillScore);
     }
     return () => clearInterval(timer);
   }, [drillActive, drillTimeLeft, drillScore, saveSpeedDrillScoreVal]);
@@ -337,7 +334,7 @@ export default function PracticePage() {
                 <div className="w-20 h-20 rounded-3xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center mb-4">
                   <Trophy className="w-10 h-10" />
                 </div>
-                <h3 className="text-3xl font-black text-slate-900 mb-1">Time's Up! Puikus darbas!</h3>
+                <h3 className="text-3xl font-black text-slate-900 mb-1">Time&apos;s Up! Puikus darbas!</h3>
                 <p className="text-slate-500 text-sm font-medium mb-6">
                   You completed the 60-second speed blitz.
                 </p>

@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useGame } from '@/context/GameContext';
 import { getAllLessons } from '@/data/curriculum';
-import { Zap, Flame, Heart, Trophy, Award, RotateCcw, Unlock, Check, Sparkles } from 'lucide-react';
+import { Zap, Flame, Heart, Trophy, Award, RotateCcw, Sparkles } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 
 export default function ProfilePage() {
   const { progress, refillHearts, resetProgress } = useGame();
   const allLessons = getAllLessons();
-  const [copiedNotification, setCopiedNotification] = useState(false);
 
   const completedCount = progress.completedLessons.length;
   const totalCount = allLessons.length;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Download, X, Share, Smartphone, Sparkles, Check } from 'lucide-react';
+import { Download, X, Share } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,10 +11,16 @@ interface BeforeInstallPromptEvent extends Event {
 export const PwaInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [isIos, setIsIos] = useState(false);
+  const [isIos] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent) && !/crios|fxios/.test(userAgent);
+  });
   const [showIosGuide, setShowIosGuide] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(true); // default true until verified
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return sessionStorage.getItem('sekmes_pwa_dismissed') === 'true';
+  });
 
   useEffect(() => {
     // 1. Register Service Worker
@@ -44,18 +50,7 @@ export const PwaInstallPrompt: React.FC = () => {
     const standalone = checkStandalone();
     if (standalone) return;
 
-    // Check if dismissed previously in this session
-    const dismissed = sessionStorage.getItem('sekmes_pwa_dismissed') === 'true';
-    if (!dismissed) {
-      setIsDismissed(false);
-    }
-
-    // 3. Detect iOS Safari
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent) && !/crios|fxios/.test(userAgent);
-    setIsIos(isIosDevice);
-
-    // 4. Capture BeforeInstallPrompt for Android & Chrome / Edge
+    // 3. Capture BeforeInstallPrompt for Android & Chrome / Edge
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -66,7 +61,6 @@ export const PwaInstallPrompt: React.FC = () => {
 
     // 5. Detect successful install
     window.addEventListener('appinstalled', () => {
-      setIsInstalled(true);
       setDeferredPrompt(null);
       setIsDismissed(true);
       console.log('Sėkmės PWA was installed successfully!');
@@ -80,10 +74,7 @@ export const PwaInstallPrompt: React.FC = () => {
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      if (choiceResult.outcome === 'accepted') {
-        setIsInstalled(true);
-      }
+      await deferredPrompt.userChoice;
       setDeferredPrompt(null);
       setIsDismissed(true);
     } else if (isIos) {

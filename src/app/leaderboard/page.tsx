@@ -3,21 +3,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  Trophy,
   Flame,
   Zap,
   Crown,
-  Medal,
   ChevronUp,
   ChevronDown,
   Clock,
-  Shield,
   ArrowRight,
-  Sparkles,
   Award,
-  Users,
   Info,
-  CheckCircle2,
 } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,11 +26,10 @@ export default function LeaderboardPage() {
   const [activeTier, setActiveTier] = useState<LeagueTier>(userAssignedTier);
   const [realMembers, setRealMembers] = useState<Competitor[]>([]);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
-  const [timeInfo, setTimeInfo] = useState(getLeagueTimeRemaining());
+  const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
 
   // Periodically refresh countdown
   useEffect(() => {
-    setTimeInfo(getLeagueTimeRemaining());
     const interval = setInterval(() => {
       setTimeInfo(getLeagueTimeRemaining());
     }, 60000);
@@ -264,6 +257,7 @@ export default function LeaderboardPage() {
               <div className="flex flex-col items-center">
                 <div className="relative mb-2">
                   {top3[1].photoURL ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={top3[1].photoURL} alt={top3[1].name} className="h-12 w-12 md:h-14 md:w-14 rounded-2xl object-cover shadow-sm" />
                   ) : (
                     <div className={`h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-gradient-to-br ${top3[1].avatarColor} text-white font-black text-sm md:text-base flex items-center justify-center shadow-sm`}>
@@ -299,6 +293,7 @@ export default function LeaderboardPage() {
                 <div className="relative mb-2">
                   <Crown className="h-6 w-6 text-yellow-500 fill-yellow-400 absolute -top-5 left-1/2 -translate-x-1/2 animate-bounce" />
                   {top3[0].photoURL ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={top3[0].photoURL} alt={top3[0].name} className="h-14 w-14 md:h-16 md:w-16 rounded-2xl object-cover shadow-md ring-2 ring-yellow-400" />
                   ) : (
                     <div className={`h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-gradient-to-br ${top3[0].avatarColor} text-white font-black text-base md:text-lg flex items-center justify-center shadow-md ring-2 ring-yellow-400`}>
@@ -333,6 +328,7 @@ export default function LeaderboardPage() {
               <div className="flex flex-col items-center">
                 <div className="relative mb-2">
                   {top3[2].photoURL ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={top3[2].photoURL} alt={top3[2].name} className="h-12 w-12 md:h-14 md:w-14 rounded-2xl object-cover shadow-sm" />
                   ) : (
                     <div className={`h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-gradient-to-br ${top3[2].avatarColor} text-white font-black text-sm md:text-base flex items-center justify-center shadow-sm`}>
@@ -416,6 +412,7 @@ export default function LeaderboardPage() {
                   {/* Avatar */}
                   <div className="relative shrink-0">
                     {item.photoURL ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={item.photoURL} alt={item.name} className="h-10 w-10 md:h-11 md:w-11 rounded-2xl object-cover shadow-2xs" />
                     ) : (
                       <div className={`h-10 w-10 md:h-11 md:w-11 rounded-2xl bg-gradient-to-br ${item.avatarColor} text-white font-black text-xs md:text-sm flex items-center justify-center shadow-2xs`}>

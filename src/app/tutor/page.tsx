@@ -15,13 +15,10 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
-  Award,
   Zap,
   Sliders,
   Settings,
   X,
-  PlusCircle,
-  UserCheck,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
@@ -40,6 +37,50 @@ interface Message {
 interface Suggestion {
   lt: string;
   en: string;
+}
+
+let tutorMsgCounter = 0;
+function createMessageId(prefix: string): string {
+  tutorMsgCounter += 1;
+  return `${prefix}-${tutorMsgCounter}`;
+}
+
+function getCurrentTimestamp(): string {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+interface SpeechRecognitionEventLike {
+  results: {
+    length: number;
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((e: unknown) => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
+
+function getSpeechRecognitionClass(): SpeechRecognitionCtor | null {
+  if (typeof window === 'undefined') return null;
+  const win = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  };
+  return win.SpeechRecognition || win.webkitSpeechRecognition || null;
 }
 
 const PRESET_CUSTOM_TOPICS = [
@@ -162,10 +203,19 @@ const SCENARIOS = [
 export default function TutorPage() {
   const { addXp } = useGame();
   const [scenario, setScenario] = useState<ScenarioType>('cafe');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => [
+    {
+      id: 'init-1',
+      role: 'assistant',
+      textLt: SCENARIOS[0].greeting,
+      textEn: SCENARIOS[0].greetingEn,
+      tip: SCENARIOS[0].tip,
+      timestamp: '12:00',
+    },
+  ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => SCENARIOS[0].initialSuggestions);
   const [showEnglishMap, setShowEnglishMap] = useState<Record<string, boolean>>({});
   const [isRecording, setIsRecording] = useState(false);
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
@@ -176,29 +226,9 @@ export default function TutorPage() {
   const [customRole, setCustomRole] = useState('Nuomotojas (Landlord)');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   const currentScenario = SCENARIOS.find((s) => s.id === scenario) || SCENARIOS[0];
-
-  // Initialize scenario dialogue
-  useEffect(() => {
-    if (scenario === 'custom') {
-      // Trigger dynamic initial custom dialogue
-      initCustomScenario(customTopic, customRole);
-    } else {
-      const initialMsg: Message = {
-        id: 'init-1',
-        role: 'assistant',
-        textLt: currentScenario.greeting,
-        textEn: currentScenario.greetingEn,
-        tip: currentScenario.tip,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages([initialMsg]);
-      setSuggestions(currentScenario.initialSuggestions);
-      setShowEnglishMap({});
-    }
-  }, [scenario]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -222,58 +252,6 @@ export default function TutorPage() {
     setShowEnglishMap((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Speech Recognition
-  const toggleSpeechRecognition = () => {
-    if (isRecording) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsRecording(false);
-      return;
-    }
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Edge.');
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'lt-LT';
-      recognition.interimResults = false;
-      recognition.continuous = false;
-
-      recognition.onstart = () => {
-        setIsRecording(true);
-      };
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript) {
-          setInputText((prev) => (prev ? `${prev} ${transcript}` : transcript));
-        }
-      };
-
-      recognition.onerror = (e: any) => {
-        console.warn('Speech error:', e);
-        setIsRecording(false);
-      };
-
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (err) {
-      console.warn('Speech recognition initiation error:', err);
-      setIsRecording(false);
-    }
-  };
-
   // Initialize custom scenario via API
   const initCustomScenario = async (topic: string, role: string) => {
     setLoading(true);
@@ -292,12 +270,12 @@ export default function TutorPage() {
 
       const data = await res.json();
       const assistantMsg: Message = {
-        id: 'init-custom-' + Date.now(),
+        id: createMessageId('init-custom'),
         role: 'assistant',
         textLt: data.replyLithuanian,
         textEn: data.replyEnglish,
         tip: data.grammarTip,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: getCurrentTimestamp(),
       };
 
       setMessages([assistantMsg]);
@@ -307,12 +285,12 @@ export default function TutorPage() {
     } catch (err) {
       console.error('Error starting custom scenario:', err);
       const fallbackMsg: Message = {
-        id: 'init-custom-fallback',
+        id: createMessageId('init-custom-fallback'),
         role: 'assistant',
         textLt: `Laba diena! Esu pasiruošusi kalbėtis tema: ${topic}. Kuo galiu jums padėti?`,
         textEn: `Good day! I am ready to converse about: ${topic}. How can I help you?`,
         tip: '„Kuo galiu padėti?“ means "How can I help you?".',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: getCurrentTimestamp(),
       };
       setMessages([fallbackMsg]);
     } finally {
@@ -329,6 +307,97 @@ export default function TutorPage() {
     initCustomScenario(topic, role);
   };
 
+  // Select a scenario
+  const handleSelectScenario = (scId: ScenarioType) => {
+    if (scId === 'custom') {
+      setIsCustomModalOpen(true);
+      return;
+    }
+    setScenario(scId);
+    const target = SCENARIOS.find((s) => s.id === scId) || SCENARIOS[0];
+    const initialMsg: Message = {
+      id: createMessageId(`init-${scId}`),
+      role: 'assistant',
+      textLt: target.greeting,
+      textEn: target.greetingEn,
+      tip: target.tip,
+      timestamp: getCurrentTimestamp(),
+    };
+    setMessages([initialMsg]);
+    setSuggestions(target.initialSuggestions);
+    setShowEnglishMap({});
+  };
+
+  // Restart conversation
+  const handleRestart = () => {
+    if (scenario === 'custom') {
+      initCustomScenario(customTopic, customRole);
+    } else {
+      const initialMsg: Message = {
+        id: createMessageId(`init-${scenario}`),
+        role: 'assistant',
+        textLt: currentScenario.greeting,
+        textEn: currentScenario.greetingEn,
+        tip: currentScenario.tip,
+        timestamp: getCurrentTimestamp(),
+      };
+      setMessages([initialMsg]);
+      setSuggestions(currentScenario.initialSuggestions);
+      setShowEnglishMap({});
+    }
+  };
+
+  // Speech Recognition
+  const toggleSpeechRecognition = () => {
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition = getSpeechRecognitionClass();
+
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Edge.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'lt-LT';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+      };
+
+      recognition.onresult = (event: SpeechRecognitionEventLike) => {
+        const transcript = event.results[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputText((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+      };
+
+      recognition.onerror = (e: unknown) => {
+        console.warn('Speech error:', e);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn('Speech recognition initiation error:', err);
+      setIsRecording(false);
+    }
+  };
+
   // Send message
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
@@ -337,10 +406,10 @@ export default function TutorPage() {
     setInputText('');
 
     const userMsg: Message = {
-      id: 'usr-' + Date.now(),
+      id: createMessageId('usr'),
       role: 'user',
       textLt: text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: getCurrentTimestamp(),
     };
 
     const newHistory = [...messages, userMsg];
@@ -368,12 +437,12 @@ export default function TutorPage() {
       const data = await res.json();
 
       const assistantMsg: Message = {
-        id: 'ast-' + Date.now(),
+        id: createMessageId('ast'),
         role: 'assistant',
         textLt: data.replyLithuanian,
         textEn: data.replyEnglish,
         tip: data.grammarTip,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: getCurrentTimestamp(),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -430,22 +499,7 @@ export default function TutorPage() {
             )}
 
             <button
-              onClick={() => {
-                if (scenario === 'custom') {
-                  initCustomScenario(customTopic, customRole);
-                } else {
-                  const initialMsg: Message = {
-                    id: 'init-' + Date.now(),
-                    role: 'assistant',
-                    textLt: currentScenario.greeting,
-                    textEn: currentScenario.greetingEn,
-                    tip: currentScenario.tip,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                  };
-                  setMessages([initialMsg]);
-                  setSuggestions(currentScenario.initialSuggestions);
-                }
-              }}
+              onClick={handleRestart}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
               title="Restart conversation"
             >
@@ -463,13 +517,7 @@ export default function TutorPage() {
             return (
               <button
                 key={sc.id}
-                onClick={() => {
-                  if (sc.id === 'custom') {
-                    setIsCustomModalOpen(true);
-                  } else {
-                    setScenario(sc.id);
-                  }
-                }}
+                onClick={() => handleSelectScenario(sc.id)}
                 className={`flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all text-left ${
                   isSelected
                     ? 'border-sky-500 bg-sky-50/80 shadow-xs'

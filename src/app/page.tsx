@@ -6,7 +6,7 @@ import { UNITS } from '@/data/curriculum';
 import { UnitCard } from '@/components/tree/UnitCard';
 import { useGame } from '@/context/GameContext';
 import { AudioSpeaker } from '@/components/AudioSpeaker';
-import { Zap, BookOpen, Flame, Sparkles, ArrowRight } from 'lucide-react';
+import { Zap, BookOpen, Sparkles, ArrowRight } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 
 import { DailyQuestsCard } from '@/components/DailyQuestsCard';

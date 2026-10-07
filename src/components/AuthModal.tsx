@@ -43,8 +43,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         await sendPasswordReset(email);
         setSuccessMsg('Slaptažodžio atstatymo nuoroda išsiųsta į jūsų el. paštą!');
       }
-    } catch (err: any) {
-      const code = err?.code || '';
+    } catch (err: unknown) {
+      const authErr = err as { code?: string; message?: string };
+      const code = authErr?.code || '';
       if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
         setError('Neteisingas el. paštas arba slaptažodis.');
       } else if (code === 'auth/email-already-in-use') {
@@ -54,7 +55,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       } else if (code === 'auth/popup-closed-by-user') {
         setError('Prisijungimo langas buvo uždarytas.');
       } else {
-        setError(err?.message || 'Įvyko klaida bandant prisijungti.');
+        setError(authErr?.message || 'Įvyko klaida bandant prisijungti.');
       }
     } finally {
       setIsSubmitting(false);
@@ -67,9 +68,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     try {
       await signInWithGoogle();
       onClose();
-    } catch (err: any) {
-      if (err?.code !== 'auth/popup-closed-by-user') {
-        setError(err?.message || 'Nepavyko prisijungti su Google.');
+    } catch (err: unknown) {
+      const authErr = err as { code?: string; message?: string };
+      if (authErr?.code !== 'auth/popup-closed-by-user') {
+        setError(authErr?.message || 'Nepavyko prisijungti su Google.');
       }
     } finally {
       setIsSubmitting(false);

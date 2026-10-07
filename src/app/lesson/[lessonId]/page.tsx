@@ -144,7 +144,10 @@ export default function LessonPage({ params }: LessonPageProps) {
         correctAnswer: getCorrectAnswerString(),
         userAnswer: selectedAnswer || assembledWords.join(' ') || typedDictation || speakingText || undefined,
         explanation: currentExercise.explanation,
-        audioText: currentExercise.audioText || (currentExercise as any).targetSentence || (currentExercise as any).targetPhrase,
+        audioText:
+          currentExercise.audioText ||
+          ('targetSentence' in currentExercise ? (currentExercise as { targetSentence: string }).targetSentence : undefined) ||
+          ('targetPhrase' in currentExercise ? (currentExercise as { targetPhrase: string }).targetPhrase : undefined),
       });
 
       const hasHearts = loseHeart();

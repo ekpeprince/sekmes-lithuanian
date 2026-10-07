@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trophy, Sparkles, ChevronRight, Crown, Medal, Flame, Clock, Award, Shield, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trophy, Sparkles, ChevronRight, Clock, Award, ArrowUp, ArrowDown } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LEAGUE_TIERS, LeagueTier, getLeagueTimeRemaining, getWeeklyCohort, Competitor } from '@/lib/league';
@@ -16,11 +16,10 @@ export const AmberLeagueCard: React.FC = () => {
   const currentTier: LeagueTier = progress.leagueTier || 'Bronza';
   const tierConfig = LEAGUE_TIERS[currentTier] || LEAGUE_TIERS.Bronza;
 
-  const [timeInfo, setTimeInfo] = useState(getLeagueTimeRemaining());
+  const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
 
   // Update countdown periodically
   useEffect(() => {
-    setTimeInfo(getLeagueTimeRemaining());
     const interval = setInterval(() => {
       setTimeInfo(getLeagueTimeRemaining());
     }, 60000);
@@ -146,6 +145,7 @@ export const AmberLeagueCard: React.FC = () => {
                   {/* Real avatar / photo or styled initials */}
                   <div className="relative shrink-0">
                     {comp.photoURL ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={comp.photoURL} alt={comp.name} className="h-6 w-6 rounded-full object-cover" />
                     ) : (
                       <div className={`h-6 w-6 rounded-lg bg-gradient-to-br ${comp.avatarColor} text-white text-[10px] font-black flex items-center justify-center shadow-2xs`}>

@@ -38,17 +38,18 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [progress, setProgress] = useState<UserProgress>(DEFAULT_PROGRESS);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [progress, setProgress] = useState<UserProgress>(() => {
+    if (typeof window !== 'undefined') {
+      return getStoredProgress();
+    }
+    return DEFAULT_PROGRESS;
+  });
 
   useEffect(() => {
-    const loaded = getStoredProgress();
-    setProgress(loaded);
-    sounds.setSoundEnabled(loaded.soundEnabled);
-    if (loaded.voiceGender) {
-      sounds.setVoiceGender(loaded.voiceGender);
+    sounds.setSoundEnabled(progress.soundEnabled);
+    if (progress.voiceGender) {
+      sounds.setVoiceGender(progress.voiceGender);
     }
-    setIsLoaded(true);
 
     const handleSync = () => {
       const updated = getStoredProgress();
@@ -65,7 +66,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       window.removeEventListener('sekmes-progress-updated', handleSync);
       window.removeEventListener('storage', handleSync);
     };
-  }, []);
+  }, [progress.soundEnabled, progress.voiceGender]);
 
   // When user signs in, load and merge cloud progress
   useEffect(() => {
@@ -180,7 +181,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <GameContext.Provider
       value={{
-        progress: isLoaded ? progress : DEFAULT_PROGRESS,
+        progress,
         loseHeart,
         refillHearts,
         finishLesson,

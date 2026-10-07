@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Volume2, Snail, Headphones, CheckCircle2, XCircle } from 'lucide-react';
 import { ListeningMultipleChoiceExercise } from '@/types/lesson';
 import { sounds } from '@/lib/audio';
@@ -25,14 +25,7 @@ export const ListeningMultipleChoice: React.FC<ListeningMultipleChoiceProps> = (
 
   const audioContent = exercise.audioDialogue || exercise.audioText || exercise.correctAnswer;
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handlePlay(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [exercise.id]);
-
-  const handlePlay = (slow: boolean = false) => {
+  const handlePlay = useCallback((slow: boolean = false) => {
     if (!audioContent) return;
     if (slow) {
       setIsSlowPlaying(true);
@@ -47,7 +40,14 @@ export const ListeningMultipleChoice: React.FC<ListeningMultipleChoiceProps> = (
         setIsSlowPlaying(false);
       },
     });
-  };
+  }, [audioContent]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handlePlay(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [handlePlay]);
 
   const handleOptionClick = (option: string) => {
     if (isChecked) return;

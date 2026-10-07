@@ -20,7 +20,6 @@ import {
   Bookmark,
   Brain,
   ArrowRight,
-  Flame,
 } from 'lucide-react';
 
 export default function GrammarPage() {
