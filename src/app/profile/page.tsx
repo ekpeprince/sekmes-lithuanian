@@ -66,7 +66,7 @@ export default function ProfilePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  Lietuvių Mokinys
+                  Lietuvių Mokinys • Learner
                 </h1>
                 <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mt-0.5">
                   Lithuanian A1 Learner • Level {level}

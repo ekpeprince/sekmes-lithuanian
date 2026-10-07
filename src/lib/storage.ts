@@ -6,7 +6,9 @@ export const DEFAULT_QUESTS: Quest[] = [
   {
     id: 'quest-lesson',
     title: 'Dienos pamoka',
+    englishTitle: 'Daily Lesson',
     description: 'Užbaikite bent 1 pamoką šiandien',
+    englishDescription: 'Complete at least 1 lesson today',
     icon: '📖',
     current: 0,
     target: 1,
@@ -18,7 +20,9 @@ export const DEFAULT_QUESTS: Quest[] = [
   {
     id: 'quest-xp',
     title: 'Energijos pliūpsnis',
+    englishTitle: 'Energy Boost',
     description: 'Surinkite 50 XP per dieną',
+    englishDescription: 'Earn 50 XP today',
     icon: '⚡',
     current: 0,
     target: 50,
@@ -30,7 +34,9 @@ export const DEFAULT_QUESTS: Quest[] = [
   {
     id: 'quest-drill',
     title: 'Greičio meistras',
+    englishTitle: 'Speed Master',
     description: 'Išbandykite 60 sekundžių žaibo treniruotę',
+    englishDescription: 'Try a 60-second lightning drill',
     icon: '⏱️',
     current: 0,
     target: 1,
@@ -42,7 +48,9 @@ export const DEFAULT_QUESTS: Quest[] = [
   {
     id: 'quest-mistakes',
     title: 'Klaidų švarintojas',
+    englishTitle: 'Mistake Cleaner',
     description: 'Ištaisykite klaidą iš klaidų banko',
+    englishDescription: 'Clear a mistake from your mistake bank',
     icon: '🎯',
     current: 0,
     target: 1,

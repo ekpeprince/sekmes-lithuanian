@@ -326,7 +326,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             <div className="flex flex-col items-center gap-1.5 animate-fadeIn">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
                 <span>⏱️</span>
-                <span>Liko: {timeLeft}s (neskubėkite!)</span>
+                <span>Liko: {timeLeft}s • {timeLeft}s left</span>
               </div>
               <div className="w-36 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <div
@@ -345,13 +345,13 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
                   Klausausi... Sakykite ramiai savo tempu!
                 </span>
                 <span className="text-xs font-medium text-slate-400">
-                  (Paspauskite mikrofoną, jei baigėte anksčiau)
+                  Listening... Tap mic when finished
                 </span>
               </div>
             ) : spokenText ? (
-              <span className="text-emerald-600">Frazė atpažinta!</span>
+              <span className="text-emerald-600">Frazė atpažinta! • Speech recognized!</span>
             ) : (
-              <span>Spauskite mikrofoną ir kalbėkite</span>
+              <span>Spauskite mikrofoną ir kalbėkite • Tap mic and speak</span>
             )}
           </div>
 
@@ -359,12 +359,12 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           {(transcript || spokenText) && (
             <div className="mt-1 px-5 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-800 font-bold text-base max-w-md w-full text-center">
               <span className="text-xs text-slate-400 block uppercase tracking-wider mb-1">
-                Jūsų ištarta frazė:
+                Jūsų ištarta frazė • Your spoken phrase:
               </span>
               “{transcript || spokenText}”
               {score !== null && (
                 <div className="mt-2 text-xs font-black text-sky-600">
-                  Tarimo tikslumas: {score}%
+                  Tarimo tikslumas • Accuracy: {score}%
                 </div>
               )}
             </div>
@@ -378,13 +378,13 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-300 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors cursor-pointer shadow-xs"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Bandykite dar kartą (Pabandyti iš naujo)</span>
+              <span>Bandykite dar kartą • Try Again</span>
             </button>
           )}
 
           {!speechSupported && (
             <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
-              Balso atpažinimas šioje naršyklėje nepalaikomas. Galite paklausyti tarimo ir paspausti „Negaliu dabar kalbėti“.
+              Balso atpažinimas šioje naršyklėje nepalaikomas • Speech recognition not supported here. Listen to native audio or tap &quot;Can&apos;t speak now&quot;.
             </div>
           )}
 
@@ -396,13 +396,13 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               className="mt-3 text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <VolumeX className="w-3.5 h-3.5" />
-              Negaliu dabar kalbėti (Rehearse later)
+              Negaliu dabar kalbėti • Can&apos;t speak now
             </button>
           )}
         </div>
       ) : (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-bold flex items-center gap-2">
-          <span>Tylos režimas: perskaitykite garsiai mintyse ir paspauskite „Tikrinti“.</span>
+          <span>Tylos režimas • Silent mode: read aloud in your head and tap &quot;CHECK&quot;.</span>
         </div>
       )}
     </div>

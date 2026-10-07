@@ -143,7 +143,7 @@ export const Navbar: React.FC = () => {
                       </p>
                       <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-emerald-600">
                         <Cloud className="h-3 w-3" />
-                        <span>Pažanga debesyje aktyvi</span>
+                        <span>Pažanga debesyje aktyvi • Cloud sync</span>
                       </div>
                     </div>
 
@@ -156,7 +156,7 @@ export const Navbar: React.FC = () => {
                       className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
                     >
                       <LogOut className="h-4 w-4" />
-                      <span>Atsijungti</span>
+                      <span>Atsijungti • Sign Out</span>
                     </button>
                   </div>
                 )}
@@ -168,7 +168,7 @@ export const Navbar: React.FC = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
               >
                 <UserIcon className="h-3.5 w-3.5" />
-                <span>Prisijungti</span>
+                <span>Prisijungti • Sign In</span>
               </button>
             )}
           </div>

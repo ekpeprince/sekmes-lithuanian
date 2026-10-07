@@ -38,12 +38,22 @@ export const DailyQuestsCard: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">{quest.icon}</span>
                   <div>
-                    <h5 className="text-xs font-black text-slate-800">
-                      {quest.title}
+                    <h5 className="text-xs font-black text-slate-800 flex items-center gap-1.5 flex-wrap">
+                      <span>{quest.title}</span>
+                      {quest.englishTitle && (
+                        <span className="text-[10px] font-bold text-slate-400">
+                          • {quest.englishTitle}
+                        </span>
+                      )}
                     </h5>
-                    <p className="text-[11px] text-slate-500 font-medium line-clamp-1">
+                    <p className="text-[11px] text-slate-600 font-medium line-clamp-1 mt-0.5">
                       {quest.description}
                     </p>
+                    {quest.englishDescription && (
+                      <p className="text-[10px] text-slate-400 font-normal italic line-clamp-1">
+                        {quest.englishDescription}
+                      </p>
+                    )}
                   </div>
                 </div>
 

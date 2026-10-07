@@ -109,14 +109,14 @@ export const PwaInstallPrompt: React.FC = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h4 className="text-sm font-black tracking-tight text-white truncate">
-                  Įdiek Sėkmės į telefoną
+                  Įdiek Sėkmės • Install App
                 </h4>
                 <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase px-1.5 py-0.2 rounded">
-                  PWA App
+                  PWA
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 font-medium truncate">
-                Pilno ekrano režimas, greitas atidarymas be naršyklės juostos.
+                Pilno ekrano režimas • Fullscreen app, fast launch.
               </p>
             </div>
           </div>
@@ -128,14 +128,14 @@ export const PwaInstallPrompt: React.FC = () => {
               className="btn-3d py-2 px-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md active:scale-95 flex items-center gap-1.5"
             >
               <Download className="h-3.5 w-3.5 stroke-[3]" />
-              <span>Įdiegti</span>
+              <span>Įdiegti • Install</span>
             </button>
 
             <button
               type="button"
               onClick={handleDismiss}
               className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              title="Praleisti"
+              title="Praleisti • Dismiss"
             >
               <X className="h-4 w-4" />
             </button>
@@ -153,8 +153,8 @@ export const PwaInstallPrompt: React.FC = () => {
                   📱
                 </div>
                 <div>
-                  <h3 className="text-base font-black">Kaip įdiegti į iPhone</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Apple iOS Safari nurodymai</p>
+                  <h3 className="text-base font-black">Kaip įdiegti į iPhone • How to Install</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Apple iOS Safari nurodymai (Safari Guide)</p>
                 </div>
               </div>
               <button
@@ -173,10 +173,10 @@ export const PwaInstallPrompt: React.FC = () => {
                 </span>
                 <div>
                   <p className="font-extrabold text-slate-900">
-                    Spustelėkite mygtuką „Dalintis“ (Share)
+                    1. Spustelėkite mygtuką „Dalintis“ (Share)
                   </p>
                   <p className="text-slate-500 text-[11px] mt-0.5 flex items-center gap-1">
-                    Safari ekrano apačioje raskite <Share className="h-3.5 w-3.5 text-sky-600 inline" /> piktogramą.
+                    Tap the <Share className="h-3.5 w-3.5 text-sky-600 inline" /> Share button at the bottom of Safari.
                   </p>
                 </div>
               </div>
@@ -187,10 +187,10 @@ export const PwaInstallPrompt: React.FC = () => {
                 </span>
                 <div>
                   <p className="font-extrabold text-slate-900">
-                    Pasirinkite „Pridėti prie pradžios ekrano“
+                    2. Pasirinkite „Pridėti prie pagrindinio ekrano“
                   </p>
                   <p className="text-slate-500 text-[11px] mt-0.5">
-                    Meniu slinkite žemyn ir pasirinkite „Add to Home Screen“ ⊞.
+                    Scroll down and tap &quot;Add to Home Screen&quot; ⊞.
                   </p>
                 </div>
               </div>
@@ -201,10 +201,10 @@ export const PwaInstallPrompt: React.FC = () => {
                 </span>
                 <div>
                   <p className="font-extrabold text-slate-900">
-                    Spustelėkite „Pridėti“ (Add)
+                    3. Spustelėkite „Pridėti“ (Add)
                   </p>
                   <p className="text-slate-500 text-[11px] mt-0.5">
-                    Sėkmės programėlė atsiras tavo telefono ekrane kartu su kitomis programomis!
+                    Tap &quot;Add&quot; in the top-right corner to launch fullscreen app anytime!
                   </p>
                 </div>
               </div>
@@ -218,7 +218,7 @@ export const PwaInstallPrompt: React.FC = () => {
               }}
               className="btn-3d w-full mt-5 py-3 rounded-xl bg-slate-900 text-white font-black text-xs uppercase tracking-wider"
             >
-              Supratau!
+              Supratau • Got it
             </button>
           </div>
         </div>

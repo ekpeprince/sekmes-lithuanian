@@ -13,8 +13,6 @@ import {
   Compass,
   MessageCircle,
   HelpCircle,
-  ChevronDown,
-  ChevronUp,
   Zap,
   Sliders,
   Settings,
@@ -504,7 +502,7 @@ export default function TutorPage() {
               title="Restart conversation"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span>Iš naujo</span>
+              <span>Iš naujo • Restart</span>
             </button>
           </div>
         </div>
@@ -518,11 +516,10 @@ export default function TutorPage() {
               <button
                 key={sc.id}
                 onClick={() => handleSelectScenario(sc.id)}
-                className={`flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all text-left ${
-                  isSelected
+                className={`flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all text-left ${isSelected
                     ? 'border-sky-500 bg-sky-50/80 shadow-xs'
                     : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+                  }`}
               >
                 <div
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${sc.color} text-white shadow-xs`}
@@ -549,16 +546,16 @@ export default function TutorPage() {
             <div className="flex items-center gap-3">
               <span className="text-2xl">✨</span>
               <div>
-                <span className="text-xs font-black uppercase text-rose-800 block">Aktyvus tinkintas scenarijus:</span>
+                <span className="text-xs font-black uppercase text-rose-800 block">Aktyvus scenarijus • Active Scenario:</span>
                 <span className="text-sm font-bold text-slate-800">{customTopic}</span>
-                <span className="text-xs text-slate-500 ml-2 font-medium">• Rolė: {customRole}</span>
+                <span className="text-xs text-slate-500 ml-2 font-medium">• Rolė • Role: {customRole}</span>
               </div>
             </div>
             <button
               onClick={() => setIsCustomModalOpen(true)}
               className="text-xs font-bold text-rose-700 hover:text-rose-900 bg-white border border-rose-200 px-3 py-1.5 rounded-xl shadow-2xs shrink-0"
             >
-              Keisti
+              Keisti temą • Change
             </button>
           </div>
         )}
@@ -566,7 +563,6 @@ export default function TutorPage() {
         <div className="flex-1 space-y-4 mb-4 overflow-y-auto">
           {messages.map((msg) => {
             const isAssistant = msg.role === 'assistant';
-            const isEnglishVisible = showEnglishMap[msg.id];
             const isPlayingThis = audioPlayingId === msg.id;
 
             return (
@@ -575,11 +571,10 @@ export default function TutorPage() {
                 className={`flex flex-col ${isAssistant ? 'items-start' : 'items-end'}`}
               >
                 <div
-                  className={`max-w-[88%] md:max-w-[75%] rounded-3xl p-4 shadow-xs transition-all ${
-                    isAssistant
+                  className={`max-w-[88%] md:max-w-[75%] rounded-3xl p-4 shadow-xs transition-all ${isAssistant
                       ? 'bg-white border-2 border-slate-200 rounded-tl-sm text-slate-800'
                       : 'bg-emerald-600 text-white rounded-tr-sm'
-                  }`}
+                    }`}
                 >
                   {/* Lithuanian Text */}
                   <div className="flex items-start justify-between gap-3">
@@ -591,11 +586,10 @@ export default function TutorPage() {
                       <button
                         onClick={() => handlePlayAudio(msg.id, msg.textLt)}
                         disabled={isPlayingThis}
-                        className={`shrink-0 p-2 rounded-xl transition ${
-                          isPlayingThis
+                        className={`shrink-0 p-2 rounded-xl transition ${isPlayingThis
                             ? 'bg-emerald-100 text-emerald-700 animate-pulse'
                             : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                        }`}
+                          }`}
                         title="Listen to native pronunciation"
                       >
                         <Volume2 className="h-4 w-4" />
@@ -603,22 +597,15 @@ export default function TutorPage() {
                     )}
                   </div>
 
-                  {/* English Translation Toggle */}
+                  {/* English Subtitle (Always visible) */}
                   {isAssistant && msg.textEn && (
-                    <div className="mt-2.5 pt-2.5 border-t border-slate-100">
-                      <button
-                        onClick={() => toggleEnglish(msg.id)}
-                        className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 transition"
-                      >
-                        <span>{isEnglishVisible ? 'Slėpti vertimą' : 'Rodyti vertimą (English)'}</span>
-                        {isEnglishVisible ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </button>
-
-                      {isEnglishVisible && (
-                        <p className="mt-1 text-xs font-medium text-slate-600 italic bg-slate-50 p-2 rounded-xl">
-                          {msg.textEn}
-                        </p>
-                      )}
+                    <div className="mt-2.5 pt-2 border-t border-slate-100">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 block mb-0.5">
+                        English Subtitle:
+                      </span>
+                      <p className="text-xs md:text-sm font-medium text-slate-600 italic bg-slate-50/90 p-2.5 rounded-xl border border-slate-100">
+                        {msg.textEn}
+                      </p>
                     </div>
                   )}
 
@@ -646,7 +633,7 @@ export default function TutorPage() {
                 <span className="h-2 w-2 rounded-full bg-sky-500 animate-bounce delay-150"></span>
                 <span className="h-2 w-2 rounded-full bg-sky-500 animate-bounce delay-300"></span>
               </div>
-              <span className="text-xs font-bold">Rūta galvoja atsakymą...</span>
+              <span className="text-xs font-bold">Rūta galvoja atsakymą... • Rūta is thinking...</span>
             </div>
           )}
 
@@ -683,11 +670,10 @@ export default function TutorPage() {
           {/* Voice Input Button */}
           <button
             onClick={toggleSpeechRecognition}
-            className={`p-3 rounded-2xl transition-all flex items-center justify-center ${
-              isRecording
+            className={`p-3 rounded-2xl transition-all flex items-center justify-center ${isRecording
                 ? 'bg-red-500 text-white animate-pulse shadow-md ring-4 ring-red-200'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
+              }`}
             title={isRecording ? 'Listening in Lithuanian... Click to stop' : 'Speak in Lithuanian (Microphone)'}
           >
             {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -716,11 +702,10 @@ export default function TutorPage() {
           <button
             onClick={() => handleSendMessage()}
             disabled={!inputText.trim() || loading}
-            className={`p-3 rounded-2xl font-bold transition-all flex items-center justify-center ${
-              inputText.trim() && !loading
+            className={`p-3 rounded-2xl font-bold transition-all flex items-center justify-center ${inputText.trim() && !loading
                 ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md active:translate-y-0.5'
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            }`}
+              }`}
           >
             <Send className="h-5 w-5" />
           </button>
@@ -774,11 +759,10 @@ export default function TutorPage() {
                       setCustomTopic(preset.topic);
                       setCustomRole(preset.role);
                     }}
-                    className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 text-left transition-all ${
-                      customTopic === preset.topic
+                    className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 text-left transition-all ${customTopic === preset.topic
                         ? 'border-rose-500 bg-rose-50/70 shadow-2xs'
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <span className="text-xl shrink-0 mt-0.5">{preset.icon}</span>
                     <div className="min-w-0">

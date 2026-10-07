@@ -122,8 +122,11 @@ export default function LeaderboardPage() {
                     {activeTierConfig.englishName}
                   </span>
                 </div>
-                <p className="text-xs md:text-sm text-slate-500 font-medium mt-0.5">
+                <p className="text-xs md:text-sm text-slate-700 font-bold mt-0.5">
                   {activeTierConfig.description}
+                </p>
+                <p className="text-[11px] md:text-xs text-slate-400 font-medium italic">
+                  {activeTierConfig.englishDescription}
                 </p>
               </div>
             </div>
@@ -136,12 +139,12 @@ export default function LeaderboardPage() {
                 className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-2xl text-xs font-bold transition cursor-pointer shadow-2xs"
               >
                 <Award className="h-4 w-4 text-amber-600" />
-                <span>Prizai ({activeTierConfig.rewards.first} 💎)</span>
+                <span>Prizai • Prizes ({activeTierConfig.rewards.first} 💎)</span>
               </button>
 
               <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700 shadow-2xs">
                 <Clock className="h-4 w-4 text-amber-600" />
-                <span>Liko: {timeInfo.formatted}</span>
+                <span>Liko • Left: {timeInfo.formatted} ({timeInfo.englishFormatted})</span>
               </div>
             </div>
           </div>
@@ -157,19 +160,24 @@ export default function LeaderboardPage() {
                 <button
                   key={tier.id}
                   onClick={() => setActiveTier(tier.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shrink-0 transition-all border-2 cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl font-bold text-xs shrink-0 transition-all border-2 cursor-pointer ${
                     isSelected
                       ? 'bg-amber-500 text-white border-amber-500 shadow-md ring-2 ring-amber-200'
                       : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
                   <span className="text-base">{tier.icon}</span>
-                  <span>{tier.name}</span>
+                  <div className="flex flex-col text-left leading-tight">
+                    <span>{tier.name}</span>
+                    <span className={`text-[10px] font-semibold ${isSelected ? 'text-amber-100' : 'text-slate-400'}`}>
+                      {tier.englishName}
+                    </span>
+                  </div>
                   {isUserCurrent && (
-                    <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
                       isSelected ? 'bg-white text-amber-600' : 'bg-amber-100 text-amber-800'
                     }`}>
-                      Tavo lyga
+                      Tavo • You
                     </span>
                   )}
                 </button>
@@ -183,24 +191,24 @@ export default function LeaderboardPage() {
       <main className="max-w-4xl mx-auto px-4 mt-6">
         {/* Banner if viewing another division */}
         {!isViewingUserTier && (
-          <div className="mb-6 bg-sky-50 border-2 border-sky-200 rounded-3xl p-4 flex items-center justify-between gap-3 text-xs">
+          <div className="mb-6 bg-sky-50 border-2 border-sky-200 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3">
               <Info className="h-5 w-5 text-sky-600 shrink-0" />
               <div>
                 <span className="font-extrabold text-sky-900 block">
-                  Peržiūrite {activeTierConfig.name} diviziją
+                  Peržiūrite {activeTierConfig.name} diviziją • Viewing {activeTierConfig.englishName}
                 </span>
                 <span className="text-sky-700 font-medium">
-                  Tavo aktyvi divizija yra <strong>{LEAGUE_TIERS[userAssignedTier].name}</strong>. Užbaik pamokas, kad pakiltum!
+                  Tavo aktyvi divizija yra <strong>{LEAGUE_TIERS[userAssignedTier].name}</strong> ({LEAGUE_TIERS[userAssignedTier].englishName}). Užbaik pamokas, kad pakiltum! (Complete lessons to advance!)
                 </span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setActiveTier(userAssignedTier)}
-              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shrink-0 shadow-2xs"
+              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shrink-0 shadow-2xs"
             >
-              Grįžti į savo lygą
+              Grįžti į savo lygą • Back to your league
             </button>
           </div>
         )}
@@ -215,24 +223,33 @@ export default function LeaderboardPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-black uppercase tracking-wider text-amber-100">
-                    Tavo statusas šią savaitę
+                    Tavo statusas šią savaitę • Your Status This Week
                   </span>
                   {userRank <= 3 && (
                     <span className="bg-emerald-400 text-emerald-950 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
-                      Pakilimo zona ▲
+                      Pakilimo zona ▲ • Promotion
                     </span>
                   )}
                 </div>
                 <h3 className="text-xl font-black">
                   #{userRank} vieta iš 30 mokinių ({progress.xp} XP)
                 </h3>
-                <p className="text-xs text-white/90 font-medium mt-0.5">
+                <span className="text-xs text-amber-100 font-medium block">
+                  Rank #{userRank} of 30 learners ({progress.xp} XP)
+                </span>
+                <div className="text-xs text-white/95 font-medium mt-1">
                   {userRank <= 3 ? (
-                    '🎉 Puiku! Išlaikyk šią poziciją iki sekmadienio ir pakilsi į aukštesnę lygą!'
+                    <div>
+                      <span>🎉 Puiku! Išlaikyk šią poziciją iki sekmadienio ir pakilsi į aukštesnę lygą!</span>
+                      <span className="block text-[11px] text-amber-100 italic">Great job! Keep this rank until Sunday to get promoted!</span>
+                    </div>
                   ) : (
-                    `Liko ${xpNeededForPromotion} XP iki 3-iosios vietos ir pakilimo zonos!`
+                    <div>
+                      <span>Liko {xpNeededForPromotion} XP iki 3-iosios vietos ir pakilimo zonos!</span>
+                      <span className="block text-[11px] text-amber-100 italic">{xpNeededForPromotion} XP needed to reach top 3 and promotion zone!</span>
+                    </div>
                   )}
-                </p>
+                </div>
               </div>
             </div>
 
@@ -241,7 +258,7 @@ export default function LeaderboardPage() {
               className="btn-3d py-2.5 px-5 bg-white text-slate-900 hover:bg-slate-50 font-black text-xs uppercase tracking-wider rounded-2xl shadow-sm inline-flex items-center justify-center gap-1.5 shrink-0"
             >
               <Zap className="h-4 w-4 fill-amber-500 text-amber-500" />
-              <span>Gauti daugiau XP</span>
+              <span>Gauti daugiau XP • Earn XP</span>
             </Link>
           </div>
         )}
@@ -249,7 +266,7 @@ export default function LeaderboardPage() {
         {/* Top 3 Podium Cards */}
         <section className="mb-8">
           <div className="text-xs font-black uppercase tracking-wider text-slate-400 mb-4 text-center">
-            {activeTierConfig.name} • Lyderių Pakyla (Top 3)
+            {activeTierConfig.name} • Lyderių Pakyla (Top 3) • Top 3 Podium
           </div>
           <div className="grid grid-cols-3 gap-2 md:gap-4 items-end max-w-2xl mx-auto">
             {/* 2nd Place */}
@@ -364,11 +381,11 @@ export default function LeaderboardPage() {
         <div className="flex items-center justify-between text-xs font-bold bg-white border border-slate-200 rounded-2xl px-4 py-2.5 mb-3 shadow-2xs">
           <div className="flex items-center gap-1.5 text-emerald-700">
             <ChevronUp className="h-4 w-4" />
-            <span>Top 3 keliauja į aukštesnę diviziją</span>
+            <span>Top 3 keliauja į aukštesnę diviziją • Top 3 promoted</span>
           </div>
           <div className="flex items-center gap-1.5 text-rose-500">
             <ChevronDown className="h-4 w-4" />
-            <span>Paskutiniai 5 iškrenta</span>
+            <span>Paskutiniai 5 iškrenta • Bottom 5 demoted</span>
           </div>
         </div>
 
@@ -428,7 +445,7 @@ export default function LeaderboardPage() {
                       </span>
                       {item.isUser && (
                         <span className="text-[10px] font-black bg-amber-500 text-white px-1.5 py-0.2 rounded-md">
-                          Tu
+                          Tu • You
                         </span>
                       )}
                       <span className="text-xs shrink-0" title={item.city}>
@@ -441,7 +458,7 @@ export default function LeaderboardPage() {
                       <span>•</span>
                       <span className="flex items-center gap-0.5 text-orange-500">
                         <Flame className="h-3 w-3 fill-orange-500" />
-                        {item.streak} d. serija
+                        {item.streak} d. serija ({item.streak}d streak)
                       </span>
                     </div>
                   </div>
@@ -451,12 +468,12 @@ export default function LeaderboardPage() {
                 <div className="flex items-center gap-2.5 shrink-0">
                   {isTop3 && (
                     <span className="hidden sm:inline text-[10px] font-extrabold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
-                      Pakilimas ▲
+                      Pakilimas ▲ • Promotion
                     </span>
                   )}
                   {isDemotion && (
                     <span className="hidden sm:inline text-[10px] font-extrabold uppercase text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg">
-                      Iškritimas ▼
+                      Iškritimas ▼ • Demotion
                     </span>
                   )}
 
@@ -475,16 +492,16 @@ export default function LeaderboardPage() {
         {/* Motivation Card */}
         <div className="mt-6 rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-black">Nori pakilti aukščiau lygoje?</h3>
+            <h3 className="text-lg font-black">Nori pakilti aukščiau lygoje? • Want to rank higher?</h3>
             <p className="text-xs md:text-sm text-emerald-100 font-medium">
-              Užbaikite pamokas arba praktikuokitės su DI tutoriumi ir gaukite papildomų XP!
+              Užbaikite pamokas arba praktikuokitės su DI tutoriumi ir gaukite papildomų XP! (Complete lessons or practice with AI Tutor to earn bonus XP!)
             </p>
           </div>
           <Link
             href="/practice"
             className="flex items-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition shadow-sm shrink-0"
           >
-            <span>Mokytis dabar</span>
+            <span>Mokytis dabar • Practice</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -499,10 +516,10 @@ export default function LeaderboardPage() {
                 <span className="text-2xl">{activeTierConfig.icon}</span>
                 <div>
                   <h3 className="text-base font-black text-slate-900">
-                    {activeTierConfig.name} Prizai
+                    {activeTierConfig.name} Prizai • Prizes
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Turnyras baigiasi sekmadienį 23:59
+                    Turnyras baigiasi sekmadienį 23:59 • Ends Sunday 23:59
                   </p>
                 </div>
               </div>
@@ -520,38 +537,38 @@ export default function LeaderboardPage() {
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥇</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">1-oji vieta</h4>
-                    <p className="text-[10px] text-slate-500">Čempiono statusas + Pakilimas</p>
+                    <h4 className="text-xs font-black text-slate-900">1-oji vieta • 1st Place</h4>
+                    <p className="text-[10px] text-slate-500">Čempiono statusas + Pakilimas (Promotion)</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-amber-700">+{activeTierConfig.rewards.first} 💎 Gintarai</span>
+                <span className="text-sm font-black text-amber-700">+{activeTierConfig.rewards.first} 💎 Gintarai (Gems)</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥈</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">2-oji vieta</h4>
-                    <p className="text-[10px] text-slate-500">Sidabrinis medalis + Pakilimas</p>
+                    <h4 className="text-xs font-black text-slate-900">2-oji vieta • 2nd Place</h4>
+                    <p className="text-[10px] text-slate-500">Sidabrinis medalis + Pakilimas (Promotion)</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-slate-700">+{activeTierConfig.rewards.second} 💎 Gintarai</span>
+                <span className="text-sm font-black text-slate-700">+{activeTierConfig.rewards.second} 💎 Gintarai (Gems)</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 border border-amber-200 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥉</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">3-ioji vieta</h4>
-                    <p className="text-[10px] text-slate-500">Bronzinis medalis + Pakilimas</p>
+                    <h4 className="text-xs font-black text-slate-900">3-ioji vieta • 3rd Place</h4>
+                    <p className="text-[10px] text-slate-500">Bronzinis medalis + Pakilimas (Promotion)</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-amber-800">+{activeTierConfig.rewards.third} 💎 Gintarai</span>
+                <span className="text-sm font-black text-amber-800">+{activeTierConfig.rewards.third} 💎 Gintarai (Gems)</span>
               </div>
             </div>
 
             <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-semibold leading-relaxed">
-              💡 <strong>Kaip pakilti į aukštesnę lygą?</strong> Užbaikite dienos pamokas ir praktikuokitės su DI tutoriumi, kad pasiektumėte Top 3 iki sekmadienio vakaro!
+              💡 <strong>Kaip pakilti į aukštesnę lygą? • How to promote:</strong> Užbaikite dienos pamokas ir praktikuokitės su DI tutoriumi, kad pasiektumėte Top 3 iki sekmadienio vakaro! (Complete lessons and practice with AI Tutor to reach Top 3 by Sunday!)
             </div>
 
             <button
@@ -559,7 +576,7 @@ export default function LeaderboardPage() {
               onClick={() => setShowRewardsModal(false)}
               className="btn-3d w-full mt-4 py-2.5 rounded-xl bg-slate-900 text-white font-black text-xs uppercase tracking-wider"
             >
-              Supratau
+              Supratau • Got it
             </button>
           </div>
         </div>

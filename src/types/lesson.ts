@@ -116,7 +116,9 @@ export interface Unit {
 export interface Quest {
   id: string;
   title: string;
+  englishTitle?: string;
   description: string;
+  englishDescription?: string;
   icon: string;
   current: number;
   target: number;

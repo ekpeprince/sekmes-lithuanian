@@ -11,6 +11,7 @@ export interface LeagueTierConfig {
   badgeText: string;
   minXp: number;
   description: string;
+  englishDescription: string;
   rewards: {
     first: number; // Gems
     second: number;
@@ -45,6 +46,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     badgeText: 'text-slate-800',
     minXp: 0,
     description: 'Pradinė divizija visiems naujiems mokiniams. Užbaikite pirmąsias pamokas ir kilkite į Bronzą!',
+    englishDescription: 'Starter division for all new learners. Complete your first lessons and climb to Bronze!',
     rewards: { first: 25, second: 15, third: 10 },
   },
   Bronza: {
@@ -58,6 +60,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     badgeText: 'text-amber-900',
     minXp: 150,
     description: 'Aktyvūs mokiniai, tvirtinantys lietuviškus pasisveikinimus, skaičius ir kavinės frazes.',
+    englishDescription: 'Active learners practicing Lithuanian greetings, everyday numbers, and café phrases.',
     rewards: { first: 40, second: 25, third: 15 },
   },
   Sidabras: {
@@ -71,6 +74,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     badgeText: 'text-slate-900',
     minXp: 400,
     description: 'Pažengusi divizija: veiksmažodžių asmenavimas, laiko klausimai ir linksnių galūnės.',
+    englishDescription: 'Advanced division: verb conjugations, time questions, and noun case endings.',
     rewards: { first: 60, second: 35, third: 20 },
   },
   Auksas: {
@@ -84,6 +88,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     badgeText: 'text-yellow-950',
     minXp: 800,
     description: 'Atkakli kova dėl patekimo į čempionų Gintaro Lygą. Tik 3 geriausi gauna bilietą!',
+    englishDescription: 'Competitive tier battling for qualification into the Amber League. Only the top 3 qualify!',
     rewards: { first: 80, second: 50, third: 30 },
   },
   Gintaras: {
@@ -97,6 +102,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     badgeText: 'text-amber-950',
     minXp: 1500,
     description: 'Aukščiausia Baltijos gintaro divizija. Čia varžosi atkakliausi kalbos entuziastai!',
+    englishDescription: 'The highest Baltic Amber division. The most dedicated language enthusiasts compete here!',
     rewards: { first: 100, second: 60, third: 40 },
   },
 };
@@ -109,6 +115,7 @@ export function getLeagueTimeRemaining(): {
   hours: number;
   minutes: number;
   formatted: string;
+  englishFormatted: string;
   weekNumber: number;
   isEndingSoon: boolean;
 } {
@@ -138,11 +145,17 @@ export function getLeagueTimeRemaining(): {
       ? `${days} d. ${hours} val.`
       : `${hours} val. ${minutes} min.`;
 
+  const englishFormatted =
+    days > 0
+      ? `${days}d ${hours}h`
+      : `${hours}h ${minutes}m`;
+
   return {
     days,
     hours,
     minutes,
     formatted,
+    englishFormatted,
     weekNumber,
     isEndingSoon: days === 0 && hours < 8,
   };

@@ -64,13 +64,13 @@ export const AmberLeagueCard: React.FC = () => {
               <Trophy className="h-4 w-4" />
             </span>
             <span className="text-xs font-black uppercase tracking-wider text-slate-800">
-              {tierConfig.name}
+              {tierConfig.name} • {tierConfig.englishName}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
             <Clock className="h-3 w-3 text-amber-600" />
-            <span>Savaitė {timeInfo.weekNumber} • {timeInfo.formatted}</span>
+            <span>Savaitė {timeInfo.weekNumber} • Liko {timeInfo.formatted} ({timeInfo.englishFormatted})</span>
           </div>
         </div>
 
@@ -82,20 +82,23 @@ export const AmberLeagueCard: React.FC = () => {
             <span className="text-3xl drop-shadow-sm">{tierConfig.icon}</span>
             <div>
               <div className="flex items-center gap-1.5">
-                <h4 className="text-lg font-black tracking-tight">{tierConfig.englishName}</h4>
+                <h4 className="text-lg font-black tracking-tight">{tierConfig.name}</h4>
                 {currentTier === 'Gintaras' && <Sparkles className="w-4 h-4 text-yellow-200 animate-spin-slow" />}
               </div>
-              <p className="text-[11px] text-white/90 font-medium">
+              <span className="text-[11px] font-bold text-amber-100 block">
+                {tierConfig.englishName}
+              </span>
+              <p className="text-[11px] text-white/90 font-medium mt-0.5">
                 {isPromoting ? (
                   <span className="text-emerald-200 font-bold flex items-center gap-1">
-                    <ArrowUp className="w-3 h-3" /> #{userRank} vieta • Pakilimo zonoje!
+                    <ArrowUp className="w-3 h-3" /> #{userRank} vieta • Pakilimo zonoje! (Promotion Zone)
                   </span>
                 ) : isDemoting ? (
                   <span className="text-rose-200 font-bold flex items-center gap-1">
-                    <ArrowDown className="w-3 h-3" /> #{userRank} vieta • Iškritimo zonoje!
+                    <ArrowDown className="w-3 h-3" /> #{userRank} vieta • Iškritimo zonoje! (Demotion Zone)
                   </span>
                 ) : (
-                  <span>#{userRank} vieta iš 30 mokinių</span>
+                  <span>#{userRank} vieta iš 30 mokinių (Rank #{userRank} of 30)</span>
                 )}
               </p>
             </div>
@@ -105,11 +108,11 @@ export const AmberLeagueCard: React.FC = () => {
             type="button"
             onClick={() => setShowRewardsModal(true)}
             className="flex flex-col items-end bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl transition border border-white/20 text-right cursor-pointer"
-            title="Peržiūrėti prizus"
+            title="Peržiūrėti prizus • View prizes"
           >
             <span className="text-xl font-black">{progress.xp}</span>
             <span className="text-[9px] font-bold block uppercase tracking-wider opacity-90 text-amber-200">
-              Tavo XP
+              Tavo XP • XP
             </span>
           </button>
         </div>
@@ -189,7 +192,7 @@ export const AmberLeagueCard: React.FC = () => {
                     TU
                   </div>
                   <span className="truncate font-black text-amber-950">
-                    {userName} (Tu)
+                    {userName} (Tu • You)
                   </span>
                   <span className="text-xs">🇱🇹</span>
                 </div>
@@ -197,7 +200,7 @@ export const AmberLeagueCard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-amber-900 text-[11px] font-mono font-black">{progress.xp} XP</span>
                   <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                    Liko {leaderboard[2] ? Math.max(0, leaderboard[2].xp - progress.xp + 1) : 0} XP iki Top 3
+                    Liko {leaderboard[2] ? Math.max(0, leaderboard[2].xp - progress.xp + 1) : 0} XP iki Top 3 (Need XP for Top 3)
                   </span>
                 </div>
               </div>
@@ -213,14 +216,14 @@ export const AmberLeagueCard: React.FC = () => {
             className="text-[11px] font-extrabold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
           >
             <Award className="h-3.5 w-3.5" />
-            <span>Prizai (Gems)</span>
+            <span>Prizai • Prizes (Gems)</span>
           </button>
 
           <Link
             href="/leaderboard"
             className="text-xs font-black text-sky-600 hover:text-sky-700 hover:underline flex items-center gap-1"
           >
-            <span>Visa lentelė (30 mokinių)</span>
+            <span>Visa lentelė • Standings (30)</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -235,10 +238,10 @@ export const AmberLeagueCard: React.FC = () => {
                 <span className="text-2xl">{tierConfig.icon}</span>
                 <div>
                   <h3 className="text-base font-black text-slate-900">
-                    {tierConfig.name} Prizai
+                    {tierConfig.name} Prizai • Prizes
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Turnyras baigiasi sekmadienį 23:59
+                    Turnyras baigiasi sekmadienį 23:59 • Ends Sunday 23:59
                   </p>
                 </div>
               </div>
@@ -256,38 +259,38 @@ export const AmberLeagueCard: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥇</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">1-oji vieta</h4>
-                    <p className="text-[10px] text-slate-500">Čempiono statusas + Pakilimas</p>
+                    <h4 className="text-xs font-black text-slate-900">1-oji vieta • 1st Place</h4>
+                    <p className="text-[10px] text-slate-500">Čempiono statusas + Pakilimas (Promotion)</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-amber-700">+{tierConfig.rewards.first} 💎 Gintarai</span>
+                <span className="text-sm font-black text-amber-700">+{tierConfig.rewards.first} 💎 Gintarai (Gems)</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥈</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">2-oji vieta</h4>
-                    <p className="text-[10px] text-slate-500">Sidabrinis medalis + Pakilimas</p>
+                    <h4 className="text-xs font-black text-slate-900">2-oji vieta • 2nd Place</h4>
+                    <p className="text-[10px] text-slate-500">Sidabrinis medalis + Pakilimas (Promotion)</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-slate-700">+{tierConfig.rewards.second} 💎 Gintarai</span>
+                <span className="text-sm font-black text-slate-700">+{tierConfig.rewards.second} 💎 Gintarai (Gems)</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 border border-amber-200 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥉</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">3-ioji vieta</h4>
-                    <p className="text-[10px] text-slate-500">Bronzinis medalis + Pakilimas</p>
+                    <h4 className="text-xs font-black text-slate-900">3-ioji vieta • 3rd Place</h4>
+                    <p className="text-[10px] text-slate-500">Bronzinis medalis + Pakilimas (Promotion)</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-amber-800">+{tierConfig.rewards.third} 💎 Gintarai</span>
+                <span className="text-sm font-black text-amber-800">+{tierConfig.rewards.third} 💎 Gintarai (Gems)</span>
               </div>
             </div>
 
             <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-semibold leading-relaxed">
-              💡 <strong>Kaip pakilti į aukštesnę lygą?</strong> Užbaikite dienos pamokas ir praktikuokitės su DI tutoriumi, kad pasiektumėte Top 3 iki sekmadienio vakaro!
+              💡 <strong>Kaip pakilti į aukštesnę lygą? • How to promote:</strong> Užbaikite dienos pamokas ir praktikuokitės su DI tutoriumi, kad pasiektumėte Top 3 iki sekmadienio vakaro! (Complete lessons and practice with AI Tutor to reach Top 3 by Sunday!)
             </div>
 
             <button
@@ -295,7 +298,7 @@ export const AmberLeagueCard: React.FC = () => {
               onClick={() => setShowRewardsModal(false)}
               className="btn-3d w-full mt-4 py-2.5 rounded-xl bg-slate-900 text-white font-black text-xs uppercase tracking-wider"
             >
-              Supratau
+              Supratau • Got it
             </button>
           </div>
         </div>

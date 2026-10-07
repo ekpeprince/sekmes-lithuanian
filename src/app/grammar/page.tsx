@@ -48,10 +48,13 @@ export default function GrammarPage() {
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Gramatikos ir Žodyno Gidas
+            Gramatikos ir Žodyno Gidas • Grammar & Vocabulary Guide
           </h1>
           <p className="mt-2 text-base text-slate-600 max-w-2xl font-medium">
             Akademinė lietuvių kalbos programa (1–4 skyriai): 7 linksniai, šauksmininkas, vietininkas, prielinksniai, laiko reiškimas ir interaktyvios užduotys.
+          </p>
+          <p className="mt-0.5 text-xs text-slate-400 font-medium italic">
+            Academic Lithuanian A1 syllabus: 7 noun cases, vocative, locative, prepositions, time expressions, and drills.
           </p>
         </div>
 
@@ -67,7 +70,7 @@ export default function GrammarPage() {
             }`}
           >
             <Compass className="h-4 w-4 text-emerald-600" />
-            <span>7 Linksniai</span>
+            <span>7 Linksniai • Cases</span>
           </button>
 
           <button
@@ -80,7 +83,7 @@ export default function GrammarPage() {
             }`}
           >
             <Bookmark className="h-4 w-4 text-sky-600" />
-            <span>Taisyklės (1–4 sk.)</span>
+            <span>Taisyklės • Rules (1–4)</span>
           </button>
 
           <button
@@ -93,7 +96,7 @@ export default function GrammarPage() {
             }`}
           >
             <Sparkles className="h-4 w-4 text-amber-500" />
-            <span>Veiksmažodžiai</span>
+            <span>Veiksmažodžiai • Verbs</span>
           </button>
 
           <button
@@ -106,7 +109,7 @@ export default function GrammarPage() {
             }`}
           >
             <MessageSquare className="h-4 w-4 text-rose-500" />
-            <span>Frazės ({COMMON_PHRASES.length})</span>
+            <span>Frazės • Phrases ({COMMON_PHRASES.length})</span>
           </button>
 
           {/* NEW 5TH TAB: INTERACTIVE DRILLS */}
