@@ -100,23 +100,23 @@ export const PwaInstallPrompt: React.FC = () => {
   return (
     <>
       {/* Floating Bottom PWA Install Banner */}
-      <aside aria-label="Install App" className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-50 animate-pop">
-        <div className="rounded-3xl bg-slate-900/95 backdrop-blur-md p-4 text-white shadow-2xl border-2 border-emerald-500/40 flex items-center justify-between gap-3">
+      <aside aria-label="Install Sėkmės App" className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-[410px] z-50 animate-pop">
+        <div className="rounded-2xl bg-slate-900/95 backdrop-blur-md p-4 text-white shadow-2xl border border-slate-700/60 flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-11 w-11 shrink-0 rounded-2xl bg-gradient-to-tr from-emerald-500 to-green-400 p-1 flex items-center justify-center text-xl shadow-md shadow-emerald-500/30">
-              🇱🇹
+            <div className="h-11 w-11 shrink-0 rounded-xl bg-gradient-to-tr from-emerald-500 to-green-400 p-0.5 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/20 font-black text-white">
+              LT
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h4 className="text-sm font-black tracking-tight text-white truncate">
-                  Įdiek Sėkmės • Install App
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold tracking-tight text-white">
+                  Install Sėkmės! App
                 </h4>
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase px-1.5 py-0.2 rounded">
+                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-md">
                   PWA
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300 font-medium truncate">
-                Pilno ekrano režimas • Fullscreen app, fast launch.
+              <p className="text-xs text-slate-400 font-normal leading-tight mt-0.5">
+                Fast, offline-ready & fullscreen learning
               </p>
             </div>
           </div>
@@ -125,17 +125,18 @@ export const PwaInstallPrompt: React.FC = () => {
             <button
               type="button"
               onClick={handleInstallClick}
-              className="btn-3d py-2 px-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md active:scale-95 flex items-center gap-1.5"
+              className="btn-3d py-2 px-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs tracking-wide rounded-xl shadow-md active:scale-95 flex items-center gap-1.5 transition-colors"
             >
-              <Download className="h-3.5 w-3.5 stroke-[3]" />
-              <span>Įdiegti • Install</span>
+              <Download className="h-3.5 w-3.5 stroke-[2.5]" />
+              <span>Install</span>
             </button>
 
             <button
               type="button"
               onClick={handleDismiss}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
-              title="Praleisti • Dismiss"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Dismiss"
+              aria-label="Dismiss banner"
             >
               <X className="h-4 w-4" />
             </button>
@@ -148,63 +149,64 @@ export const PwaInstallPrompt: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-pop">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-100 text-slate-900">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg shadow-sm">
                   📱
                 </div>
                 <div>
-                  <h3 className="text-base font-black">Kaip įdiegti į iPhone • How to Install</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Apple iOS Safari nurodymai (Safari Guide)</p>
+                  <h3 className="text-base font-bold text-slate-900">Install on iPhone / iPad</h3>
+                  <p className="text-xs text-slate-500 font-medium">Safari Quick Setup Guide</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowIosGuide(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 transition-colors"
+                aria-label="Close dialog"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-3.5 text-xs text-slate-700">
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-black text-[11px]">
+            <div className="space-y-3 text-xs text-slate-700">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-xs">
                   1
                 </span>
                 <div>
-                  <p className="font-extrabold text-slate-900">
-                    1. Spustelėkite mygtuką „Dalintis“ (Share)
+                  <p className="font-bold text-slate-900">
+                    Tap the Share button
                   </p>
-                  <p className="text-slate-500 text-[11px] mt-0.5 flex items-center gap-1">
-                    Tap the <Share className="h-3.5 w-3.5 text-sky-600 inline" /> Share button at the bottom of Safari.
+                  <p className="text-slate-500 text-xs mt-0.5 flex items-center gap-1.5">
+                    Tap <Share className="h-3.5 w-3.5 text-sky-600 inline" /> at the bottom bar of Safari.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-black text-[11px]">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-xs">
                   2
                 </span>
                 <div>
-                  <p className="font-extrabold text-slate-900">
-                    2. Pasirinkite „Pridėti prie pagrindinio ekrano“
+                  <p className="font-bold text-slate-900">
+                    Select &apos;Add to Home Screen&apos;
                   </p>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
-                    Scroll down and tap &quot;Add to Home Screen&quot; ⊞.
+                  <p className="text-slate-500 text-xs mt-0.5">
+                    Scroll down through the share options and tap &quot;Add to Home Screen&quot;.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-black text-[11px]">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-xs">
                   3
                 </span>
                 <div>
-                  <p className="font-extrabold text-slate-900">
-                    3. Spustelėkite „Pridėti“ (Add)
+                  <p className="font-bold text-slate-900">
+                    Tap &apos;Add&apos; to Finish
                   </p>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
-                    Tap &quot;Add&quot; in the top-right corner to launch fullscreen app anytime!
+                  <p className="text-slate-500 text-xs mt-0.5">
+                    Tap &quot;Add&quot; in the top-right corner to launch the fullscreen app anytime!
                   </p>
                 </div>
               </div>
@@ -216,9 +218,9 @@ export const PwaInstallPrompt: React.FC = () => {
                 setShowIosGuide(false);
                 handleDismiss();
               }}
-              className="btn-3d w-full mt-5 py-3 rounded-xl bg-slate-900 text-white font-black text-xs uppercase tracking-wider"
+              className="btn-3d w-full mt-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition-colors"
             >
-              Supratau • Got it
+              Got it
             </button>
           </div>
         </div>
