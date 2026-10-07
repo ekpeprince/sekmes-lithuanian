@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Trophy, Shield, Sparkles, ChevronRight, Crown, Medal, Flame } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 
@@ -107,14 +108,13 @@ export const AmberLeagueCard: React.FC = () => {
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowFullLeaderboard(true)}
+        <Link
+          href="/leaderboard"
           className="w-full py-2 text-center text-xs font-black text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-xl transition-colors flex items-center justify-center gap-1"
         >
           <span>View Full League Standings</span>
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </Link>
       </div>
 
       {/* Full Leaderboard Modal */}

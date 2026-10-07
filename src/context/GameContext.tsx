@@ -15,7 +15,8 @@ import {
   DEFAULT_PROGRESS,
 } from '@/lib/storage';
 import { sounds } from '@/lib/audio';
-
+import { useAuth } from '@/contexts/AuthContext';
+import { saveProgressToCloud, loadProgressFromCloud } from '@/lib/progressSync';
 
 interface GameContextType {
   progress: UserProgress;
@@ -30,12 +31,13 @@ interface GameContextType {
   resolveMistakeById: (id: string) => void;
   claimQuestRewardById: (questId: string) => void;
   saveSpeedDrillScoreVal: (score: number) => void;
+  addXp: (amount: number) => void;
 }
-
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [progress, setProgress] = useState<UserProgress>(DEFAULT_PROGRESS);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -65,10 +67,44 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  // When user signs in, load and merge cloud progress
+  useEffect(() => {
+    if (!user) return;
+
+    loadProgressFromCloud(user.uid).then((cloudProg) => {
+      if (cloudProg) {
+        setProgress((prev) => {
+          const merged: UserProgress = {
+            ...prev,
+            ...cloudProg,
+            xp: Math.max(prev.xp, cloudProg.xp || 0),
+            streak: Math.max(prev.streak, cloudProg.streak || 0),
+            completedLessons: Array.from(
+              new Set([...prev.completedLessons, ...(cloudProg.completedLessons || [])])
+            ),
+          };
+          saveProgress(merged);
+          return merged;
+        });
+      } else {
+        // Save existing local progress to fresh cloud user account
+        const current = getStoredProgress();
+        saveProgressToCloud(user.uid, current);
+      }
+    });
+  }, [user]);
+
+  const syncToCloudIfUser = (updatedProg: UserProgress) => {
+    if (user?.uid) {
+      saveProgressToCloud(user.uid, updatedProg);
+    }
+  };
+
   const loseHeart = (): boolean => {
     const updated = deductHeart();
     setProgress(updated);
     sounds.playError();
+    syncToCloudIfUser(updated);
     return updated.hearts > 0;
   };
 
@@ -76,11 +112,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updated = refillHeartsStorage();
     setProgress(updated);
     sounds.playSuccess();
+    syncToCloudIfUser(updated);
   };
 
   const finishLesson = (lessonId: string, xpReward: number) => {
     const updated = completeLessonStorage(lessonId, xpReward);
     setProgress(updated);
+    syncToCloudIfUser(updated);
   };
 
   const toggleSound = () => {
@@ -132,6 +170,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProgress(updatedProg);
   };
 
+  const addXp = (amount: number) => {
+    const updated = { ...progress, xp: progress.xp + amount };
+    saveProgress(updated);
+    setProgress(updated);
+    syncToCloudIfUser(updated);
+  };
 
   return (
     <GameContext.Provider
@@ -148,6 +192,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resolveMistakeById,
         claimQuestRewardById,
         saveSpeedDrillScoreVal,
+        addXp,
       }}
     >
       {children}

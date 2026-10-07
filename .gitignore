@@ -45,4 +45,9 @@ next-env.d.ts
 aciu_*.mp3
 test_*.js
 
+# firebase secrets & service accounts
+serviceAccountKey.json
+firebase_client_config.json
+get_config.js
+
 

@@ -61,8 +61,11 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   const [score, setScore] = useState<number | null>(null);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [cantSpeakNow, setCantSpeakNow] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(10);
 
   const recognitionRef = useRef<any>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Check Web Speech API support
@@ -72,6 +75,17 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     if (!SpeechRecognition) {
       setSpeechSupported(false);
     }
+
+    return () => {
+      // Clean up any active timers and speech recognition on unmount
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+      }
+    };
   }, []);
 
   const handlePlayModelAudio = () => {
@@ -82,6 +96,27 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     });
   };
 
+  const clearAllTimers = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  };
+
+  const stopListening = () => {
+    clearAllTimers();
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+    }
+    setIsRecording(false);
+  };
+
   const startListening = () => {
     if (isChecked || isRecording) return;
     sounds.playClick();
@@ -90,7 +125,6 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      // Graceful fallback simulation if browser lacks API
       setSpeechSupported(false);
       return;
     }
@@ -98,23 +132,40 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = 'lt-LT';
+      // Continuous mode gives learners generous time without cutting off on pauses
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 3;
       recognitionRef.current = recognition;
 
       setIsRecording(true);
       setTranscript('');
+      setScore(null);
+      setTimeLeft(10);
+
+      // 10-second comfortable countdown timer for learner breathing room
+      clearAllTimers();
+      timerIntervalRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            stopListening();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
 
       recognition.onresult = (event: any) => {
         let currentTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        for (let i = 0; i < event.results.length; ++i) {
           currentTranscript += event.results[i][0].transcript;
         }
         setTranscript(currentTranscript);
 
-        // Evaluate passing score
+        // Evaluate similarity score
         const similarity = computeSimilarity(exercise.targetPhrase, currentTranscript);
-        setScore(Math.round(similarity * 100));
+        const currentScore = Math.round(similarity * 100);
+        setScore(currentScore);
 
         // If >= 70% match or variation matches, register passing
         const passes = similarity >= 0.7 || (exercise.acceptableVariations || []).some(
@@ -122,32 +173,41 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
         );
 
         onSpoken(currentTranscript, passes);
+
+        // Reset silence debounce: if learner pauses after speaking, give 3.5s before gently completing
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+          stopListening();
+        }, passes ? 1800 : 3500);
       };
 
       recognition.onerror = () => {
-        setIsRecording(false);
+        stopListening();
       };
 
       recognition.onend = () => {
+        clearAllTimers();
         setIsRecording(false);
       };
 
       recognition.start();
     } catch {
-      setIsRecording(false);
+      stopListening();
     }
   };
 
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setIsRecording(false);
+  const handleRetry = () => {
+    sounds.playClick();
+    stopListening();
+    setTranscript('');
+    setScore(null);
+    setTimeLeft(10);
+    onSpoken('', false);
   };
 
   const handleCantSpeak = () => {
+    stopListening();
     setCantSpeakNow(true);
-    // Mark as auto-passed with practice notice
     onSpoken(exercise.targetPhrase, true);
   };
 
@@ -208,7 +268,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
 
       {/* Recording Feedback & Microphone Button */}
       {!cantSpeakNow ? (
-        <div className="flex flex-col items-center gap-4 my-2">
+        <div className="flex flex-col items-center gap-3 my-2">
           {/* Main Glowing Mic Button */}
           <div className="relative">
             {isRecording && (
@@ -236,10 +296,33 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             </button>
           </div>
 
+          {/* Learner Timer Progress Indicator */}
+          {isRecording && (
+            <div className="flex flex-col items-center gap-1.5 animate-fadeIn">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                <span>⏱️</span>
+                <span>Liko: {timeLeft}s (neskubėkite!)</span>
+              </div>
+              <div className="w-36 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-rose-500 transition-all duration-1000 ease-linear rounded-full"
+                  style={{ width: `${(timeLeft / 10) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Status Label */}
-          <div className="text-sm font-black text-slate-600">
+          <div className="text-sm font-black text-slate-600 text-center">
             {isRecording ? (
-              <span className="text-rose-600 animate-pulse">Klausausi... Sakykite dabar!</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-rose-600 font-extrabold animate-pulse">
+                  Klausausi... Sakykite ramiai savo tempu!
+                </span>
+                <span className="text-xs font-medium text-slate-400">
+                  (Paspauskite mikrofoną, jei baigėte anksčiau)
+                </span>
+              </div>
             ) : spokenText ? (
               <span className="text-emerald-600">Frazė atpažinta!</span>
             ) : (
@@ -249,7 +332,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
 
           {/* Transcript Display */}
           {(transcript || spokenText) && (
-            <div className="mt-2 px-5 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-800 font-bold text-base max-w-md">
+            <div className="mt-1 px-5 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-800 font-bold text-base max-w-md w-full text-center">
               <span className="text-xs text-slate-400 block uppercase tracking-wider mb-1">
                 Jūsų ištarta frazė:
               </span>
@@ -262,12 +345,24 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             </div>
           )}
 
+          {/* Quick Retry Button */}
+          {!isChecked && !isRecording && (transcript || spokenText) && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-300 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors cursor-pointer shadow-xs"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Bandykite dar kartą (Pabandyti iš naujo)</span>
+            </button>
+          )}
+
           {/* Can't speak right now fallback */}
           {!isChecked && (
             <button
               type="button"
               onClick={handleCantSpeak}
-              className="mt-4 text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1.5 transition-colors"
+              className="mt-3 text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <VolumeX className="w-3.5 h-3.5" />
               Negaliu dabar kalbėti (Rehearse later)

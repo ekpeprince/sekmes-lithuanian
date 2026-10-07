@@ -7,66 +7,66 @@ export const UNITS: Unit[] = [
     number: 1,
     title: '1 skyrius: Koks jūsų vardas?',
     subtitle: 'What is your name? • Pasisveikinimai ir susipažinimas',
-    description: 'Master greetings, polite expressions, introductions, the verb "būti / nebūti" (to be), and countries with nationalities.',
+    description: 'Master the Lithuanian alphabet, pronunciation, introductions, the verb "būti / nebūti" (to be), and countries with nationalities.',
     color: '#059669',
     accentColor: '#10b981',
     lessons: [
       {
         id: 'lesson-1',
         unitId: 'unit-1',
-        title: 'Greetings & Polite Words • Pasisveikinimai',
-        description: 'Learn everyday greetings, apologies, and polite responses in Lithuanian.',
-        subExplanation: 'Master essential everyday Lithuanian greetings, polite apologies, and farewells based on the time of day and etiquette.',
-        detailedExplanation: '• "Labas rytas" (Good morning) is used until noon.\n• "Laba diena" (Good afternoon / Good day) is the standard polite daytime greeting.\n• "Labas vakaras" (Good evening) is used after dark.\n• When someone says "Atsiprašau!" (Sorry / Excuse me), respond politely with "Nieko tokio!" (It\'s okay!), "Nieko!", or "Prašom!".\n• "Nėra už ką" means "Don\'t mention it / You\'re welcome" (literally: "there is nothing for what [to thank]").\n• Farewells: "Iki pasimatymo!" (See you / Goodbye), "Viso gero!" (All the best), "Iki rytojaus!" (See you tomorrow).',
+        title: 'Alphabet & Pronunciation • Abėcėlė ir tarimas',
+        description: 'Learn the Lithuanian alphabet, unique letters with diacritics (ė, ą, č, ū), and basic starter words.',
+        subExplanation: 'Master the core sounds of the 32-letter Lithuanian alphabet, unique diacritics, and pronounce your first everyday words.',
+        detailedExplanation: '• Lithuanian uses 32 Latin letters without Q, W, or X.\n• Unique vowel with dot: "ė" (closed long "ay" sound, e.g. "tėtis" = dad, "kėdė" = chair).\n• Long vowels: "ū" and "y" are held longer than short "u" and "i".\n• Nasal vowels (nosinės): "ą, ę, į, ų" are pronounced today as long vowels.\n• Soft consonants: "č" (like ch in church), "š" (like sh in ship), "ž" (like s in measure).\n• Core starter vocabulary: "kava" (coffee), "arbata" (tea), "namas" (house), "vanduo" (water), "prašom" (please).',
         xpReward: 20,
         order: 1,
         exercises: [
           {
             id: 'u1-l1-e1',
             type: 'multiple_choice',
-            prompt: 'How do you politely respond when someone says "Atsiprašau!" (Excuse me / Sorry)?',
-            subPrompt: 'English tip: Look for polite reassurances meaning "never mind" or "it\'s fine".',
-            audioText: 'Atsiprašau! – Nieko tokio!',
-            options: ['Nieko tokio! / Nieko!', 'Labas vakaras!', 'Viso gero!', 'Ačiū'],
-            correctAnswer: 'Nieko tokio! / Nieko!',
-            explanation: 'When someone apologizes with "Atsiprašau!" (Excuse me / Sorry), polite responses include "Nieko tokio!" (Never mind / It\'s okay!), "Nieko!" or "Prašom!".'
+            prompt: 'Which unique Lithuanian letter has a dot on top and sounds like a closed "ay" (as in "tėtis")?',
+            subPrompt: 'English tip: Look for the distinct letter with an upper dot (taškas).',
+            audioText: 'Raidė ė – tėtis, kėdė',
+            options: ['Ė / ė', 'Ę / ę', 'Č / č', 'Ū / ū'],
+            correctAnswer: 'Ė / ė',
+            explanation: 'The letter "ė" (e su tašku) is unique to Lithuanian. It represents a long, closed front vowel sound /eː/ (like German "eh" or French "é"), as in "tėtis" (father) and "kėdė" (chair).'
           },
           {
             id: 'u1-l1-e2',
             type: 'match_pairs',
-            prompt: 'Match the Lithuanian greetings and farewells with their English meanings:',
-            subPrompt: 'English tip: Match standard morning, farewell, and polite courtesy phrases.',
-            audioText: 'Labas rytas, nėra už ką, iki pasimatymo, iki rytojaus',
+            prompt: 'Match these essential Lithuanian starter words with their English meanings:',
+            subPrompt: 'English tip: Fundamental everyday nouns demonstrating clear vowel sounds.',
+            audioText: 'Kava, arbata, namas, vanduo',
             pairs: [
-              { id: 'p1', lithuanian: 'Labas rytas!', english: 'Good morning!' },
-              { id: 'p2', lithuanian: 'Nėra už ką.', english: 'Not at all / Don\'t mention it.' },
-              { id: 'p3', lithuanian: 'Iki pasimatymo!', english: 'See you later / Goodbye!' },
-              { id: 'p4', lithuanian: 'Iki rytojaus!', english: 'See you tomorrow!' }
+              { id: 'p1', lithuanian: 'Kava', english: 'Coffee' },
+              { id: 'p2', lithuanian: 'Arbata', english: 'Tea' },
+              { id: 'p3', lithuanian: 'Namas', english: 'House' },
+              { id: 'p4', lithuanian: 'Vanduo', english: 'Water' }
             ],
-            explanation: '"Labas rytas" = Good morning, "Nėra už ką" = Don\'t mention it (lit. nothing to thank for), "Iki pasimatymo" = Until we meet, "Iki rytojaus" = See you tomorrow.'
+            explanation: '"Kava" = Coffee, "Arbata" = Tea, "Namas" = House, and "Vanduo" = Water (ending in the diphthong -uo).'
           },
           {
             id: 'u1-l1-e3',
             type: 'audio_dictation',
-            prompt: 'Listen and assemble the farewell phrase in Lithuanian:',
-            subPrompt: 'English meaning: "Goodbye and see you tomorrow"',
-            targetSentence: 'Viso gero ir iki rytojaus',
-            audioText: 'Viso gero ir iki rytojaus',
-            words: ['gero', 'Viso', 'iki', 'ir', 'rytojaus', 'Labas'],
-            correctSequence: ['Viso', 'gero', 'ir', 'iki', 'rytojaus'],
-            translationHint: 'Goodbye and see you tomorrow',
-            explanation: '"Viso gero" is a polite farewell meaning "All the best / Goodbye", and "iki rytojaus" means "until tomorrow" (from "rytojus" = tomorrow). Together: "Viso gero ir iki rytojaus" (Goodbye and see you tomorrow).'
+            prompt: 'Listen and assemble the everyday starter phrase in Lithuanian:',
+            subPrompt: 'English meaning: "Coffee and tea, please"',
+            targetSentence: 'Kava ir arbata, prašom',
+            audioText: 'Kava ir arbata, prašom',
+            words: ['arbata,', 'Kava', 'prašom', 'ir', 'namas', 'vanduo'],
+            correctSequence: ['Kava', 'ir', 'arbata,', 'prašom'],
+            translationHint: 'Coffee and tea, please',
+            explanation: '"Kava" (coffee) + "ir" (and) + "arbata" (tea) + "prašom" (please). This is one of the most useful polite phrases you will use in Lithuania!'
           },
           {
             id: 'u1-l1-e4',
             type: 'speaking_pronounce',
-            prompt: 'Pronounce this polite greeting aloud clearly:',
-            subPrompt: 'English translation: "Good afternoon, thank you very much!"',
-            targetPhrase: 'Laba diena, ačiū labai!',
-            phoneticHint: 'Lah-bah dyeh-nah, ah-chyoo lah-by',
-            translation: 'Good afternoon, thank you very much!',
-            acceptableVariations: ['laba diena ačiū labai', 'laba diena aciu labai'],
-            explanation: '"Laba diena" is the polite daytime greeting ("Good day / Good afternoon"), and "ačiū labai" means "thank you very much" ("labai" = very/greatly).'
+            prompt: 'Pronounce this friendly greeting and starter order aloud clearly:',
+            subPrompt: 'English translation: "Hello! Coffee, please."',
+            targetPhrase: 'Labas! Kava, prašom!',
+            phoneticHint: 'Lah-bahs! Kah-vah, prah-shohm!',
+            translation: 'Hello! Coffee, please.',
+            acceptableVariations: ['labas kava prašom', 'labas kava prasom'],
+            explanation: '"Labas" is the friendly Lithuanian greeting ("Hello / Hi"), and "kava, prašom!" means "coffee, please!".'
           }
         ]
       },
@@ -852,6 +852,290 @@ export const UNITS: Unit[] = [
             translation: 'I invite you over this weekend!',
             acceptableVariations: ['kviečiu į svečius šį savaitgalį', 'kvieciu i svecius si savaitgali'],
             explanation: '"Kviečiu" (I invite, from kviesti) + "į svečius" (over / as guests) + "šį savaitgalį" (this weekend, Accusative of time). "Kviesti į svečius" is the classic Lithuanian way to invite someone to your home.'
+          }
+        ]
+      }
+    ]
+  },
+
+  // 5 SKYRIUS: KAVINĖJE IR RESTORANE
+  {
+    id: 'unit-5',
+    number: 5,
+    title: '5 skyrius: Kavinėje ir restorane',
+    subtitle: 'Food, Drinks, Ordering & Paying • Maistas ir užsakymai',
+    description: 'Master ordering traditional Lithuanian food (cepelinai, šaltibarščiai), asking prices, and paying by card or cash.',
+    color: '#d97706',
+    accentColor: '#f59e0b',
+    lessons: [
+      {
+        id: 'lesson-13',
+        unitId: 'unit-5',
+        title: 'Food & Drinks • Maistas ir gėrimai',
+        description: 'Learn iconic Lithuanian dishes (šaltibarščiai, cepelinai) and daily beverages.',
+        subExplanation: 'Explore famous Lithuanian culinary vocabulary, from cold pink beet soup to hot herbal tea.',
+        detailedExplanation: '• Lithuanian national dishes:\n  - „Šaltibarščiai“ (cold beet soup with kefir, served with hot boiled potatoes)\n  - „Didžkukuliai“ or „Cepelinai“ (large grated potato dumplings with meat or curd filling)\n  - „Kepta duona su sūriu“ (crispy fried rye bread with garlic & melted cheese)\n• Drinks:\n  - „Kava su pienu“ (coffee with milk) / „Juoda kava“ (black coffee)\n  - „Arbata su citrina“ (tea with lemon)\n  - „Gira“ (traditional fermented rye bread kvass)\n  - „Vanduo su citrina“ (water with lemon).',
+        xpReward: 25,
+        order: 1,
+        exercises: [
+          {
+            id: 'u5-l13-e1',
+            type: 'match_pairs',
+            prompt: 'Match traditional Lithuanian dishes with their English descriptions:',
+            subPrompt: 'English tip: Match the famous culinary terms.',
+            audioText: 'Šaltibarščiai, cepelinai, kepta duona su sūriu, gira',
+            pairs: [
+              { id: 'f1', lithuanian: 'Šaltibarščiai', english: 'Cold pink beet soup with kefir' },
+              { id: 'f2', lithuanian: 'Cepelinai', english: 'Potato dumplings with meat/curd' },
+              { id: 'f3', lithuanian: 'Kepta duona', english: 'Fried rye bread with garlic & cheese' },
+              { id: 'f4', lithuanian: 'Gira', english: 'Fermented rye bread kvass' }
+            ],
+            explanation: 'Šaltibarščiai is the world-famous pink soup, cepelinai are the zeppelin-shaped potato dumplings, kepta duona is a beloved pub snack, and gira is a refreshing traditional malt beverage.'
+          },
+          {
+            id: 'u5-l13-e2',
+            type: 'multiple_choice',
+            prompt: 'How do you say "tea with lemon" in Lithuanian?',
+            subPrompt: 'English tip: Preposition "su" (with) takes the Instrumental case.',
+            audioText: 'Arbata su citrina',
+            options: ['Arbata su citrina', 'Kava su pienu', 'Vanduo be ledo', 'Sultys su cukrumi'],
+            correctAnswer: 'Arbata su citrina',
+            explanation: '"Arbata" = tea; "su" = with; "citrina" = lemon in the Instrumental case: "Arbata su citrina".'
+          },
+          {
+            id: 'u5-l13-e3',
+            type: 'speaking_pronounce',
+            prompt: 'Pronounce the name of Lithuania\'s most iconic cold soup:',
+            subPrompt: 'English translation: "Cold beet soup"',
+            targetPhrase: 'Šaltibarščiai su karštomis bulvėmis',
+            phoneticHint: 'Shahl-tih-bahrsh-chyey soo kahrsh-toh-mees bool-veh-mees',
+            translation: 'Cold beet soup with hot potatoes',
+            acceptableVariations: ['šaltibarščiai su karštomis bulvėmis', 'saltibarsciai su karstomis bulvemis'],
+            explanation: '"Šaltibarščiai" is compounded from "šalti" (cold) + "barščiai" (borscht/beet soup), traditionally eaten with hot boiled potatoes ("su karštomis bulvėmis").'
+          }
+        ]
+      },
+      {
+        id: 'lesson-14',
+        unitId: 'unit-5',
+        title: 'Polite Ordering & Paying • Užsakymas kavinėje',
+        description: 'Order politely using "Norėčiau...", ask for the bill, and choose payment methods.',
+        subExplanation: 'Learn real-world dialogue at a café: ordering, requesting the check, and paying with card or cash.',
+        detailedExplanation: '• Polite ordering:\n  - „Norėčiau...“ (I would like... + Genitive or Accusative)\n  - „Prašom sąskaitą!“ (The bill, please!)\n• Paying:\n  - „Mokėsiu kortele“ (I will pay by card - Instrumental „kortele“)\n  - „Mokėsiu grynaisiais“ (I will pay in cash - „grynaisiais“)\n• Complimenting food:\n  - „Labai skanu!“ (Very tasty/delicious!)',
+        xpReward: 30,
+        order: 2,
+        exercises: [
+          {
+            id: 'u5-l14-e1',
+            type: 'dialogue_fill',
+            prompt: 'Complete the barista dialogue with polite "I would like":',
+            subPrompt: 'English tip: Use "Norėčiau" (I would like) to place a polite order.',
+            audioText: 'Ką norėtumėte užsisakyti? Norėčiau kavos su pienu, prašau.',
+            dialogue: [
+              { speaker: 'Barista', avatar: '☕', text: 'Laba diena! Ką norėtumėte užsisakyti?' },
+              {
+                speaker: 'You (Tu)',
+                avatar: '🙋',
+                text: '',
+                isBlank: true,
+                blankPrefix: '',
+                blankSuffix: ' kavos su pienu, prašau.'
+              },
+              { speaker: 'Barista', avatar: '☕', text: 'Puiku, tuoj paruošiu!' }
+            ],
+            options: ['Norėčiau', 'Noriu', 'Gersiu', 'Einu'],
+            correctAnswer: 'Norėčiau',
+            explanation: '„Norėčiau“ (I would like) is the polite conditional form of „norėti“ (to want), universally preferred when ordering.'
+          },
+          {
+            id: 'u5-l14-e2',
+            type: 'word_bank_order',
+            prompt: 'Assemble the polite phrase: "The bill, please!"',
+            subPrompt: 'English tip: A must-know phrase when finishing your meal.',
+            audioText: 'Prašom sąskaitą!',
+            words: ['sąskaitą!', 'Prašom', 'pinigus', 'stalą', 'kortelę'],
+            correctSequence: ['Prašom', 'sąskaitą!'],
+            explanation: '„Prašom sąskaitą!“ means "The bill, please!". „Sąskaita“ (bill/invoice) takes the Accusative case (-ą) as the object.'
+          },
+          {
+            id: 'u5-l14-e3',
+            type: 'multiple_choice',
+            prompt: 'How do you tell the waiter "I will pay by card"?',
+            subPrompt: 'English tip: "Kortele" is the Instrumental form of "kortelė".',
+            audioText: 'Mokėsiu kortele, prašau.',
+            options: ['Mokėsiu kortele, prašau.', 'Mokėsiu grynaisiais, prašau.', 'Neturiu pinigų.', 'Kortelė neveikia.'],
+            correctAnswer: 'Mokėsiu kortele, prašau.',
+            explanation: '„Mokėsiu kortele“ = "I will pay by card". If paying with cash, you would say „Mokėsiu grynaisiais“.'
+          },
+          {
+            id: 'u5-l14-e4',
+            type: 'speaking_pronounce',
+            prompt: 'Say the heartfelt compliment to the chef aloud:',
+            subPrompt: 'English translation: "Thank you very much, everything was very delicious!"',
+            targetPhrase: 'Labai ačiū, viskas buvo labai skanu!',
+            phoneticHint: 'Lah-by ah-choo, vihs-kahs bwoh lah-by skah-noo',
+            translation: 'Thank you very much, everything was very delicious!',
+            acceptableVariations: ['labai ačiū viskas buvo labai skanu', 'labai aciu viskas buvo labai skanu'],
+            explanation: '„Labai ačiū“ (Thank you very much) + „viskas buvo labai skanu“ (everything was very delicious). This is the best compliment to leave at any Lithuanian restaurant!'
+          }
+        ]
+      },
+      {
+        id: 'lesson-15',
+        unitId: 'unit-5',
+        title: 'Prices & Numbers • Kiek kainuoja?',
+        description: 'Ask prices with "Kiek kainuoja?", understand Euro amounts, and count numbers.',
+        subExplanation: 'Master asking prices and understanding currency amounts from 1 to 100 Euros in Lithuanian.',
+        detailedExplanation: '• Inquiring price:\n  - „Kiek kainuoja kava?“ (How much does the coffee cost?)\n  - „Kiek kainuoja šis pyragaitis?“ (How much does this pastry cost?)\n• Number and currency rules with „euras“:\n  - 1 euras (Nominative singular for number 1: vienas euras)\n  - 2–9 eurai (Nominative plural for numbers ending in 2-9: du eurai, penki eurai)\n  - 10–20 eurų (Genitive plural for numbers 10-20 & tens: dešimt eurų, dvidešimt eurų)\n• Cent endings: 1 centas, 2–9 centai, 10–20 centų.',
+        xpReward: 30,
+        order: 3,
+        exercises: [
+          {
+            id: 'u5-l15-e1',
+            type: 'multiple_choice',
+            prompt: 'Which form of "euras" is used after number 5 (penki)?',
+            subPrompt: 'English tip: Numbers 2 to 9 take the ending -ai in the nominative.',
+            audioText: 'Penki eurai',
+            options: ['eurai', 'euras', 'eurų', 'eurams'],
+            correctAnswer: 'eurai',
+            explanation: 'Numbers 2 to 9 require the Nominative plural: „du eurai“, „trys eurai“, „penki eurai“. After 10 it changes to „dešimt eurų“.'
+          },
+          {
+            id: 'u5-l15-e2',
+            type: 'audio_dictation',
+            prompt: 'Listen and assemble the sentence:',
+            subPrompt: 'English translation: "How much does black coffee cost?"',
+            targetSentence: 'Kiek kainuoja juoda kava?',
+            audioText: 'Kiek kainuoja juoda kava?',
+            words: ['kava?', 'juoda', 'kainuoja', 'Kiek', 'arbata', 'eurai'],
+            correctSequence: ['Kiek', 'kainuoja', 'juoda', 'kava?'],
+            translationHint: 'How much does black coffee cost?',
+            explanation: '„Kiek kainuoja...?“ is the universal phrase for "How much does ... cost?".'
+          },
+          {
+            id: 'u5-l15-e3',
+            type: 'speaking_pronounce',
+            prompt: 'Pronounce this total price clearly:',
+            subPrompt: 'English translation: "Three euros and fifty cents."',
+            targetPhrase: 'Trys eurai ir penkiasdešimt centų.',
+            phoneticHint: 'Treece eh-oo-rye eer pehn-kyahs-deh-shimt tsehn-too',
+            translation: 'Three euros and fifty cents.',
+            acceptableVariations: ['trys eurai ir penkiasdešimt centų', 'trys eurai ir penkiasdesimt centu'],
+            explanation: '„Trys eurai“ (3 euros, nominative plural) + „ir“ (and) + „penkiasdešimt centų“ (50 cents, tens take genitive plural -ų).'
+          }
+        ]
+      }
+    ]
+  },
+
+  // 6 SKYRIUS: MIESTO ORIENTACIJA IR KELIONĖS
+  {
+    id: 'unit-6',
+    number: 6,
+    title: '6 skyrius: Miesto orientacija ir kelionės',
+    subtitle: 'Directions, Public Transit & Vilnius Landmarks • Miestas ir kelionės',
+    description: 'Learn to ask for directions (tiesiai, į kairę, į dešinę), use public transport (autobusas, troleibusas), and explore Vilnius landmarks.',
+    color: '#0891b2',
+    accentColor: '#06b6d4',
+    lessons: [
+      {
+        id: 'lesson-16',
+        unitId: 'unit-6',
+        title: 'Asking Directions • Kur yra...?',
+        description: 'Ask for famous city spots and understand directional instructions.',
+        subExplanation: 'Navigate the cobblestone streets of Vilnius by mastering directional prepositions and landmarks.',
+        detailedExplanation: '• Directional adverbs and phrases:\n  - „Tiesiai“ (straight ahead)\n  - „Į dešinę“ (to the right - į + Accusative)\n  - „Į kairę“ (to the left - į + Accusative)\n  - „Šalia“ (next to / near)\n  - „Priešais“ (opposite / in front of)\n• Vilnius landmarks:\n  - „Katedros aikštė“ (Cathedral Square)\n  - „Gedimino pilis“ (Gediminas Tower/Castle)\n  - „Bernardinų sodas“ (Bernardine Garden)\n  - „Geležinkelio stotis“ (Railway Station).',
+        xpReward: 30,
+        order: 1,
+        exercises: [
+          {
+            id: 'u6-l16-e1',
+            type: 'match_pairs',
+            prompt: 'Match navigation instructions with their English translations:',
+            subPrompt: 'English tip: Essential directional words for navigating the city.',
+            audioText: 'Tiesiai, į kairę, į dešinę, priešais',
+            pairs: [
+              { id: 'd1', lithuanian: 'Tiesiai', english: 'Straight ahead' },
+              { id: 'd2', lithuanian: 'Į kairę', english: 'To the left' },
+              { id: 'd3', lithuanian: 'Į dešinę', english: 'To the right' },
+              { id: 'd4', lithuanian: 'Priešais', english: 'Opposite / In front of' }
+            ],
+            explanation: '„Tiesiai“ = straight ahead; „į kairę“ = turn left; „į dešinę“ = turn right; „priešais“ = directly opposite.'
+          },
+          {
+            id: 'u6-l16-e2',
+            type: 'dialogue_fill',
+            prompt: 'Complete the direction inquiry dialogue in Vilnius:',
+            subPrompt: 'English tip: Excuse yourself politely with "Atsiprašau".',
+            audioText: 'Atsiprašau, kur yra Katedra? Eikite tiesiai, ji yra priešais jus.',
+            dialogue: [
+              {
+                speaker: 'Visitor',
+                avatar: '🚶',
+                text: '',
+                isBlank: true,
+                blankPrefix: '',
+                blankSuffix: ', kur yra Katedra?'
+              },
+              { speaker: 'Local', avatar: '🙋‍♂️', text: 'Eikite tiesiai, ji yra priešais jus! (Go straight, it is right in front of you!)' }
+            ],
+            options: ['Atsiprašau', 'Prašom', 'Labas', 'Ačiū'],
+            correctAnswer: 'Atsiprašau',
+            explanation: '„Atsiprašau“ (Excuse me) is the most polite way to stop someone on the street to ask for directions.'
+          },
+          {
+            id: 'u6-l16-e3',
+            type: 'speaking_pronounce',
+            prompt: 'Say this direction aloud clearly:',
+            subPrompt: 'English translation: "Turn right and walk straight ahead!"',
+            targetPhrase: 'Pasukite į dešinę ir eikite tiesiai!',
+            phoneticHint: 'Pah-soo-kih-teh ee deh-shee-neh eer ey-kih-teh tyeh-sy-eye',
+            translation: 'Turn right and walk straight ahead!',
+            acceptableVariations: ['pasukite į dešinę ir eikite tiesiai', 'pasukite i desine ir eikite tiesiai'],
+            explanation: '„Pasukite į dešinę“ (Turn right - formal/plural imperative) + „ir eikite tiesiai“ (and walk straight).'
+          }
+        ]
+      },
+      {
+        id: 'lesson-17',
+        unitId: 'unit-6',
+        title: 'Public Transit • Autobusas ir troleibusas',
+        description: 'Take buses, trolleybuses, and buy tickets like a local.',
+        subExplanation: 'Navigate city public transport in Vilnius and Kaunas, buy tickets, and listen for station announcements.',
+        detailedExplanation: '• Transport modes in Lithuania:\n  - „Autobusas“ (bus)\n  - „Troleibusas“ (electric trolleybus - prominent in Vilnius & Kaunas!)\n  - „Traukinys“ (train)\n• Key travel words:\n  - „Stotelė“ (bus/trolleybus stop)\n  - „Stotis“ (central station: autobusų stotis / geležinkelio stotis)\n  - „Bilietas“ (ticket)\n  - „Kitas sustojimas“ (next stop announcement).',
+        xpReward: 30,
+        order: 2,
+        exercises: [
+          {
+            id: 'u6-l17-e1',
+            type: 'multiple_choice',
+            prompt: 'What does the automated audio announce when approaching the next bus stop in Lithuania?',
+            subPrompt: 'English tip: "Kitas sustojimas" is heard on every public bus and trolleybus.',
+            audioText: 'Kitas sustojimas: Katedros aikštė',
+            options: ['Kitas sustojimas', 'Geros kelionės', 'Durys atsidaro', 'Bilietų kontrolė'],
+            correctAnswer: 'Kitas sustojimas',
+            explanation: '„Kitas sustojimas“ literally translates to "Next stop", followed by the stop name.'
+          },
+          {
+            id: 'u6-l17-e2',
+            type: 'word_bank_order',
+            prompt: 'Assemble the question: "Where can I buy a ticket?"',
+            subPrompt: 'English tip: Question word "Kur" (where).',
+            audioText: 'Kur nusipirkti bilietą?',
+            words: ['nusipirkti', 'Kur', 'bilietą?', 'kada', 'traukinys'],
+            correctSequence: ['Kur', 'nusipirkti', 'bilietą?'],
+            explanation: '„Kur“ (Where) + „nusipirkti“ (to buy/purchase) + „bilietą?“ (a ticket - Accusative case).'
+          },
+          {
+            id: 'u6-l17-e3',
+            type: 'speaking_pronounce',
+            prompt: 'Pronounce this practical travel question aloud:',
+            subPrompt: 'English translation: "Which trolleybus goes to the station?"',
+            targetPhrase: 'Kuris troleibusas važiuoja į stotį?',
+            phoneticHint: 'Koo-rihs troh-ley-boo-sahs vah-zhyoo-yah ee stoh-tee',
+            translation: 'Which trolleybus goes to the station?',
+            acceptableVariations: ['kuris troleibusas važiuoja į stotį', 'kuris troleibusas vaziuoja i stoti'],
+            explanation: '„Kuris“ (Which) + „troleibusas“ (trolleybus) + „važiuoja“ (goes/drives) + „į stotį?“ (to the station - į + Accusative).'
           }
         ]
       }

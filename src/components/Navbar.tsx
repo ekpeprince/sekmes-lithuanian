@@ -1,14 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, Mic } from 'lucide-react';
+import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, Mic, User as UserIcon, LogOut, Cloud, ChevronDown } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { sounds } from '@/lib/audio';
+import { AuthModal } from '@/components/AuthModal';
 
 export const Navbar: React.FC = () => {
   const { progress, refillHearts, toggleSound, setVoiceGender } = useGame();
+  const { user, signOut } = useAuth();
   const [showHeartModal, setShowHeartModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -91,9 +107,75 @@ export const Navbar: React.FC = () => {
               <span className="text-sm">{progress.voiceGender === 'male' ? '👨' : '👩'}</span>
               <span className="hidden md:inline">{progress.voiceGender === 'male' ? 'Leonas' : 'Ona'}</span>
             </button>
+
+            {/* User Account / Sign In */}
+            {user ? (
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowProfileMenu((prev) => !prev)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 transition-all cursor-pointer shadow-2xs"
+                  title="Paskyros nustatymai"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="User" className="h-6 w-6 rounded-full" />
+                    ) : (
+                      (user.displayName || user.email || 'U').charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <span className="hidden sm:inline max-w-[100px] truncate">
+                    {user.displayName || user.email?.split('@')[0]}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-emerald-600" />
+                </button>
+
+                {/* Profile Dropdown */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white p-3 shadow-xl border-2 border-slate-100 animate-pop z-50">
+                    <div className="border-b border-slate-100 pb-2.5 mb-2 px-1">
+                      <p className="text-xs font-black text-slate-800 truncate">
+                        {user.displayName || 'Vartotojas'}
+                      </p>
+                      <p className="text-[11px] font-medium text-slate-400 truncate">
+                        {user.email}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-emerald-600">
+                        <Cloud className="h-3 w-3" />
+                        <span>Pažanga debesyje aktyvi</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        signOut();
+                        setShowProfileMenu(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Atsijungti</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+              >
+                <UserIcon className="h-3.5 w-3.5" />
+                <span>Prisijungti</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       {/* Refill Hearts Modal */}
       {showHeartModal && (

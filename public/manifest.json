@@ -1,0 +1,18 @@
+{
+  "name": "Sėkmės! – Mokykis lietuvių kalbos",
+  "short_name": "Sėkmės!",
+  "description": "Learn Lithuanian with interactive gamified lessons, AI conversation partner, and authentic audio.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["education", "language"]
+}

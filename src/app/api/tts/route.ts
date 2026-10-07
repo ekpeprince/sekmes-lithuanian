@@ -15,9 +15,9 @@ function formatForNaturalFlow(text: string): string {
 
   const lower = clean.toLowerCase();
 
-  // Core polite words: a calm period '.' ensures natural first-syllable root stress (Á-čiū) and polite cadence
+  // Core polite expressions: lively exclamation ensures warm, cheerful conversational intonation matching natural speech
   if (lower === 'ačiū' || lower === 'aciu') {
-    return 'Ačiū.';
+    return 'Ačiū!';
   }
   if (lower === 'prašom' || lower === 'prasom') {
     return 'Prašom.';
@@ -36,12 +36,14 @@ function formatForNaturalFlow(text: string): string {
     lower.startsWith('kodėl ') ||
     lower.startsWith('kada ');
 
-  // Lively greetings
+  // Lively greetings & warm expressions
   const isLivelyGreeting =
     lower.includes('labas') ||
     lower.includes('viso gero') ||
     lower.includes('iki pasimatymo') ||
-    lower.includes('sveiki');
+    lower.includes('sveiki') ||
+    lower.includes('ačiū') ||
+    lower.includes('aciu');
 
   if (isQuestion) {
     if (!clean.endsWith('?')) {
@@ -108,7 +110,43 @@ async function generateFallbackAudio(cleanText: string): Promise<ArrayBuffer> {
   return await response.arrayBuffer();
 }
 
+// Sliding window IP rate limiter (protects server from rapid scraping / DoS)
+const ipRequestHistory = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 60; // 60 requests per minute
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = ipRequestHistory.get(ip) || [];
+  const validTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+
+  if (validTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    ipRequestHistory.set(ip, validTimestamps);
+    return true;
+  }
+
+  validTimestamps.push(now);
+  ipRequestHistory.set(ip, validTimestamps);
+
+  // Periodically clean stale IPs
+  if (ipRequestHistory.size > 2000) {
+    for (const [key, list] of ipRequestHistory.entries()) {
+      if (list.every(t => now - t >= RATE_LIMIT_WINDOW_MS)) {
+        ipRequestHistory.delete(key);
+      }
+    }
+  }
+
+  return false;
+}
+
 export async function GET(request: NextRequest) {
+  // Client IP rate check
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+  if (isRateLimited(ip)) {
+    return new NextResponse('Rate limit exceeded. Please wait a moment before playing more audio.', { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const text = searchParams.get('text');
   const gender = searchParams.get('gender') || 'female';
@@ -121,7 +159,7 @@ export async function GET(request: NextRequest) {
   // Format text for fluid, natural Lithuanian prosody
   const formattedText = formatForNaturalFlow(text.slice(0, 200));
   const voice = gender === 'male' ? 'lt-LT-LeonasNeural' : 'lt-LT-OnaNeural';
-  const cacheKey = `v3:${voice}:${speed}:${formattedText.toLowerCase()}`;
+  const cacheKey = `v4:${voice}:${speed}:${formattedText.toLowerCase()}`;
 
   // Return cached audio if present
   if (audioCache.has(cacheKey)) {

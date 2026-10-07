@@ -3,11 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Dumbbell, GraduationCap, User } from 'lucide-react';
+import { BookOpen, Dumbbell, GraduationCap, User, Sparkles, Trophy } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Learn', icon: BookOpen },
+  { href: '/tutor', label: 'AI Tutor', icon: Sparkles },
   { href: '/practice', label: 'Practice', icon: Dumbbell },
+  { href: '/leaderboard', label: 'Amber League', icon: Trophy },
   { href: '/grammar', label: 'Grammar Bank', icon: GraduationCap },
   { href: '/profile', label: 'Profile', icon: User },
 ];
