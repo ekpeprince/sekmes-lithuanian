@@ -46,45 +46,45 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Gamification Stats */}
-          <div className="flex items-center gap-2 sm:gap-5">
+          <div className="flex items-center gap-1.5 sm:gap-4">
             {/* Streak */}
             <div 
-              className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 font-bold text-orange-500 hover:bg-orange-50 transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1.5 font-bold text-orange-500 hover:bg-orange-50 transition-colors"
               title="Daily Learning Streak"
             >
-              <Flame className="h-5 w-5 fill-orange-500 animate-bounce-slow text-orange-500" />
-              <span className="text-sm sm:text-base">{progress.streak}</span>
+              <Flame className="h-4.5 w-4.5 sm:h-5 sm:w-5 fill-orange-500 animate-bounce-slow text-orange-500" />
+              <span className="text-xs sm:text-base">{progress.streak}</span>
             </div>
 
             {/* XP */}
             <div 
-              className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 font-bold text-amber-500 hover:bg-amber-50 transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1.5 font-bold text-amber-500 hover:bg-amber-50 transition-colors"
               title="Total Experience Points"
             >
-              <Zap className="h-5 w-5 fill-amber-500 text-amber-500" />
-              <span className="text-sm sm:text-base">{progress.xp} <span className="hidden sm:inline text-xs font-semibold text-amber-600/70">XP</span></span>
+              <Zap className="h-4.5 w-4.5 sm:h-5 sm:w-5 fill-amber-500 text-amber-500" />
+              <span className="text-xs sm:text-base">{progress.xp} <span className="hidden sm:inline text-xs font-semibold text-amber-600/70">XP</span></span>
             </div>
 
             {/* Hearts */}
             <button
               type="button"
               onClick={() => setShowHeartModal(true)}
-              className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 font-bold text-rose-500 hover:bg-rose-50 transition-all cursor-pointer group"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1.5 font-bold text-rose-500 hover:bg-rose-50 transition-all cursor-pointer group"
               title="Hearts remaining (Click to refill)"
             >
-              <Heart className={`h-5 w-5 fill-rose-500 text-rose-500 transition-transform ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110'}`} />
-              <span className="text-sm sm:text-base">{progress.hearts}</span>
+              <Heart className={`h-4.5 w-4.5 sm:h-5 sm:w-5 fill-rose-500 text-rose-500 transition-transform ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110'}`} />
+              <span className="text-xs sm:text-base">{progress.hearts}</span>
               {progress.hearts < 5 && (
-                <PlusCircle className="h-4 w-4 text-emerald-500 hidden sm:inline" />
+                <PlusCircle className="h-3.5 w-3.5 text-emerald-500 hidden sm:inline" />
               )}
             </button>
 
-            {/* Sound Toggle */}
+            {/* Sound Toggle (Desktop & Tablet) */}
             <button
               type="button"
               onClick={toggleSound}
               title={progress.soundEnabled ? 'Mute audio' : 'Enable audio'}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="hidden md:flex p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
             >
               {progress.soundEnabled ? (
                 <Volume2 className="h-5 w-5 text-emerald-600" />
@@ -93,7 +93,7 @@ export const Navbar: React.FC = () => {
               )}
             </button>
 
-            {/* Native Speaker Voice Switcher */}
+            {/* Native Speaker Voice Switcher (Desktop & Tablet) */}
             <button
               type="button"
               onClick={() => {
@@ -102,10 +102,10 @@ export const Navbar: React.FC = () => {
                 sounds.speak(nextGender === 'male' ? 'Labas, aš esu Leonas!' : 'Labas, aš esu Ona!');
               }}
               title={`Native Speaker Voice: ${progress.voiceGender === 'male' ? 'Leonas (Male)' : 'Ona (Female)'}. Click to switch voice.`}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-xs font-bold text-slate-700 hover:text-emerald-700 transition-all cursor-pointer shadow-2xs active:scale-95"
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-xs font-bold text-slate-700 hover:text-emerald-700 transition-all cursor-pointer shadow-2xs active:scale-95"
             >
               <span className="text-sm">{progress.voiceGender === 'male' ? '👨' : '👩'}</span>
-              <span className="hidden md:inline">{progress.voiceGender === 'male' ? 'Leonas' : 'Ona'}</span>
+              <span>{progress.voiceGender === 'male' ? 'Leonas' : 'Ona'}</span>
             </button>
 
             {/* User Account / Sign In */}

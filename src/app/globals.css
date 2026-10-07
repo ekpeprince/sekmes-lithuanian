@@ -7,12 +7,27 @@
   }
 }
 
+html,
 body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
   background-color: #f7fafc;
   color: #1e293b;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Eliminate iOS Safari automatic zoom-in when tapping input fields */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* Duolingo-style Tactile 3D Buttons */

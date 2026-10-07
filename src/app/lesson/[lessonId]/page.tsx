@@ -292,7 +292,7 @@ export default function LessonPage({ params }: LessonPageProps) {
       </div>
 
       {/* Main Exercise Area */}
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8 flex flex-col justify-center animate-pop">
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-6 pb-36 sm:pb-40 flex flex-col justify-center animate-pop">
         {currentExercise.type === 'multiple_choice' && (
           <MultipleChoice
             exercise={currentExercise}

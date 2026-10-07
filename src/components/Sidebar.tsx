@@ -6,12 +6,12 @@ import { usePathname } from 'next/navigation';
 import { BookOpen, Dumbbell, GraduationCap, User, Sparkles, Trophy } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Learn', icon: BookOpen },
-  { href: '/tutor', label: 'AI Tutor', icon: Sparkles },
-  { href: '/practice', label: 'Practice', icon: Dumbbell },
-  { href: '/leaderboard', label: 'Amber League', icon: Trophy },
-  { href: '/grammar', label: 'Grammar Bank', icon: GraduationCap },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/', label: 'Learn', mobileLabel: 'Learn', icon: BookOpen },
+  { href: '/tutor', label: 'AI Tutor', mobileLabel: 'Tutor', icon: Sparkles },
+  { href: '/practice', label: 'Practice', mobileLabel: 'Practice', icon: Dumbbell },
+  { href: '/leaderboard', label: 'Amber League', mobileLabel: 'League', icon: Trophy },
+  { href: '/grammar', label: 'Grammar Bank', mobileLabel: 'Grammar', icon: GraduationCap },
+  { href: '/profile', label: 'Profile', mobileLabel: 'Profile', icon: User },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -60,7 +60,7 @@ export const Sidebar: React.FC = () => {
       </aside>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden items-center justify-around border-t-2 border-slate-200 bg-white/95 backdrop-blur-md px-2 py-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden items-center justify-around border-t-2 border-slate-200 bg-white/95 backdrop-blur-md px-1 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -68,14 +68,14 @@ export const Sidebar: React.FC = () => {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all ${
+              className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl font-bold text-[10px] sm:text-[11px] transition-all ${
                 isActive
                   ? 'text-sky-600 font-extrabold'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               <Icon className={`h-5 w-5 ${isActive ? 'text-sky-500 stroke-[2.5]' : 'text-slate-400'}`} />
-              <span>{item.label}</span>
+              <span>{item.mobileLabel || item.label}</span>
             </Link>
           );
         })}

@@ -12,9 +12,9 @@ interface UnitCardProps {
 }
 
 export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) => {
-  // Compute zigzag offsets for nodes: e.g. [0, -35, 35, 0]
+  // Compute zigzag offsets for nodes that stay within mobile screen bounds
   const getOffset = (index: number) => {
-    const pattern = [0, -40, 0, 40];
+    const pattern = [0, -22, 0, 22];
     return pattern[index % pattern.length];
   };
 

@@ -78,7 +78,7 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
             className="fixed inset-0 z-30"
             onClick={() => setShowTooltip(false)}
           />
-          <div className="absolute top-24 z-40 w-72 -translate-x-1/2 left-1/2 rounded-2xl bg-white p-4 shadow-xl border-2 border-slate-200 animate-pop">
+          <div className="absolute top-24 z-40 w-[280px] max-w-[calc(100vw-32px)] -translate-x-1/2 left-1/2 rounded-2xl bg-white p-4 shadow-xl border-2 border-slate-200 animate-pop">
             {/* Triangular arrow pointing up */}
             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-t-2 border-l-2 border-slate-200 rotate-45" />
 

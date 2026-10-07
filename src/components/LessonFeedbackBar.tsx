@@ -27,10 +27,10 @@ export const LessonFeedbackBar: React.FC<LessonFeedbackBarProps> = ({
     <footer
       className={`fixed bottom-0 left-0 right-0 z-40 border-t-2 transition-all duration-200 ${
         !isChecked
-          ? 'bg-white border-slate-200 py-4 sm:py-5'
+          ? 'bg-white border-slate-200 py-3.5 sm:py-5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]'
           : isCorrect
-          ? 'bg-emerald-100 border-emerald-300 py-6 sm:py-8'
-          : 'bg-rose-100 border-rose-300 py-6 sm:py-8'
+          ? 'bg-emerald-100 border-emerald-300 py-4 sm:py-8 pb-[calc(1rem+env(safe-area-inset-bottom))]'
+          : 'bg-rose-100 border-rose-300 py-4 sm:py-8 pb-[calc(1rem+env(safe-area-inset-bottom))]'
       }`}
     >
       <div className="mx-auto flex max-w-3xl flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6">
