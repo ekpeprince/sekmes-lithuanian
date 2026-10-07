@@ -27,13 +27,13 @@ export const LessonFeedbackBar: React.FC<LessonFeedbackBarProps> = ({
     <footer
       className={`fixed bottom-0 left-0 right-0 z-40 border-t-2 transition-all duration-200 ${
         !isChecked
-          ? 'bg-white border-slate-200 py-3.5 sm:py-5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]'
+          ? 'bg-white border-slate-200 py-2.5 sm:py-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))]'
           : isCorrect
-          ? 'bg-emerald-100 border-emerald-300 py-4 sm:py-8 pb-[calc(1rem+env(safe-area-inset-bottom))]'
-          : 'bg-rose-100 border-rose-300 py-4 sm:py-8 pb-[calc(1rem+env(safe-area-inset-bottom))]'
+          ? 'bg-emerald-100 border-emerald-300 py-3 sm:py-5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]'
+          : 'bg-rose-100 border-rose-300 py-3 sm:py-5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]'
       }`}
     >
-      <div className="mx-auto flex max-w-3xl flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex max-w-3xl flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6">
         {/* If not checked yet, show empty or helper */}
         {!isChecked ? (
           <>
@@ -44,7 +44,7 @@ export const LessonFeedbackBar: React.FC<LessonFeedbackBarProps> = ({
               type="button"
               disabled={!canCheck}
               onClick={onCheck}
-              className="btn-3d btn-green-3d w-full sm:w-48 py-3.5 text-center text-base font-extrabold tracking-wider"
+              className="btn-3d btn-green-3d w-full sm:w-48 py-3 sm:py-3.5 text-center text-sm sm:text-base font-extrabold tracking-wider"
             >
               CHECK
             </button>

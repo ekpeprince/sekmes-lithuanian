@@ -193,109 +193,99 @@ export default function LessonPage({ params }: LessonPageProps) {
   );
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-between pb-32">
-      {/* Top Header & Progress */}
-      <header className="sticky top-0 z-30 w-full border-b border-slate-100 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-8">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
+    <div className="fixed inset-0 h-[100dvh] w-full bg-white flex flex-col overflow-hidden select-none">
+      {/* Top Header Bar (Unified compact top bar: Exit, Progress, Guide, Hearts) */}
+      <header className="shrink-0 z-30 w-full border-b border-slate-100 bg-white/95 backdrop-blur-md px-3 py-2.5 sm:px-6">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           {/* Close / Exit Button */}
           <button
             type="button"
             onClick={() => setShowExitModal(true)}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+            aria-label="Exit lesson"
           >
-            <X className="h-6 w-6 stroke-[2.5]" />
+            <X className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.5]" />
           </button>
 
           {/* Progress Bar */}
-          <div className="h-4 flex-1 rounded-full bg-slate-200 overflow-hidden relative">
+          <div className="h-3 sm:h-3.5 flex-1 rounded-full bg-slate-100 overflow-hidden relative shadow-inner">
             <div
               className="h-full rounded-full bg-emerald-500 transition-all duration-300 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
-          {/* Hearts Display */}
-          <div className="flex items-center gap-1.5 font-bold text-rose-500">
-            <Heart className="h-6 w-6 fill-rose-500" />
-            <span className="text-base sm:text-lg">{progress.hearts}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Guide Button */}
+            <button
+              type="button"
+              onClick={() => setShowGuide(true)}
+              className="flex items-center gap-1 font-bold text-xs px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 transition shadow-2xs"
+              title="Lesson Grammar Guide"
+            >
+              <Lightbulb className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+              <span className="hidden xs:inline sm:inline">Guide</span>
+            </button>
+
+            {/* Hearts Display */}
+            <div className="flex items-center gap-1 font-black text-rose-500 bg-rose-50 border border-rose-200/60 px-2.5 py-1 rounded-xl text-xs sm:text-sm">
+              <Heart className="h-4 w-4 fill-rose-500" />
+              <span>{progress.hearts}</span>
+            </div>
           </div>
         </div>
       </header>
- 
-      {/* Lesson Sub-Explanation & Guide Bar */}
-      <div className="w-full bg-slate-50 border-b border-slate-200/90 px-4 py-2 sm:px-8">
-        <div className="mx-auto max-w-4xl flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="shrink-0 font-extrabold text-slate-700 bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
-              Lesson {lesson.order}
-            </span>
-            <span className="font-bold text-slate-800 truncate">
-              {lesson.title}
-            </span>
-            {lesson.subExplanation && (
-              <span className="text-slate-500 hidden md:inline truncate">
-                • {lesson.subExplanation}
-              </span>
-            )}
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setShowGuide(!showGuide)}
-            className={`shrink-0 flex items-center gap-1.5 font-bold px-3 py-1 rounded-xl transition-all ${
-              showGuide
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-            }`}
-          >
-            <Lightbulb className="h-3.5 w-3.5 fill-current" />
-            <span>{showGuide ? 'Hide Guide' : 'English Guide'}</span>
-            {showGuide ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
-          </button>
-        </div>
-
-        {/* Collapsible English Explanation Drawer */}
-        {showGuide && (
-          <div className="mx-auto max-w-4xl mt-3 p-4 sm:p-5 rounded-2xl bg-white border-2 border-emerald-200 shadow-sm animate-pop text-left">
-            <div className="flex items-start justify-between gap-4 mb-2">
+      {/* English Study Guide Modal Overlay */}
+      {showGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-pop">
+          <div className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border-2 border-emerald-200 text-left">
+            <div className="flex items-start justify-between gap-4 mb-3 border-b border-slate-100 pb-3">
               <div>
                 <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 block mb-0.5">
                   💡 Lesson Study Guide • Paaiškinimas
                 </span>
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
                   {lesson.title}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowGuide(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition"
+                aria-label="Close guide"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {lesson.subExplanation && (
-              <p className="text-xs sm:text-sm font-semibold text-slate-700 mb-3 leading-relaxed">
-                {lesson.subExplanation}
-              </p>
-            )}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {lesson.subExplanation && (
+                <p className="text-xs sm:text-sm font-bold text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  {lesson.subExplanation}
+                </p>
+              )}
 
-            {lesson.detailedExplanation && (
-              <div className="p-3 sm:p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 text-xs sm:text-sm text-slate-800 space-y-1.5 whitespace-pre-line leading-relaxed font-normal">
-                {lesson.detailedExplanation}
-              </div>
-            )}
+              {lesson.detailedExplanation && (
+                <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-xs sm:text-sm text-slate-800 space-y-2 whitespace-pre-line leading-relaxed font-normal">
+                  {lesson.detailedExplanation}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowGuide(false)}
+              className="btn-3d w-full mt-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+            >
+              Continue Lesson
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Main Exercise Area */}
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-6 pb-36 sm:pb-40 flex flex-col justify-center animate-pop">
+      {/* Main Exercise Area (Centered & Viewport-fitted without page scroll) */}
+      <main className="flex-1 min-h-0 w-full max-w-xl mx-auto px-4 py-2 sm:py-4 flex flex-col justify-center overflow-y-auto pb-24 sm:pb-28">
         {currentExercise.type === 'multiple_choice' && (
           <MultipleChoice
             exercise={currentExercise}

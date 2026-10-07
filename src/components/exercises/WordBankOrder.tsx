@@ -57,19 +57,19 @@ export const WordBankOrder: React.FC<WordBankOrderProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center">
       {/* Exercise Prompt */}
-      <div className="w-full mb-6">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-2">
+      <div className="w-full mb-3 sm:mb-5">
+        <h2 className="text-lg sm:text-2xl font-extrabold text-slate-800 mb-1 sm:mb-2">
           {exercise.prompt}
         </h2>
         {exercise.subPrompt && (
-          <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-2">
+          <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-1.5 sm:mb-2">
             {exercise.subPrompt}
           </p>
         )}
         {exercise.audioText && (
-          <div className="flex items-center gap-3 mt-3 p-3 bg-sky-50 rounded-2xl border border-sky-200">
-            <AudioSpeaker text={exercise.audioText} size="md" showSlow={true} />
-            <span className="text-sm font-semibold text-sky-800">
+          <div className="flex items-center gap-2.5 mt-2 p-2 sm:p-3 bg-sky-50 rounded-xl sm:rounded-2xl border border-sky-200">
+            <AudioSpeaker text={exercise.audioText} size="sm" showSlow={true} />
+            <span className="text-xs sm:text-sm font-semibold text-sky-800">
               Listen to the target phrase
             </span>
           </div>
@@ -78,7 +78,7 @@ export const WordBankOrder: React.FC<WordBankOrderProps> = ({
 
       {/* Answer Sentence Tray */}
       <div
-        className={`w-full min-h-[90px] p-4 rounded-2xl border-2 transition-all mb-8 flex flex-wrap items-center gap-2.5 ${
+        className={`w-full min-h-[64px] sm:min-h-[85px] p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all mb-3 sm:mb-6 flex flex-wrap items-center gap-2 sm:gap-2.5 ${
           isChecked
             ? isCorrect
               ? 'border-emerald-400 bg-emerald-50/60'
@@ -89,7 +89,7 @@ export const WordBankOrder: React.FC<WordBankOrderProps> = ({
         }`}
       >
         {assembledWords.length === 0 ? (
-          <span className="text-sm font-medium text-slate-400 italic mx-auto">
+          <span className="text-xs sm:text-sm font-medium text-slate-400 italic mx-auto">
             Tap the word blocks below to assemble your answer
           </span>
         ) : (
@@ -99,7 +99,7 @@ export const WordBankOrder: React.FC<WordBankOrderProps> = ({
               type="button"
               disabled={isChecked}
               onClick={() => handleRemoveWord(idx)}
-              className="word-chip animate-pop group hover:border-rose-300"
+              className="word-chip animate-pop group hover:border-rose-300 text-xs sm:text-sm py-1.5 px-3 sm:py-2 sm:px-4"
             >
               <span>{word}</span>
             </button>
@@ -108,7 +108,7 @@ export const WordBankOrder: React.FC<WordBankOrderProps> = ({
       </div>
 
       {/* Horizontal Divider Line */}
-      <div className="w-full border-t border-slate-200 mb-6" />
+      <div className="w-full border-t border-slate-200 mb-3 sm:mb-5" />
 
       {/* Available Words Pool */}
       <div className="w-full flex flex-wrap justify-center gap-2.5">

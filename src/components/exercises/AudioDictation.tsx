@@ -85,12 +85,12 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center">
       {/* Title & Prompt */}
-      <div className="w-full text-center sm:text-left mb-6">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-black uppercase tracking-wider mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
+      <div className="w-full text-center sm:text-left mb-3 sm:mb-5">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[11px] font-black uppercase tracking-wider mb-1.5">
+          <Sparkles className="w-3 h-3" />
           Listening Comprehension • Klausymas
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+        <h2 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight">
           {exercise.prompt}
         </h2>
         {exercise.subPrompt ? (
@@ -98,26 +98,26 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
             {exercise.subPrompt}
           </p>
         ) : (
-          <p className="text-sm font-medium text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
             Listen carefully and reconstruct the Lithuanian sentence.
           </p>
         )}
       </div>
 
       {/* Audio Control Center */}
-      <div className="w-full bg-slate-50 border-2 border-slate-200/80 rounded-3xl p-6 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-3">
+      <div className="w-full bg-slate-50 border-2 border-slate-200/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 mb-3 sm:mb-5 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 shadow-xs">
+        <div className="flex items-center gap-2.5">
           {/* Normal Speed Button */}
           <button
             type="button"
             onClick={() => handlePlay(false)}
             disabled={isPlaying || isSlowPlaying}
-            className={`btn-3d flex items-center justify-center gap-2 h-16 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-base shadow-md transition-transform active:scale-95 ${
+            className={`btn-3d flex items-center justify-center gap-2 h-12 sm:h-14 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-sm sm:text-base shadow-md transition-transform active:scale-95 ${
               isPlaying ? 'ring-4 ring-sky-300 ring-offset-2 animate-pulse' : ''
             }`}
             title="Listen at normal speed"
           >
-            <Volume2 className="w-7 h-7" />
+            <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
             <span>Klausyti</span>
           </button>
 
@@ -126,12 +126,12 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
             type="button"
             onClick={() => handlePlay(true)}
             disabled={isPlaying || isSlowPlaying}
-            className={`btn-3d flex items-center justify-center h-16 w-16 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-md transition-transform active:scale-95 ${
+            className={`btn-3d flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-md transition-transform active:scale-95 ${
               isSlowPlaying ? 'ring-4 ring-amber-300 ring-offset-2 animate-pulse' : ''
             }`}
             title="Listen slowly (slow rate)"
           >
-            <Snail className="w-7 h-7" />
+            <Snail className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
@@ -141,7 +141,7 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
             <button
               type="button"
               onClick={() => setShowHint(!showHint)}
-              className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-2 rounded-xl hover:bg-slate-200/60 transition-colors"
+              className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-xl hover:bg-slate-200/60 transition-colors"
             >
               {showHint ? exercise.translationHint : '💡 Show English hint'}
             </button>
@@ -151,10 +151,10 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
             <button
               type="button"
               onClick={() => setUseKeyboard(!useKeyboard)}
-              className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shadow-2xs"
+              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shadow-2xs"
               title={useKeyboard ? 'Switch to word bank' : 'Switch to keyboard input'}
             >
-              <Keyboard className="w-5 h-5" />
+              <Keyboard className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           )}
         </div>
@@ -162,28 +162,28 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
 
       {/* Input Mode: Keyboard or Word Bank */}
       {useKeyboard && onTypedChange ? (
-        <div className="w-full mb-6">
+        <div className="w-full mb-3 sm:mb-5">
           <textarea
             value={typedAnswer}
             onChange={(e) => onTypedChange(e.target.value)}
             disabled={isChecked}
             placeholder="Type what you hear in Lithuanian..."
-            rows={3}
-            className="w-full p-4 rounded-2xl border-2 border-slate-200 bg-white text-lg font-bold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100 transition-all resize-none"
+            rows={2}
+            className="w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-slate-200 bg-white text-base sm:text-lg font-bold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100 transition-all resize-none"
           />
         </div>
       ) : (
-        <div className="w-full flex flex-col gap-6 mb-4">
+        <div className="w-full flex flex-col gap-3 sm:gap-5 mb-2">
           {/* Assembled Tray Area */}
           <div
-            className={`min-h-[90px] w-full rounded-2xl border-2 border-dashed p-4 flex flex-wrap gap-2.5 items-center transition-all ${
+            className={`min-h-[64px] sm:min-h-[85px] w-full rounded-xl sm:rounded-2xl border-2 border-dashed p-2.5 sm:p-4 flex flex-wrap gap-2 items-center transition-all ${
               assembledWords.length === 0
                 ? 'border-slate-300 bg-slate-50/70 justify-center'
                 : 'border-slate-300 bg-white justify-start'
             }`}
           >
             {assembledWords.length === 0 ? (
-              <span className="text-sm font-bold text-slate-400 select-none">
+              <span className="text-xs sm:text-sm font-bold text-slate-400 select-none">
                 Tap words below in the order you hear them
               </span>
             ) : (
@@ -193,7 +193,7 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
                   type="button"
                   onClick={() => handleRemoveWord(idx)}
                   disabled={isChecked}
-                  className="btn-3d px-4 py-2.5 rounded-xl bg-sky-500 text-white font-black text-base shadow-sm border-b-3 border-sky-700 active:scale-95 animate-pop"
+                  className="btn-3d px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-sky-500 text-white font-black text-xs sm:text-base shadow-sm border-b-2 sm:border-b-3 border-sky-700 active:scale-95 animate-pop"
                 >
                   {word}
                 </button>
@@ -202,14 +202,14 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
           </div>
 
           {/* Word Token Bank */}
-          <div className="flex flex-wrap gap-2.5 justify-center pt-2 min-h-[90px]">
+          <div className="flex flex-wrap gap-2 sm:gap-2.5 justify-center pt-1 min-h-[60px]">
             {getRemainingTokens().map(({ word, index, isUsed }) => (
               <button
                 key={`bank-${word}-${index}`}
                 type="button"
                 onClick={() => handleSelectWord(word)}
                 disabled={isUsed || isChecked}
-                className={`btn-3d px-4 py-2.5 rounded-xl font-black text-base transition-all ${
+                className={`btn-3d px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-black text-xs sm:text-base transition-all ${
                   isUsed
                     ? 'bg-slate-200 text-slate-300 border-b-2 border-slate-200 cursor-not-allowed opacity-40 shadow-none'
                     : 'bg-white text-slate-800 border-2 border-slate-200 hover:border-slate-300 shadow-sm active:scale-95'

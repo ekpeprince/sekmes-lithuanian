@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Download, X, Share } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -9,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export const PwaInstallPrompt: React.FC = () => {
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIos] = useState(() => {
@@ -86,6 +88,11 @@ export const PwaInstallPrompt: React.FC = () => {
     setIsDismissed(true);
     sessionStorage.setItem('sekmes_pwa_dismissed', 'true');
   };
+
+  // Hide prompt during active lessons to avoid blocking exercises or check buttons
+  if (pathname.startsWith('/lesson/')) {
+    return null;
+  }
 
   // If already running standalone or dismissed, do not render
   if (isStandalone || isDismissed) {

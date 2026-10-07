@@ -123,8 +123,8 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center">
       {/* Exercise Prompt */}
-      <div className="w-full mb-6">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-2">
+      <div className="w-full mb-2.5 sm:mb-5">
+        <h2 className="text-lg sm:text-2xl font-extrabold text-slate-800 mb-1 sm:mb-2">
           {exercise.prompt}
         </h2>
         {exercise.subPrompt ? (
@@ -132,16 +132,16 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
             {exercise.subPrompt}
           </p>
         ) : (
-          <p className="text-sm font-semibold text-slate-500">
+          <p className="text-xs sm:text-sm font-semibold text-slate-500">
             Tap a pair of matching Lithuanian words and English definitions.
           </p>
         )}
       </div>
 
       {/* Two Columns Grid */}
-      <div className="w-full grid grid-cols-2 gap-4">
+      <div className="w-full grid grid-cols-2 gap-2 sm:gap-4">
         {/* Left Column: Lithuanian */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:gap-3">
           {shuffledLt.map((item) => {
             const isMatched = matchedIds.includes(item.id);
             const isSelected = selectedLt === item.id;
@@ -153,7 +153,7 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
                 type="button"
                 disabled={isMatched}
                 onClick={() => handleLtClick(item.id, item.text)}
-                className={`btn-option-3d w-full p-4 rounded-2xl font-bold text-sm sm:text-base text-left flex items-center justify-between transition-all ${
+                className={`btn-option-3d w-full p-2.5 sm:p-4 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-base text-left flex items-center justify-between transition-all ${
                   isMatched
                     ? 'opacity-40 bg-emerald-50 border-emerald-300 text-emerald-700 pointer-events-none'
                     : isMismatch
@@ -164,14 +164,14 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
                 }`}
               >
                 <span>{item.text}</span>
-                {isMatched && <Check className="h-4 w-4 text-emerald-600" />}
+                {isMatched && <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />}
               </button>
             );
           })}
         </div>
 
         {/* Right Column: English */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:gap-3">
           {shuffledEn.map((item) => {
             const isMatched = matchedIds.includes(item.id);
             const isSelected = selectedEn === item.id;
@@ -183,7 +183,7 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
                 type="button"
                 disabled={isMatched}
                 onClick={() => handleEnClick(item.id)}
-                className={`btn-option-3d w-full p-4 rounded-2xl font-bold text-sm sm:text-base text-left flex items-center justify-between transition-all ${
+                className={`btn-option-3d w-full p-2.5 sm:p-4 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-base text-left flex items-center justify-between transition-all ${
                   isMatched
                     ? 'opacity-40 bg-emerald-50 border-emerald-300 text-emerald-700 pointer-events-none'
                     : isMismatch
@@ -194,7 +194,7 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
                 }`}
               >
                 <span>{item.text}</span>
-                {isMatched && <Check className="h-4 w-4 text-emerald-600" />}
+                {isMatched && <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />}
               </button>
             );
           })}

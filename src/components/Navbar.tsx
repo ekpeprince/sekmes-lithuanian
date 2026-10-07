@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, User as UserIcon, LogOut, Cloud, ChevronDown } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +10,7 @@ import { sounds } from '@/lib/audio';
 import { AuthModal } from '@/components/AuthModal';
 
 export const Navbar: React.FC = () => {
+  const pathname = usePathname();
   const { progress, refillHearts, toggleSound, setVoiceGender } = useGame();
   const { user, signOut } = useAuth();
   const [showHeartModal, setShowHeartModal] = useState(false);
@@ -25,6 +27,11 @@ export const Navbar: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // During active lesson, hide global Navbar to maximize mobile screen space
+  if (pathname.startsWith('/lesson/')) {
+    return null;
+  }
 
   return (
     <>

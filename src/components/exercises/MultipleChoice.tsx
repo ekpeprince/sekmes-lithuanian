@@ -29,19 +29,19 @@ export const MultipleChoice: React.FC<MultipleChoiceProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center">
       {/* Exercise Prompt */}
-      <div className="w-full mb-6">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-2">
+      <div className="w-full mb-3 sm:mb-5">
+        <h2 className="text-lg sm:text-2xl font-extrabold text-slate-800 mb-1 sm:mb-2">
           {exercise.prompt}
         </h2>
         {exercise.subPrompt && (
-          <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-2">
+          <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-1.5 sm:mb-2">
             {exercise.subPrompt}
           </p>
         )}
         {exercise.audioText && (
-          <div className="flex items-center gap-3 mt-3 p-3 bg-sky-50 rounded-2xl border border-sky-200">
-            <AudioSpeaker text={exercise.audioText} size="md" showSlow={true} />
-            <span className="text-sm font-semibold text-sky-800">
+          <div className="flex items-center gap-2.5 mt-2 p-2 sm:p-3 bg-sky-50 rounded-xl sm:rounded-2xl border border-sky-200">
+            <AudioSpeaker text={exercise.audioText} size="sm" showSlow={true} />
+            <span className="text-xs sm:text-sm font-semibold text-sky-800">
               Listen to the phrase
             </span>
           </div>
@@ -49,7 +49,7 @@ export const MultipleChoice: React.FC<MultipleChoiceProps> = ({
       </div>
 
       {/* Options Grid */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
         {exercise.options.map((option, index) => {
           const isSelected = selectedAnswer === option;
           let stateClass = '';
@@ -77,12 +77,12 @@ export const MultipleChoice: React.FC<MultipleChoiceProps> = ({
                   handleOptionClick(option);
                 }
               }}
-              className={`btn-option-3d w-full p-4 rounded-2xl flex items-center justify-between text-left font-bold text-base sm:text-lg transition-all cursor-pointer select-none ${
+              className={`btn-option-3d w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-between text-left font-bold text-sm sm:text-base transition-all cursor-pointer select-none ${
                 isChecked ? 'pointer-events-none' : ''
               } ${stateClass}`}
             >
-              <div className="flex items-center gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-xs font-black text-slate-500">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-xs font-black text-slate-500">
                   {index + 1}
                 </span>
                 <span className="leading-snug">{option}</span>

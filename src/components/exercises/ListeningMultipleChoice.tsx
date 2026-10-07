@@ -58,12 +58,12 @@ export const ListeningMultipleChoice: React.FC<ListeningMultipleChoiceProps> = (
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center">
       {/* Category Tag */}
-      <div className="w-full text-center sm:text-left mb-6">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-black uppercase tracking-wider mb-2">
-          <Headphones className="w-3.5 h-3.5" />
+      <div className="w-full text-center sm:text-left mb-3 sm:mb-5">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wider mb-1.5">
+          <Headphones className="w-3 h-3" />
           Listening Comprehension • Pasiklausymas
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+        <h2 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight">
           {exercise.prompt}
         </h2>
         {exercise.subPrompt && (
@@ -74,17 +74,17 @@ export const ListeningMultipleChoice: React.FC<ListeningMultipleChoiceProps> = (
       </div>
 
       {/* Audio Playback Box */}
-      <div className="w-full bg-slate-50 border-2 border-slate-200/80 rounded-3xl p-6 mb-6 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-3">
+      <div className="w-full bg-slate-50 border-2 border-slate-200/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 mb-3 sm:mb-5 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => handlePlay(false)}
             disabled={isPlaying || isSlowPlaying}
-            className={`btn-3d flex items-center justify-center gap-2.5 h-16 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-base shadow-md active:scale-95 ${
+            className={`btn-3d flex items-center justify-center gap-2 h-12 sm:h-14 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-xs sm:text-base shadow-md active:scale-95 ${
               isPlaying ? 'ring-4 ring-sky-300 ring-offset-2 animate-pulse' : ''
             }`}
           >
-            <Volume2 className="w-7 h-7" />
+            <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
             <span>Klausytis frazės</span>
           </button>
 
@@ -92,32 +92,32 @@ export const ListeningMultipleChoice: React.FC<ListeningMultipleChoiceProps> = (
             type="button"
             onClick={() => handlePlay(true)}
             disabled={isPlaying || isSlowPlaying}
-            className={`btn-3d flex items-center justify-center h-16 w-16 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-md active:scale-95 ${
+            className={`btn-3d flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-md active:scale-95 ${
               isSlowPlaying ? 'ring-4 ring-amber-300 ring-offset-2 animate-pulse' : ''
             }`}
             title="Lėtai (Slow)"
           >
-            <Snail className="w-7 h-7" />
+            <Snail className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {isChecked && audioContent && (
           <div className="text-right">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Nuorašas</span>
-            <span className="text-sm font-black text-slate-700 italic">“{audioContent}”</span>
+            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block">Nuorašas</span>
+            <span className="text-xs sm:text-sm font-black text-slate-700 italic">“{audioContent}”</span>
           </div>
         )}
       </div>
 
       {/* Sub-question */}
       {exercise.question && (
-        <div className="w-full mb-4 px-1">
-          <h3 className="text-lg font-bold text-slate-700">{exercise.question}</h3>
+        <div className="w-full mb-2 sm:mb-3 px-1">
+          <h3 className="text-base sm:text-lg font-bold text-slate-700">{exercise.question}</h3>
         </div>
       )}
 
       {/* Options Grid */}
-      <div className="grid grid-cols-1 gap-3 w-full">
+      <div className="grid grid-cols-1 gap-2 sm:gap-3 w-full">
         {exercise.options.map((option, idx) => {
           const isSelected = selectedAnswer === option;
           let buttonStyle = 'bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-800';
@@ -140,10 +140,10 @@ export const ListeningMultipleChoice: React.FC<ListeningMultipleChoiceProps> = (
               type="button"
               onClick={() => handleOptionClick(option)}
               disabled={isChecked}
-              className={`btn-3d relative w-full p-4 rounded-2xl font-black text-base text-left flex items-center justify-between transition-all active:scale-[0.99] ${buttonStyle}`}
+              className={`btn-3d relative w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base text-left flex items-center justify-between transition-all active:scale-[0.99] ${buttonStyle}`}
             >
-              <div className="flex items-center gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-500">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-500">
                   {idx + 1}
                 </span>
                 <span>{option}</span>

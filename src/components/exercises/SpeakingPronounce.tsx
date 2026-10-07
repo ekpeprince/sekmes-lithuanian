@@ -239,71 +239,71 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center text-center">
       {/* Category Tag */}
-      <div className="w-full text-center sm:text-left mb-6">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-black uppercase tracking-wider mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
+      <div className="w-full text-center sm:text-left mb-2.5 sm:mb-5">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[11px] font-black uppercase tracking-wider mb-1.5">
+          <Sparkles className="w-3 h-3" />
           Pronunciation Studio • Tarimo treniruotė
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+        <h2 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight">
           {exercise.prompt}
         </h2>
         {exercise.subPrompt ? (
-          <p className="text-xs sm:text-sm font-semibold text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm font-semibold text-slate-500 mt-0.5">
             {exercise.subPrompt}
           </p>
         ) : (
-          <p className="text-sm font-medium text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
             Tap the microphone and speak clearly in Lithuanian.
           </p>
         )}
       </div>
 
       {/* Target Phrase Card */}
-      <div className="w-full bg-white border-2 border-slate-200 rounded-3xl p-6 mb-6 shadow-sm flex flex-col items-center">
+      <div className="w-full bg-white border-2 border-slate-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 mb-2.5 sm:mb-4 shadow-sm flex flex-col items-center">
         {/* Listen Model Button */}
         <button
           type="button"
           onClick={handlePlayModelAudio}
           disabled={isPlayingModelAudio}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full bg-sky-50 text-sky-600 border border-sky-200 font-bold text-xs uppercase tracking-wider hover:bg-sky-100 transition-colors mb-4 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 text-sky-600 border border-sky-200 font-bold text-[11px] uppercase tracking-wider hover:bg-sky-100 transition-colors mb-2 sm:mb-3 ${
             isPlayingModelAudio ? 'animate-pulse' : ''
           }`}
         >
-          <Volume2 className="w-4 h-4" />
-          <span>Listen to native pronunciation</span>
+          <Volume2 className="w-3.5 h-3.5" />
+          <span>Listen to pronunciation</span>
         </button>
 
         {/* Big Target Phrase */}
-        <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">
+        <div className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1">
           {exercise.targetPhrase}
         </div>
 
         {/* Phonetic Pronunciation Hint */}
         {exercise.phoneticHint && (
-          <div className="text-xs font-bold text-slate-400 font-mono tracking-wider mb-2">
+          <div className="text-xs font-bold text-slate-400 font-mono tracking-wider mb-1">
             /{exercise.phoneticHint}/
           </div>
         )}
 
         {/* Translation */}
-        <div className="text-sm font-medium text-slate-500">
+        <div className="text-xs sm:text-sm font-medium text-slate-500">
           “{exercise.translation}”
         </div>
       </div>
 
       {/* Recording Feedback & Microphone Button */}
       {!cantSpeakNow ? (
-        <div className="flex flex-col items-center gap-3 my-2">
+        <div className="flex flex-col items-center gap-2 my-1">
           {/* Main Glowing Mic Button */}
           <div className="relative">
             {isRecording && (
-              <span className="absolute -inset-3 rounded-full bg-rose-400 opacity-40 animate-ping" />
+              <span className="absolute -inset-2.5 rounded-full bg-rose-400 opacity-40 animate-ping" />
             )}
             <button
               type="button"
               onClick={isRecording ? stopListening : startListening}
               disabled={isChecked}
-              className={`relative btn-3d flex items-center justify-center w-24 h-24 rounded-full font-black shadow-lg transition-transform active:scale-95 ${
+              className={`relative btn-3d flex items-center justify-center w-16 h-16 sm:w-22 sm:h-22 rounded-full font-black shadow-lg transition-transform active:scale-95 ${
                 isRecording
                   ? 'bg-rose-500 text-white ring-4 ring-rose-200'
                   : spokenText
@@ -312,11 +312,11 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               }`}
             >
               {isRecording ? (
-                <MicOff className="w-10 h-10 animate-bounce" />
+                <MicOff className="w-7 h-7 sm:w-9 sm:h-9 animate-bounce" />
               ) : spokenText ? (
-                <CheckCircle2 className="w-10 h-10" />
+                <CheckCircle2 className="w-7 h-7 sm:w-9 sm:h-9" />
               ) : (
-                <Mic className="w-10 h-10" />
+                <Mic className="w-7 h-7 sm:w-9 sm:h-9" />
               )}
             </button>
           </div>
