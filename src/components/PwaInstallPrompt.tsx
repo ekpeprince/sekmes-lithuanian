@@ -107,14 +107,9 @@ export const PwaInstallPrompt: React.FC = () => {
               LT
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold tracking-tight text-white">
-                  Install Sėkmės! App
-                </h4>
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-md">
-                  PWA
-                </span>
-              </div>
+              <h4 className="text-sm font-bold tracking-tight text-white">
+                Install Sėkmės! App
+              </h4>
               <p className="text-xs text-slate-400 font-normal leading-tight mt-0.5">
                 Fast, offline-ready & fullscreen learning
               </p>
