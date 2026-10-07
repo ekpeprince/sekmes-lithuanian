@@ -36,7 +36,7 @@ export const Navbar: React.FC = () => {
               <span className="text-xl">🇱🇹</span>
             </div>
             <div>
-              <span className="text-xl font-extrabold tracking-wider text-emerald-600 block leading-tight">
+              <span className="notranslate text-xl font-extrabold tracking-wider text-emerald-600 block leading-tight" translate="no">
                 SĖKMĖS!
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">

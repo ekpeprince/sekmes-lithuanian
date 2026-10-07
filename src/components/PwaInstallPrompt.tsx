@@ -108,7 +108,7 @@ export const PwaInstallPrompt: React.FC = () => {
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-sm font-bold tracking-tight text-white">
-                Install Sėkmės! App
+                Install <span className="notranslate" translate="no">Sėkmės!</span> App
               </h4>
               <p className="text-xs text-slate-400 font-normal leading-tight mt-0.5">
                 Fast, offline-ready & fullscreen learning

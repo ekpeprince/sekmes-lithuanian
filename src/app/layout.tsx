@@ -24,6 +24,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Sėkmės!',
   },
+  other: {
+    google: 'notranslate',
+  },
 };
 
 export const viewport = {
@@ -40,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="lt">
+    <html lang="en" translate="no" className="notranslate">
       <body className="min-h-screen bg-[#f7fafc] text-slate-800 flex flex-col antialiased">
         <AuthProvider>
           <GameProvider>
