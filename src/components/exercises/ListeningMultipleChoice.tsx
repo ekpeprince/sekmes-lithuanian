@@ -66,6 +66,11 @@ export const ListeningMultipleChoice: React.FC<ListeningMultipleChoiceProps> = (
         <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
           {exercise.prompt}
         </h2>
+        {exercise.subPrompt && (
+          <p className="text-xs sm:text-sm font-semibold text-slate-500 mt-1">
+            {exercise.subPrompt}
+          </p>
+        )}
       </div>
 
       {/* Audio Playback Box */}

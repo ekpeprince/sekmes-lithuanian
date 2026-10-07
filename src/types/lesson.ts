@@ -12,6 +12,7 @@ export interface BaseExercise {
   id: string;
   type: ExerciseType;
   prompt: string;
+  subPrompt?: string; // English sub-explanation / hint directly under the prompt
   explanation?: string;
   audioText?: string; // Lithuanian text to pronounce
 }
@@ -93,6 +94,8 @@ export interface Lesson {
   unitId: string;
   title: string;
   description: string;
+  subExplanation?: string; // Concise English sub-explanation summarizing the key concept
+  detailedExplanation?: string; // In-depth English study notes, grammar rules, and tips
   xpReward: number;
   exercises: Exercise[];
   icon?: string;

@@ -33,6 +33,11 @@ export const MultipleChoice: React.FC<MultipleChoiceProps> = ({
         <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-2">
           {exercise.prompt}
         </h2>
+        {exercise.subPrompt && (
+          <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-2">
+            {exercise.subPrompt}
+          </p>
+        )}
         {exercise.audioText && (
           <div className="flex items-center gap-3 mt-3 p-3 bg-sky-50 rounded-2xl border border-sky-200">
             <AudioSpeaker text={exercise.audioText} size="md" showSlow={true} />

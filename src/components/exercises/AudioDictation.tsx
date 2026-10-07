@@ -94,9 +94,15 @@ export const AudioDictation: React.FC<AudioDictationProps> = ({
         <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
           {exercise.prompt}
         </h2>
-        <p className="text-sm font-medium text-slate-500 mt-1">
-          Listen carefully and reconstruct the Lithuanian sentence.
-        </p>
+        {exercise.subPrompt ? (
+          <p className="text-xs sm:text-sm font-semibold text-slate-500 mt-1">
+            {exercise.subPrompt}
+          </p>
+        ) : (
+          <p className="text-sm font-medium text-slate-500 mt-1">
+            Listen carefully and reconstruct the Lithuanian sentence.
+          </p>
+        )}
       </div>
 
       {/* Audio Control Center */}

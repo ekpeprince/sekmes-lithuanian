@@ -85,13 +85,20 @@ export const LessonFeedbackBar: React.FC<LessonFeedbackBarProps> = ({
                 )}
 
                 {explanation && (
-                  <p
-                    className={`mt-1.5 text-xs sm:text-sm font-medium leading-relaxed max-w-lg ${
-                      isCorrect ? 'text-emerald-900/80' : 'text-rose-900/80'
+                  <div
+                    className={`mt-2 text-xs sm:text-sm leading-relaxed max-w-xl p-2.5 rounded-xl border ${
+                      isCorrect
+                        ? 'bg-emerald-50/80 border-emerald-300/80 text-emerald-950'
+                        : 'bg-rose-50/80 border-rose-300/80 text-rose-950'
                     }`}
                   >
-                    {explanation}
-                  </p>
+                    <span className="font-extrabold flex items-center gap-1 mb-0.5 text-[11px] uppercase tracking-wider opacity-90">
+                      💡 English Explanation
+                    </span>
+                    <p className="font-medium">
+                      {explanation}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

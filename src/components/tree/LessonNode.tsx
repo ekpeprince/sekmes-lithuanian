@@ -96,9 +96,20 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
               <h4 className="font-extrabold text-slate-800 text-base mb-1">
                 {lesson.title}
               </h4>
-              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+              <p className="text-xs text-slate-500 mb-2.5 leading-relaxed">
                 {lesson.description}
               </p>
+
+              {lesson.subExplanation && (
+                <div className="mb-3.5 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-left">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1 mb-0.5">
+                    💡 English Guide
+                  </span>
+                  <p className="text-[11px] font-medium text-emerald-950/90 leading-snug">
+                    {lesson.subExplanation}
+                  </p>
+                </div>
+              )}
 
               <Link
                 href={`/lesson/${lesson.id}`}

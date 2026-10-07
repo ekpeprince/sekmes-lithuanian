@@ -3,7 +3,7 @@
 import React, { useState, use } from 'react';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import { X, Heart, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Heart, AlertCircle, RefreshCw, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { getLessonById, getNextLessonId } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
 import { MultipleChoice } from '@/components/exercises/MultipleChoice';
@@ -44,6 +44,7 @@ export default function LessonPage({ params }: LessonPageProps) {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showOutOfHeartsModal, setShowOutOfHeartsModal] = useState(false);
   const [isLessonFinished, setIsLessonFinished] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const [mistakesCount, setMistakesCount] = useState(0);
 
@@ -217,6 +218,78 @@ export default function LessonPage({ params }: LessonPageProps) {
           </div>
         </div>
       </header>
+ 
+      {/* Lesson Sub-Explanation & Guide Bar */}
+      <div className="w-full bg-slate-50 border-b border-slate-200/90 px-4 py-2 sm:px-8">
+        <div className="mx-auto max-w-4xl flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="shrink-0 font-extrabold text-slate-700 bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+              Lesson {lesson.order}
+            </span>
+            <span className="font-bold text-slate-800 truncate">
+              {lesson.title}
+            </span>
+            {lesson.subExplanation && (
+              <span className="text-slate-500 hidden md:inline truncate">
+                • {lesson.subExplanation}
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowGuide(!showGuide)}
+            className={`shrink-0 flex items-center gap-1.5 font-bold px-3 py-1 rounded-xl transition-all ${
+              showGuide
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+            }`}
+          >
+            <Lightbulb className="h-3.5 w-3.5 fill-current" />
+            <span>{showGuide ? 'Hide Guide' : 'English Guide'}</span>
+            {showGuide ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </div>
+
+        {/* Collapsible English Explanation Drawer */}
+        {showGuide && (
+          <div className="mx-auto max-w-4xl mt-3 p-4 sm:p-5 rounded-2xl bg-white border-2 border-emerald-200 shadow-sm animate-pop text-left">
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 block mb-0.5">
+                  💡 Lesson Study Guide • Paaiškinimas
+                </span>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  {lesson.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGuide(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {lesson.subExplanation && (
+              <p className="text-xs sm:text-sm font-semibold text-slate-700 mb-3 leading-relaxed">
+                {lesson.subExplanation}
+              </p>
+            )}
+
+            {lesson.detailedExplanation && (
+              <div className="p-3 sm:p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 text-xs sm:text-sm text-slate-800 space-y-1.5 whitespace-pre-line leading-relaxed font-normal">
+                {lesson.detailedExplanation}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Main Exercise Area */}
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8 flex flex-col justify-center animate-pop">

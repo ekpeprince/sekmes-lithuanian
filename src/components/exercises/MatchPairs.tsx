@@ -86,9 +86,15 @@ export const MatchPairs: React.FC<MatchPairsProps> = ({
         <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-2">
           {exercise.prompt}
         </h2>
-        <p className="text-sm font-semibold text-slate-500">
-          Tap a pair of matching Lithuanian words and English definitions.
-        </p>
+        {exercise.subPrompt ? (
+          <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-1">
+            {exercise.subPrompt}
+          </p>
+        ) : (
+          <p className="text-sm font-semibold text-slate-500">
+            Tap a pair of matching Lithuanian words and English definitions.
+          </p>
+        )}
       </div>
 
       {/* Two Columns Grid */}
