@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   }
@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   } catch (primaryError) {
@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
         status: 200,
         headers: {
           'Content-Type': 'audio/mpeg',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Cache-Control': 'public, max-age=31536000, immutable',
         },
       });
     } catch (fallbackError) {
