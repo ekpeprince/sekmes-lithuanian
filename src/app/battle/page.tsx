@@ -73,6 +73,7 @@ function BattleArenaContent() {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const advanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [guestId] = useState<string>(() => {
     if (typeof window === 'undefined') return 'guest-user';
@@ -93,10 +94,47 @@ function BattleArenaContent() {
     }
   }, [user]);
 
-  // Auto-fill room code if ?room= query param is provided
+  // Join friend's room with code
+  const handleJoinRoomWithCode = async (code: string) => {
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) {
+      setErrorMessage('Įveskite 6 simbolių kambario kodą.');
+      return;
+    }
+
+    try {
+      setIsJoiningRoom(true);
+      setErrorMessage(null);
+      const joined = await joinBattleRoom(cleanCode, {
+        id: myPlayerId,
+        name: userName,
+        avatar: userAvatar,
+      });
+
+      if (!joined) {
+        setErrorMessage(`Kambarys „${cleanCode}“ nerastas. Patikrinkite kodą!`);
+        return;
+      }
+
+      setRoom(joined);
+      sounds.playClick();
+      if (joined.status === 'in_progress') {
+        setView('in_game');
+      }
+    } catch (err) {
+      console.error('Error joining room:', err);
+      setErrorMessage('Nepavyko prisijungti prie kambario.');
+    } finally {
+      setIsJoiningRoom(false);
+    }
+  };
+
+  // Auto-join room if ?room= query param is provided via invite link
   useEffect(() => {
-    if (roomParam) {
-      setJoinCodeInput(roomParam.toUpperCase());
+    if (roomParam && view === 'lobby' && !room) {
+      const code = roomParam.trim().toUpperCase();
+      setJoinCodeInput(code);
+      handleJoinRoomWithCode(code);
     }
   }, [roomParam]);
 
@@ -111,7 +149,8 @@ function BattleArenaContent() {
         setTimeLeft(15);
         setSelectedOption(null);
         setHasAnsweredCurrentRound(false);
-      } else if (updatedRoom.status === 'finished' && view === 'in_game') {
+        setRoundTransitioning(false);
+      } else if (updatedRoom.status === 'finished') {
         setView('results');
       }
     });
@@ -120,6 +159,30 @@ function BattleArenaContent() {
       unsubscribe();
     };
   }, [room?.id, view]);
+
+  // Trigger round advance with review delay
+  const triggerRoundAdvance = (targetRound: number) => {
+    if (roundTransitioning) return;
+    setRoundTransitioning(true);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    advanceTimeoutRef.current = setTimeout(async () => {
+      if (!room) return;
+      const nextRound = targetRound + 1;
+      const myPlayer = room.players[myPlayerId];
+      // Only host or solo vs AI dispatches advance to avoid race conditions
+      if (myPlayer?.isHost || room.id.startsWith('BOT-')) {
+        const updated = await advanceRound(room.id, nextRound);
+        if (updated) {
+          setRoom(updated);
+          if (nextRound >= updated.questions.length) {
+            setView('results');
+          }
+        }
+      }
+    }, 2800);
+  };
 
   // 15-second round countdown timer
   useEffect(() => {
@@ -132,6 +195,7 @@ function BattleArenaContent() {
     setRoundTransitioning(false);
 
     if (timerRef.current) clearInterval(timerRef.current);
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
 
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
@@ -146,8 +210,22 @@ function BattleArenaContent() {
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
     };
   }, [room?.currentRound, view]);
+
+  // Check if both players have answered to trigger round transition
+  useEffect(() => {
+    if (view !== 'in_game' || !room || room.status !== 'in_progress' || roundTransitioning) return;
+
+    const playersList = Object.values(room.players);
+    if (playersList.length >= 2) {
+      const bothAnswered = playersList.every((p) => p.answers[room.currentRound] !== undefined);
+      if (bothAnswered) {
+        triggerRoundAdvance(room.currentRound);
+      }
+    }
+  }, [room, view, roundTransitioning]);
 
   // AI Rival automated response simulation
   useEffect(() => {
@@ -162,13 +240,12 @@ function BattleArenaContent() {
     const currentQ = room.questions[room.currentRound];
     if (!currentQ) return;
 
-    // Simulate bot thinking delay
-    const delay = Math.floor(2500 + Math.random() * 3500);
+    // Natural simulated thinking delay
+    const delay = Math.floor(1800 + Math.random() * 2000);
 
     if (botTimerRef.current) clearTimeout(botTimerRef.current);
 
     botTimerRef.current = setTimeout(async () => {
-      // 85% chance bot chooses correctly
       const willBeCorrect = Math.random() < 0.85;
       const firstOptLt = typeof currentQ.options[0] === 'string' ? currentQ.options[0] : currentQ.options[0].lt;
       const incorrectOpt = currentQ.options.find((o) => {
@@ -196,7 +273,7 @@ function BattleArenaContent() {
 
   // Handle when timer hits 0
   const handleTimeExpired = async () => {
-    if (!room || hasAnsweredCurrentRound) return;
+    if (!room || hasAnsweredCurrentRound || roundTransitioning) return;
     const currentQ = room.questions[room.currentRound];
     if (!currentQ) return;
 
@@ -204,13 +281,14 @@ function BattleArenaContent() {
     setSelectedOption('');
     sounds.playError();
 
-    await submitAnswer(room.id, myPlayerId, room.currentRound, '', currentQ.correctAnswer, 15000);
-    checkAdvanceRound();
+    const updated = await submitAnswer(room.id, myPlayerId, room.currentRound, '', currentQ.correctAnswer, 15000);
+    if (updated) setRoom(updated);
+    triggerRoundAdvance(room.currentRound);
   };
 
   // Submit player's answer
   const handleSelectOption = async (option: string) => {
-    if (hasAnsweredCurrentRound || !room) return;
+    if (hasAnsweredCurrentRound || !room || roundTransitioning) return;
 
     const currentQ = room.questions[room.currentRound];
     if (!currentQ) return;
@@ -220,6 +298,9 @@ function BattleArenaContent() {
 
     setSelectedOption(option);
     setHasAnsweredCurrentRound(true);
+
+    // Stop countdown timer once answered
+    if (timerRef.current) clearInterval(timerRef.current);
 
     if (isCorrect) {
       sounds.playSuccess();
@@ -235,25 +316,14 @@ function BattleArenaContent() {
       currentQ.correctAnswer,
       elapsedMs
     );
-    if (updated) setRoom(updated);
-
-    checkAdvanceRound();
-  };
-
-  // Auto-advance round after both have answered or delay
-  const checkAdvanceRound = () => {
-    setRoundTransitioning(true);
-    setTimeout(async () => {
-      if (!room) return;
-      const nextRound = room.currentRound + 1;
-      const updated = await advanceRound(room.id, nextRound);
-      if (updated) {
-        setRoom(updated);
-        if (nextRound >= updated.questions.length) {
-          setView('results');
-        }
+    if (updated) {
+      setRoom(updated);
+      const playersList = Object.values(updated.players);
+      const bothAnswered = playersList.length >= 2 && playersList.every((p) => p.answers[updated.currentRound] !== undefined);
+      if (bothAnswered) {
+        triggerRoundAdvance(updated.currentRound);
       }
-    }, 2500);
+    }
   };
 
   // Create a new room for a friend
@@ -289,37 +359,7 @@ function BattleArenaContent() {
 
   // Join friend's room with code
   const handleJoinRoom = async () => {
-    const code = joinCodeInput.trim().toUpperCase();
-    if (!code) {
-      setErrorMessage('Įveskite 6 simbolių kambario kodą.');
-      return;
-    }
-
-    try {
-      setIsJoiningRoom(true);
-      setErrorMessage(null);
-      const joined = await joinBattleRoom(code, {
-        id: myPlayerId,
-        name: userName,
-        avatar: userAvatar,
-      });
-
-      if (!joined) {
-        setErrorMessage(`Kambarys „${code}“ nerastas. Patikrinkite kodą!`);
-        return;
-      }
-
-      setRoom(joined);
-      sounds.playClick();
-      if (joined.status === 'in_progress') {
-        setView('in_game');
-      }
-    } catch (err) {
-      console.error('Error joining room:', err);
-      setErrorMessage('Nepavyko prisijungti prie kambario.');
-    } finally {
-      setIsJoiningRoom(false);
-    }
+    await handleJoinRoomWithCode(joinCodeInput);
   };
 
   // Start game when both players are in lobby
@@ -923,12 +963,17 @@ function BattleArenaContent() {
                   <span>Paaiškinimas • Explanation:</span>
                 </div>
                 <p className="font-medium">{currentQ.explanation}</p>
-                {opponentAnswer && (
-                  <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] font-bold text-slate-500 flex items-center gap-2">
+                {opponentAnswer ? (
+                  <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] font-bold text-slate-500 flex items-center justify-between">
                     <span>{opponentPlayer?.name}:</span>
                     <span className={opponentAnswer.correct ? 'text-emerald-600' : 'text-rose-600'}>
                       {opponentAnswer.correct ? 'Atsakė teisingai! (Correct)' : 'Suklydo! (Wrong)'} (+{opponentAnswer.points} pts)
                     </span>
+                  </div>
+                ) : (
+                  <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] font-bold text-amber-700 flex items-center gap-2 animate-pulse">
+                    <span className="text-sm">⏳</span>
+                    <span>Laukiama varžovo atsakymo... • Waiting for opponent to answer...</span>
                   </div>
                 )}
               </div>

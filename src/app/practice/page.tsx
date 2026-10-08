@@ -81,8 +81,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Ką reiškia pasveikinimas „Laba diena“?',
-        englishSubtitle: 'What does the greeting "Laba diena" mean?',
+        q: 'Kaip lietuviškai pasisveikinti „Good afternoon / Good day“?',
+        englishSubtitle: 'How do you say "Good afternoon / Good day" in Lithuanian?',
         correct: 'Laba diena',
         options: [
           { lt: 'Laba diena', en: 'Good afternoon / Good day' },
@@ -92,8 +92,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Kaip išversti klausimą „Kaip sekasi?“?',
-        englishSubtitle: 'How do you translate "Kaip sekasi?" in English?',
+        q: 'Kaip lietuviškai paklausti „How are you / How is it going?“?',
+        englishSubtitle: 'How do you ask "How are you / How is it going?" in Lithuanian?',
         correct: 'Kaip sekasi?',
         options: [
           { lt: 'Kaip sekasi?', en: 'How are you / How is it going?' },
@@ -103,8 +103,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Kaip užsisakyti „Kavos su pienu“?',
-        englishSubtitle: 'How do you translate "Coffee with milk"?',
+        q: 'Kaip užsisakyti „Coffee with milk“?',
+        englishSubtitle: 'How do you order "Coffee with milk" in Lithuanian?',
         correct: 'Kava su pienu',
         options: [
           { lt: 'Kava su pienu', en: 'Coffee with milk' },
@@ -114,8 +114,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Ką reiškia klausimas „Kiek tai kainuoja?“?',
-        englishSubtitle: 'What does "Kiek tai kainuoja?" mean?',
+        q: 'Kaip lietuviškai paklausti „How much does this cost?“?',
+        englishSubtitle: 'How do you ask "How much does this cost?" in Lithuanian?',
         correct: 'Kiek tai kainuoja?',
         options: [
           { lt: 'Kiek tai kainuoja?', en: 'How much does this cost?' },
@@ -125,8 +125,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Ką nurodo frazė „Eikite tiesiai“?',
-        englishSubtitle: 'What does the direction "Eikite tiesiai" mean?',
+        q: 'Kuri frazė nurodo kryptį „Walk straight ahead“?',
+        englishSubtitle: 'Which direction phrase means "Walk straight ahead"?',
         correct: 'Eikite tiesiai',
         options: [
           { lt: 'Eikite tiesiai', en: 'Walk straight ahead' },
@@ -136,7 +136,7 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Kaip pasakyti „Vienas euras“?',
+        q: 'Kaip pasakyti „One euro (€1)“?',
         englishSubtitle: 'What is "One euro" in Lithuanian?',
         correct: 'Vienas euras',
         options: [
@@ -147,8 +147,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Ką reiškia „Aš esu studentas“?',
-        englishSubtitle: 'What does "Aš esu studentas" mean?',
+        q: 'Kaip lietuviškai pasakyti „I am a student“?',
+        englishSubtitle: 'How do you say "I am a student" in Lithuanian?',
         correct: 'Aš esu studentas',
         options: [
           { lt: 'Aš esu studentas', en: 'I am a student' },
@@ -158,8 +158,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Kaip atsiprašyti lietuviškai („Excuse me / Sorry“)?',
-        englishSubtitle: 'How do you apologize or say "Excuse me / Sorry"?',
+        q: 'Kaip mandagiai atsiprašyti („Excuse me / Sorry“)?',
+        englishSubtitle: 'How do you politely apologize or say "Excuse me / Sorry"?',
         correct: 'Atsiprašau',
         options: [
           { lt: 'Atsiprašau', en: 'Excuse me / Sorry' },
@@ -169,8 +169,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Ką reiškia žodis „Stotis“?',
-        englishSubtitle: 'What does the word "Stotis" mean?',
+        q: 'Kuris lietuviškas žodis reiškia „Station“?',
+        englishSubtitle: 'Which Lithuanian word means "Station (bus/train)"?',
         correct: 'Stotis',
         options: [
           { lt: 'Stotis', en: 'Station (train / bus)' },
@@ -180,8 +180,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Kaip pasakyti kryptį „Į dešinę“?',
-        englishSubtitle: 'What does "Į dešinę" mean?',
+        q: 'Kaip pasakyti kryptį „To the right“?',
+        englishSubtitle: 'What is the Lithuanian direction for "To the right"?',
         correct: 'Į dešinę',
         options: [
           { lt: 'Į dešinę', en: 'To the right' },
@@ -191,8 +191,8 @@ export default function PracticePage() {
         ],
       },
       {
-        q: 'Kuris žodis lietuviškai reiškia „Bread“?',
-        englishSubtitle: 'What is the Lithuanian word for "Bread"?',
+        q: 'Kuris lietuviškas žodis reiškia „Bread“?',
+        englishSubtitle: 'Which Lithuanian word means "Bread"?',
         correct: 'Duona',
         options: [
           { lt: 'Duona', en: 'Bread (rye/wheat)' },
@@ -204,25 +204,32 @@ export default function PracticePage() {
     ];
   }, []);
 
-  // Speed drill timer effect
+  // Speed drill timer effect (stable interval)
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (drillActive && drillTimeLeft > 0) {
-      timer = setInterval(() => {
-        setDrillTimeLeft((prev) => {
-          if (prev <= 1) {
-            setDrillActive(false);
-            setDrillFinished(true);
-            sounds.playLevelComplete();
-            saveSpeedDrillScoreVal(drillScore);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    if (!drillActive) return;
+
+    const timer = setInterval(() => {
+      setDrillTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setDrillActive(false);
+          setDrillFinished(true);
+          sounds.playLevelComplete();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(timer);
-  }, [drillActive, drillTimeLeft, drillScore, saveSpeedDrillScoreVal]);
+  }, [drillActive]);
+
+  // Persist score when drill finishes
+  useEffect(() => {
+    if (drillFinished && drillScore > 0) {
+      saveSpeedDrillScoreVal(drillScore);
+    }
+  }, [drillFinished, drillScore, saveSpeedDrillScoreVal]);
 
   const startSpeedDrill = () => {
     sounds.playClick();

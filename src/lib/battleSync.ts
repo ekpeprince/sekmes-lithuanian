@@ -129,6 +129,34 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 2500): Pr
   ]);
 }
 
+// Helper to communicate with Next.js server battle sync endpoint
+async function apiBattleCall<T>(payload: Record<string, unknown>): Promise<T | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/api/battle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+// Fetch live room from server
+async function fetchServerRoom(roomId: string): Promise<BattleRoom | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch(`/api/battle?roomId=${encodeURIComponent(roomId)}`);
+    if (!res.ok) return null;
+    return (await res.json()) as BattleRoom;
+  } catch {
+    return null;
+  }
+}
+
 // Save room to local storage (fallback & offline)
 function saveLocalRoom(room: BattleRoom): void {
   if (typeof window === 'undefined') return;
@@ -180,15 +208,18 @@ export async function createBattleRoom(hostUser: {
     },
   };
 
-  // Save room locally immediately so host gets instant room code & UI feedback
+  // 1. Save room locally immediately
   saveLocalRoom(initialRoom);
 
-  // Sync to Firestore in background with a timeout so the UI never hangs
+  // 2. Register room on server so friends on any device/phone can join with code
+  apiBattleCall({ action: 'create', room: initialRoom }).catch(() => {});
+
+  // 3. Sync to Firestore in background if configured
   if (isFirebaseConfigured && db) {
     const sanitized = sanitizeForFirestore(initialRoom);
     withTimeout(setDoc(doc(db, 'battles', roomId), sanitized), 2500)
       .catch((err) => {
-        console.warn('Firestore battle create notice (room active locally):', err);
+        console.warn('Firestore battle create notice (room active locally & server):', err);
       });
   }
 
@@ -244,15 +275,28 @@ export async function joinBattleRoom(
   roomId: string,
   guestUser: { id: string; name: string; avatar: string }
 ): Promise<BattleRoom | null> {
+  const cleanId = roomId.trim().toUpperCase();
   let room: BattleRoom | null = null;
 
-  // 1. Check local storage first (instant)
-  room = getLocalRoom(roomId);
+  // 1. Try server first (supports cross-device joining from mobile or different browsers)
+  const serverJoined = await apiBattleCall<BattleRoom>({
+    action: 'join',
+    roomId: cleanId,
+    guestUser,
+  });
+  if (serverJoined) {
+    room = serverJoined;
+    saveLocalRoom(room);
+    return room;
+  }
 
-  // 2. If not found locally, query Firestore with a 3-second timeout
+  // 2. Check local storage (same browser / tabs)
+  room = getLocalRoom(cleanId);
+
+  // 3. Query Firestore if connected
   if (!room && isFirebaseConfigured && db) {
     try {
-      const snap = await withTimeout(getDoc(doc(db, 'battles', roomId)), 3000);
+      const snap = await withTimeout(getDoc(doc(db, 'battles', cleanId)), 3000);
       if (snap && snap.exists()) {
         room = snap.data() as BattleRoom;
       }
@@ -283,11 +327,11 @@ export async function joinBattleRoom(
   if (isFirebaseConfigured && db && !room.id.startsWith('BOT-')) {
     const sanitizedPlayer = sanitizeForFirestore(room.players[guestUser.id]);
     withTimeout(
-      updateDoc(doc(db, 'battles', roomId), {
+      updateDoc(doc(db, 'battles', cleanId), {
         [`players.${guestUser.id}`]: sanitizedPlayer,
       }),
       2500
-    ).catch((err) => console.warn('Failed to update player in Firestore:', err));
+    ).catch(() => {});
   }
 
   return room;
@@ -295,23 +339,27 @@ export async function joinBattleRoom(
 
 // Start battle (moves status from 'waiting' to 'in_progress')
 export async function startBattle(roomId: string): Promise<void> {
+  const cleanId = roomId.trim().toUpperCase();
   const updates = {
     status: 'in_progress' as const,
     currentRound: 0,
     roundStartTime: Date.now(),
   };
 
-  const local = getLocalRoom(roomId);
+  const local = getLocalRoom(cleanId);
   if (local) {
     const updated = { ...local, ...updates };
     saveLocalRoom(updated);
   }
 
-  if (isFirebaseConfigured && db && !roomId.startsWith('BOT-')) {
+  // Sync to server
+  apiBattleCall({ action: 'start', roomId: cleanId }).catch(() => {});
+
+  if (isFirebaseConfigured && db && !cleanId.startsWith('BOT-')) {
     withTimeout(
-      updateDoc(doc(db, 'battles', roomId), sanitizeForFirestore(updates)),
+      updateDoc(doc(db, 'battles', cleanId), sanitizeForFirestore(updates)),
       2500
-    ).catch((err) => console.warn('Failed to start battle in Firestore:', err));
+    ).catch(() => {});
   }
 }
 
@@ -324,11 +372,17 @@ export async function submitAnswer(
   correctAnswer: string,
   timeMs: number
 ): Promise<BattleRoom | null> {
-  const room = getLocalRoom(roomId);
+  const cleanId = roomId.trim().toUpperCase();
+  const room = getLocalRoom(cleanId);
   if (!room) return null;
 
   const player = room.players[playerId];
   if (!player) return room;
+
+  // Prevent duplicate answer overwrite
+  if (player.answers[roundIndex]) {
+    return room;
+  }
 
   const isCorrect = selected === correctAnswer;
   const currentStreak = isCorrect ? player.streak + 1 : 0;
@@ -361,13 +415,24 @@ export async function submitAnswer(
 
   saveLocalRoom(updatedRoom);
 
+  // Sync to server
+  apiBattleCall({
+    action: 'answer',
+    roomId: cleanId,
+    playerId,
+    roundIndex,
+    selected,
+    correctAnswer,
+    timeMs,
+  }).catch(() => {});
+
   if (isFirebaseConfigured && db && !room.id.startsWith('BOT-')) {
     withTimeout(
-      updateDoc(doc(db, 'battles', roomId), {
+      updateDoc(doc(db, 'battles', cleanId), {
         [`players.${playerId}`]: sanitizeForFirestore(updatedPlayer),
       }),
       2500
-    ).catch((err) => console.warn('Failed to submit answer to Firestore:', err));
+    ).catch(() => {});
   }
 
   return updatedRoom;
@@ -375,8 +440,14 @@ export async function submitAnswer(
 
 // Advance to next round or finish
 export async function advanceRound(roomId: string, nextRound: number): Promise<BattleRoom | null> {
-  const room = getLocalRoom(roomId);
+  const cleanId = roomId.trim().toUpperCase();
+  const room = getLocalRoom(cleanId);
   if (!room) return null;
+
+  // Idempotency guard: prevent double advancing
+  if (room.currentRound >= nextRound) {
+    return room;
+  }
 
   const isFinished = nextRound >= room.questions.length;
   let winnerId: string | undefined = undefined;
@@ -401,64 +472,92 @@ export async function advanceRound(roomId: string, nextRound: number): Promise<B
   const updatedRoom: BattleRoom = { ...room, ...updates };
   saveLocalRoom(updatedRoom);
 
+  // Sync to server
+  apiBattleCall({ action: 'advance', roomId: cleanId, nextRound }).catch(() => {});
+
   if (isFirebaseConfigured && db && !room.id.startsWith('BOT-')) {
     withTimeout(
-      updateDoc(doc(db, 'battles', roomId), sanitizeForFirestore(updates)),
+      updateDoc(doc(db, 'battles', cleanId), sanitizeForFirestore(updates)),
       2500
-    ).catch((err) => console.warn('Failed to advance round in Firestore:', err));
+    ).catch(() => {});
   }
 
   return updatedRoom;
 }
 
-// Subscribe to real-time room updates
+// Subscribe to real-time room updates (supports cross-device server polling, window events & Firestore)
 export function subscribeToBattleRoom(
   roomId: string,
   onUpdate: (room: BattleRoom) => void
 ): () => void {
-  // 1. Listen to local custom events within the window
+  const cleanId = roomId.trim().toUpperCase();
+  let lastStateJson = '';
+
+  const checkAndUpdate = (room: BattleRoom) => {
+    const json = JSON.stringify(room);
+    if (json !== lastStateJson) {
+      lastStateJson = json;
+      saveLocalRoom(room);
+      onUpdate(room);
+    }
+  };
+
+  // 1. Initial local state
+  const current = getLocalRoom(cleanId);
+  if (current) {
+    lastStateJson = JSON.stringify(current);
+  }
+
+  // 2. Poll server every 900ms for cross-device updates (phone <-> laptop)
+  let pollInterval: NodeJS.Timeout | null = null;
+  if (!cleanId.startsWith('BOT-')) {
+    pollInterval = setInterval(async () => {
+      const serverRoom = await fetchServerRoom(cleanId);
+      if (serverRoom) {
+        checkAndUpdate(serverRoom);
+      }
+    }, 900);
+  }
+
+  // 3. Listen to local custom events within the window
   const handleLocal = (e: Event) => {
     const customEvent = e as CustomEvent<BattleRoom>;
-    if (customEvent.detail && customEvent.detail.id === roomId) {
-      onUpdate(customEvent.detail);
+    if (customEvent.detail && customEvent.detail.id === cleanId) {
+      checkAndUpdate(customEvent.detail);
     }
   };
   window.addEventListener('sekmes-battle-update', handleLocal);
 
-  // 2. Listen to cross-tab storage changes
+  // 4. Listen to cross-tab storage changes
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === `${LOCAL_STORAGE_PREFIX}${roomId}` && e.newValue) {
+    if (e.key === `${LOCAL_STORAGE_PREFIX}${cleanId}` && e.newValue) {
       try {
         const parsed = JSON.parse(e.newValue) as BattleRoom;
-        onUpdate(parsed);
+        checkAndUpdate(parsed);
       } catch {}
     }
   };
   window.addEventListener('storage', handleStorage);
 
-  // 3. Listen to Firestore real-time updates if connected
+  // 5. Listen to Firestore real-time updates if connected
   let unsubFirestore: Unsubscribe | null = null;
-  if (!roomId.startsWith('BOT-') && isFirebaseConfigured && db) {
+  if (!cleanId.startsWith('BOT-') && isFirebaseConfigured && db) {
     try {
       unsubFirestore = onSnapshot(
-        doc(db, 'battles', roomId),
+        doc(db, 'battles', cleanId),
         (snap) => {
           if (snap.exists()) {
             const roomData = snap.data() as BattleRoom;
-            saveLocalRoom(roomData);
-            onUpdate(roomData);
+            checkAndUpdate(roomData);
           }
         },
-        (error) => {
-          console.warn('Firestore snapshot notice, falling back to local sync:', error);
-        }
+        () => {}
       );
-    } catch (err) {
-      console.warn('Firestore subscription failed, falling back to local events:', err);
-    }
+    } catch {}
   }
 
   return () => {
+    if (pollInterval) clearInterval(pollInterval);
     window.removeEventListener('sekmes-battle-update', handleLocal);
     window.removeEventListener('storage', handleStorage);
     if (unsubFirestore) {
