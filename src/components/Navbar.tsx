@@ -121,13 +121,13 @@ export const Navbar: React.FC = () => {
               onClick={() => {
                 const nextGender = progress.voiceGender === 'male' ? 'female' : 'male';
                 setVoiceGender(nextGender);
-                sounds.speak(nextGender === 'male' ? 'Labas, aš esu Leonas!' : 'Labas, aš esu Ona!');
+                sounds.speak(nextGender === 'male' ? 'Labas, aš esu Leonas!' : 'Labas, aš esu Rūta!');
               }}
-              title={`Native Speaker Voice: ${progress.voiceGender === 'male' ? 'Leonas (Male)' : 'Ona (Female)'}. Click to switch voice.`}
+              title={`Native Speaker Voice: ${progress.voiceGender === 'male' ? 'Leonas (Male)' : 'Rūta (Female)'}. Click to switch voice.`}
               className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-xs font-bold text-slate-700 hover:text-emerald-700 transition-all cursor-pointer shadow-2xs active:scale-95"
             >
               <span className="text-sm">{progress.voiceGender === 'male' ? '👨' : '👩'}</span>
-              <span>{progress.voiceGender === 'male' ? 'Leonas' : 'Ona'}</span>
+              <span>{progress.voiceGender === 'male' ? 'Leonas' : 'Rūta'}</span>
             </button>
 
             {/* User Account / Sign In */}
