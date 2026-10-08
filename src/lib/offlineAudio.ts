@@ -1,5 +1,6 @@
 // Offline Audio Cache & Pre-Caching Manager for Sėkmės PWA
 import { UNITS } from '@/data/curriculum';
+import { SPEAKING_DRILLS } from '@/data/speakingDrills';
 
 export const AUDIO_CACHE_NAME = 'sekmes-audio-v1';
 
@@ -39,6 +40,7 @@ export function getAllCurriculumPhrases(): string[] {
   ];
 
   corePhrases.forEach(p => phraseSet.add(p.trim()));
+  SPEAKING_DRILLS.forEach(d => phraseSet.add(d.phrase.trim()));
 
   // Extract from all lessons and exercises
   UNITS.forEach(unit => {

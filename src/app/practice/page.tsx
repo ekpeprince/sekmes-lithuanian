@@ -13,13 +13,15 @@ import {
   CheckCircle2,
   Clock,
   Flame,
+  Mic,
 } from 'lucide-react';
 import { UNITS } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
 import { sounds } from '@/lib/audio';
 import { AudioSpeaker } from '@/components/AudioSpeaker';
+import { SpeakingLab } from '@/components/SpeakingLab';
 
-type PracticeTab = 'speed_drill' | 'flashcards' | 'mistakes_bank' | 'lessons';
+type PracticeTab = 'speaking_lab' | 'speed_drill' | 'flashcards' | 'mistakes_bank' | 'lessons';
 
 // High-frequency curated flashcard pairs across A1 Lithuanian
 const VOCABULARY_DECK = [
@@ -49,7 +51,7 @@ export default function PracticePage() {
     saveSpeedDrillScoreVal,
   } = useGame();
 
-  const [activeTab, setActiveTab] = useState<PracticeTab>('speed_drill');
+  const [activeTab, setActiveTab] = useState<PracticeTab>('speaking_lab');
 
   // Flashcards state
   const [cardIndex, setCardIndex] = useState(0);
@@ -193,6 +195,19 @@ export default function PracticePage() {
         <div className="flex flex-wrap gap-2 mb-8 bg-slate-200/70 p-1.5 rounded-2xl">
           <button
             type="button"
+            onClick={() => { sounds.playClick(); setActiveTab('speaking_lab'); }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
+              activeTab === 'speaking_lab'
+                ? 'bg-white text-rose-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Mic className="h-4 w-4 text-rose-500" />
+            <span>Pronunciation Lab</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => { sounds.playClick(); setActiveTab('speed_drill'); }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
               activeTab === 'speed_drill'
@@ -248,6 +263,11 @@ export default function PracticePage() {
             <span>Completed Lessons</span>
           </button>
         </div>
+
+        {/* TAB 0: PRONUNCIATION / SPEAKING LAB */}
+        {activeTab === 'speaking_lab' && (
+          <SpeakingLab />
+        )}
 
         {/* TAB 1: 60-SECOND SPEED DRILL */}
         {activeTab === 'speed_drill' && (

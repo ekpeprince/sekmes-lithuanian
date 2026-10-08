@@ -22,30 +22,42 @@ function normalizeLt(str: string): string {
     .trim();
 }
 
-// Compute string similarity (0.0 to 1.0)
-function computeSimilarity(target: string, actual: string): number {
+// Compute word matching details
+function computeWordMatch(target: string, actual: string) {
   const normTarget = normalizeLt(target);
   const normActual = normalizeLt(actual);
 
-  if (normTarget === normActual) return 1.0;
-  if (!normTarget || !normActual) return 0.0;
+  if (!normTarget || !normActual) {
+    return { similarity: 0, wordStatus: [] as boolean[] };
+  }
 
-  // Word set matching
   const targetWords = normTarget.split(' ');
   const actualWords = normActual.split(' ');
 
   let matches = 0;
-  targetWords.forEach(word => {
+  const wordStatus = targetWords.map((word) => {
     if (actualWords.includes(word)) {
       matches += 1;
-    } else {
-      // Check partial match (e.g. endings)
-      const hasClose = actualWords.some(act => act.startsWith(word.slice(0, -1)) || word.startsWith(act.slice(0, -1)));
-      if (hasClose) matches += 0.75;
+      return true;
     }
+    const hasClose = actualWords.some(
+      (act) => act.startsWith(word.slice(0, -1)) || word.startsWith(act.slice(0, -1))
+    );
+    if (hasClose) {
+      matches += 0.75;
+      return true;
+    }
+    return false;
   });
 
-  return Math.min(1.0, matches / targetWords.length);
+  return {
+    similarity: Math.min(1.0, matches / targetWords.length),
+    wordStatus,
+  };
+}
+
+function computeSimilarity(target: string, actual: string): number {
+  return computeWordMatch(target, actual).similarity;
 }
 
 interface SpeechRecognitionEventLike {
@@ -90,9 +102,10 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   isChecked,
 }) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [isPlayingModelAudio, setIsPlayingModelAudio] = useState(false);
+  const [isPlayingModelAudio, setIsPlayingModelAudio] = useState<'normal' | 'slow' | null>(null);
   const [transcript, setTranscript] = useState<string>('');
   const [score, setScore] = useState<number | null>(null);
+  const [matchedWords, setMatchedWords] = useState<boolean[]>([]);
   const [speechSupported, setSpeechSupported] = useState<boolean>(() => Boolean(getSpeechRecognitionClass()));
   const [cantSpeakNow, setCantSpeakNow] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(10);
@@ -114,11 +127,11 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     };
   }, []);
 
-  const handlePlayModelAudio = () => {
-    setIsPlayingModelAudio(true);
+  const handlePlayModelAudio = (slow: boolean = false) => {
+    setIsPlayingModelAudio(slow ? 'slow' : 'normal');
     sounds.speak(exercise.targetPhrase, {
-      slow: false,
-      onEnd: () => setIsPlayingModelAudio(false),
+      slow,
+      onEnd: () => setIsPlayingModelAudio(null),
     });
   };
 
@@ -187,10 +200,11 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
         }
         setTranscript(currentTranscript);
 
-        // Evaluate similarity score
-        const similarity = computeSimilarity(exercise.targetPhrase, currentTranscript);
+        // Evaluate similarity score and word-level matches
+        const { similarity, wordStatus } = computeWordMatch(exercise.targetPhrase, currentTranscript);
         const currentScore = Math.round(similarity * 100);
         setScore(currentScore);
+        setMatchedWords(wordStatus);
 
         // If >= 70% match or variation matches, register passing
         const passes = similarity >= 0.7 || (exercise.acceptableVariations || []).some(
@@ -226,6 +240,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     stopListening();
     setTranscript('');
     setScore(null);
+    setMatchedWords([]);
     setTimeLeft(10);
     onSpoken('', false);
   };
@@ -235,6 +250,8 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     setCantSpeakNow(true);
     onSpoken(exercise.targetPhrase, true);
   };
+
+  const targetWords = exercise.targetPhrase.split(/\s+/);
 
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center text-center">
@@ -259,19 +276,36 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
       </div>
 
       {/* Target Phrase Card */}
-      <div className="w-full bg-white border-2 border-slate-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 mb-2.5 sm:mb-4 shadow-sm flex flex-col items-center">
-        {/* Listen Model Button */}
-        <button
-          type="button"
-          onClick={handlePlayModelAudio}
-          disabled={isPlayingModelAudio}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 text-sky-600 border border-sky-200 font-bold text-[11px] uppercase tracking-wider hover:bg-sky-100 transition-colors mb-2 sm:mb-3 ${
-            isPlayingModelAudio ? 'animate-pulse' : ''
-          }`}
-        >
-          <Volume2 className="w-3.5 h-3.5" />
-          <span>Listen to pronunciation</span>
-        </button>
+      <div className="w-full bg-white border-2 border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-5 mb-2.5 sm:mb-4 shadow-sm flex flex-col items-center">
+        {/* Listen Model Buttons (Normal & Slow) */}
+        <div className="flex items-center gap-2 mb-2.5">
+          <button
+            type="button"
+            onClick={() => handlePlayModelAudio(false)}
+            disabled={isPlayingModelAudio !== null}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider transition-colors ${
+              isPlayingModelAudio === 'normal'
+                ? 'bg-sky-500 text-white ring-2 ring-sky-300 animate-pulse'
+                : 'bg-sky-50 text-sky-600 border border-sky-200 hover:bg-sky-100'
+            }`}
+          >
+            <Volume2 className="w-3.5 h-3.5" />
+            <span>Listen (1.0x)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handlePlayModelAudio(true)}
+            disabled={isPlayingModelAudio !== null}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider transition-colors ${
+              isPlayingModelAudio === 'slow'
+                ? 'bg-amber-500 text-white ring-2 ring-amber-300 animate-pulse'
+                : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+            }`}
+          >
+            <span>🐢 Slow (0.75x)</span>
+          </button>
+        </div>
 
         {/* Big Target Phrase */}
         <div className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1">
@@ -286,14 +320,49 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
         )}
 
         {/* Translation */}
-        <div className="text-xs sm:text-sm font-medium text-slate-500">
+        <div className="text-xs sm:text-sm font-medium text-slate-500 mb-3">
           “{exercise.translation}”
+        </div>
+
+        {/* Word-by-Word Matching Chips */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          {targetWords.map((word, idx) => {
+            const isMatched = matchedWords[idx];
+            return (
+              <span
+                key={idx}
+                className={`px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black border transition-all ${
+                  isMatched
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
+                    : isRecording
+                    ? 'bg-slate-100 text-slate-500 border-slate-200'
+                    : transcript
+                    ? 'bg-rose-50 text-rose-600 border-rose-200'
+                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                }`}
+              >
+                {isMatched ? '✓ ' : ''}
+                {word}
+              </span>
+            );
+          })}
         </div>
       </div>
 
       {/* Recording Feedback & Microphone Button */}
       {!cantSpeakNow ? (
         <div className="flex flex-col items-center gap-2 my-1">
+          {/* Animated Sound Wave Equalizer while recording */}
+          {isRecording && (
+            <div className="flex items-center gap-1.5 justify-center mb-1 h-5">
+              <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-1.5 h-3 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-1.5 h-6 bg-rose-600 rounded-full animate-bounce" />
+              <span className="w-1.5 h-2.5 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.2s]" />
+              <span className="w-1.5 h-4 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.35s]" />
+            </div>
+          )}
+
           {/* Main Glowing Mic Button */}
           <div className="relative">
             {isRecording && (
