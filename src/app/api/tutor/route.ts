@@ -139,8 +139,12 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
           },
         });
 
-        const text = response.text?.trim() || '';
-        const parsed = JSON.parse(text);
+        const rawText = response.text?.trim() || '';
+        let cleanedJson = rawText;
+        if (cleanedJson.startsWith('```')) {
+          cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        }
+        const parsed = JSON.parse(cleanedJson);
         return NextResponse.json(parsed);
       } catch (geminiError) {
         console.warn('Gemini API call failed, falling back to dialogue engine:', geminiError);

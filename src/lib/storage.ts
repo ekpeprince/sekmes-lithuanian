@@ -91,6 +91,14 @@ export function getStoredProgress(): UserProgress {
       return DEFAULT_PROGRESS;
     }
     const parsed = JSON.parse(raw) as Partial<UserProgress>;
+    const today = new Date().toISOString().split('T')[0];
+    const isNewDay = Boolean(parsed.lastActiveDate && parsed.lastActiveDate !== today);
+
+    // Reset daily quests if a new calendar day has arrived
+    const questsToUse = isNewDay
+      ? DEFAULT_QUESTS.map(q => ({ ...q, current: 0, completed: false, claimed: false }))
+      : (Array.isArray(parsed.quests) && parsed.quests.length > 0 ? parsed.quests : DEFAULT_QUESTS);
+
     const merged: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
@@ -98,12 +106,17 @@ export function getStoredProgress(): UserProgress {
       completedLessons: Array.isArray(parsed.completedLessons) ? parsed.completedLessons : [],
       hearts: typeof parsed.hearts === 'number' ? Math.min(5, Math.max(0, parsed.hearts)) : 5,
       mistakesBank: Array.isArray(parsed.mistakesBank) ? parsed.mistakesBank : [],
-      quests: Array.isArray(parsed.quests) && parsed.quests.length > 0 ? parsed.quests : DEFAULT_QUESTS,
+      quests: questsToUse,
       leagueTier: parsed.leagueTier || getLeagueTierByXp(parsed.xp || 0),
       speedDrillHighScore: parsed.speedDrillHighScore || 0,
       streakFreezes: typeof parsed.streakFreezes === 'number' ? parsed.streakFreezes : 1,
       mysteryChestClaimedDate: parsed.mysteryChestClaimedDate,
     };
+
+    if (isNewDay) {
+      saveProgress(merged);
+    }
+
     return merged;
   } catch {
     return DEFAULT_PROGRESS;
@@ -153,13 +166,19 @@ export function completeLesson(lessonId: string, xpEarned: number): UserProgress
   const current = getStoredProgress();
   const today = new Date().toISOString().split('T')[0];
   
-  // Calculate streak
+  // Calculate streak & check freeze protection
   let newStreak = current.streak;
+  let remainingFreezes = current.streakFreezes ?? 1;
+
   if (current.lastActiveDate !== today) {
     const lastDate = new Date(current.lastActiveDate);
     const currentDate = new Date(today);
     const diffDays = Math.round((currentDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
     if (diffDays === 1) {
+      newStreak += 1;
+    } else if (diffDays === 2 && remainingFreezes > 0) {
+      // Streak freeze protects 1 missed day!
+      remainingFreezes -= 1;
       newStreak += 1;
     } else if (diffDays > 1) {
       newStreak = 1;
@@ -190,6 +209,7 @@ export function completeLesson(lessonId: string, xpEarned: number): UserProgress
     xp: nextXp,
     gems: (current.gems || 0) + 15,
     streak: Math.max(1, newStreak),
+    streakFreezes: remainingFreezes,
     completedLessons,
     lastActiveDate: today,
     quests: updatedQuests,
