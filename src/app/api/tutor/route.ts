@@ -69,18 +69,74 @@ const SCENARIO_CONTEXTS = {
   },
 };
 
+// Sliding-window IP rate limiter to protect against bot abuse and API quota drain
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 20; // max 20 requests per minute per IP
+const ipRequestHistory = new Map<string, number[]>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = ipRequestHistory.get(ip) || [];
+  const validTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+
+  if (validTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    ipRequestHistory.set(ip, validTimestamps);
+    return true;
+  }
+
+  validTimestamps.push(now);
+  ipRequestHistory.set(ip, validTimestamps);
+
+  if (ipRequestHistory.size > 2000) {
+    for (const [key, list] of ipRequestHistory.entries()) {
+      if (list.every(t => now - t >= RATE_LIMIT_WINDOW_MS)) {
+        ipRequestHistory.delete(key);
+      }
+    }
+  }
+
+  return false;
+}
+
 export async function POST(req: NextRequest) {
+  // 1. IP Rate Limiting Check
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      {
+        replyLithuanian: 'Per daug užklausų. Prašome palaukti minutėlę!',
+        replyEnglish: 'Too many requests. Please wait a minute before sending more messages!',
+        grammarTip: '„Palaukti“ means "to wait" (Infinitive form).',
+        suggestedReplies: [
+          { lt: 'Palauksiu šiek tiek.', en: 'I will wait a little bit.' }
+        ],
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const body: TutorRequest = await req.json();
-    const {
-      scenario = 'cafe',
-      messages = [],
-      userText = '',
-      customTopic = '',
-      customRole = 'Draugas (Friend)',
-      isInitial = false,
-      learnerMemory = '',
-    } = body;
+
+    // 2. Strict Input Sanitization & Payload Caps
+    const rawScenario = body.scenario || 'cafe';
+    const scenario = ['cafe', 'market', 'directions', 'free', 'custom'].includes(rawScenario)
+      ? rawScenario
+      : 'cafe';
+
+    const userText = (body.userText || '').slice(0, 300).trim();
+    const customTopic = (body.customTopic || '').slice(0, 100).trim();
+    const customRole = (body.customRole || 'Draugas (Friend)').slice(0, 100).trim();
+    const learnerMemory = (body.learnerMemory || '').slice(0, 500).trim();
+    const isInitial = Boolean(body.isInitial);
+
+    // Limit conversation history to the last 8 turns, capped to 300 chars each
+    const messages: Message[] = (Array.isArray(body.messages) ? body.messages : [])
+      .slice(-8)
+      .map((m) => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: String(m.content || '').slice(0, 300),
+      }));
 
     const isCustom = scenario === 'custom';
     const effectiveTitle = isCustom
@@ -122,18 +178,21 @@ Guidelines:
 }
 Do NOT output markdown code blocks. Output pure JSON only.`;
 
-        let prompt = '';
+        let promptContent = '';
         if (isInitial) {
-          prompt = `${systemPrompt}\n\nTask: Start the conversation with an opening welcoming line in Lithuanian matching the situation ("${effectiveTitle}"). If you know the student's name or history from the memory above, greet them warmly and reference it! Provide a helpful grammar/cultural tip and 3 suggested starter replies the student could say in Lithuanian.`;
+          promptContent = `Task: Start the conversation with an opening welcoming line in Lithuanian matching the situation ("${effectiveTitle}"). If you know the student's name or history from the memory above, greet them warmly and reference it! Provide a helpful grammar/cultural tip and 3 suggested starter replies the student could say in Lithuanian.`;
         } else {
-          const conversationHistory = messages.map(m => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`).join('\n');
-          prompt = `${systemPrompt}\n\nConversation so far:\n${conversationHistory}\nStudent: ${userText}\nTutor:`;
+          const conversationHistory = messages
+            .map((m) => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`)
+            .join('\n');
+          promptContent = `Conversation so far:\n${conversationHistory}\nStudent: ${userText}\nTutor:`;
         }
 
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: prompt,
+          contents: promptContent,
           config: {
+            systemInstruction: systemPrompt,
             responseMimeType: 'application/json',
             temperature: 0.7,
           },
