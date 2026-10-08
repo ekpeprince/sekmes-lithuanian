@@ -74,7 +74,17 @@ function BattleArenaContent() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const myPlayerId = user?.uid || 'guest-user-1';
+  const [guestId] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'guest-user';
+    let stored = localStorage.getItem('sekmes_guest_battle_id');
+    if (!stored) {
+      stored = `guest-${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem('sekmes_guest_battle_id', stored);
+    }
+    return stored;
+  });
+
+  const myPlayerId = user?.uid || guestId;
 
   // Sync user profile from auth
   useEffect(() => {

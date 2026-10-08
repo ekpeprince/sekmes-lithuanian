@@ -116,6 +116,19 @@ export function calculateAnswerPoints(isCorrect: boolean, timeMs: number, curren
   return 100 + speedBonus + streakBonus;
 }
 
+// Helper to safely strip undefined values so Firestore never throws
+function sanitizeForFirestore<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data));
+}
+
+// Helper with timeout to prevent Firestore network calls from hanging indefinitely
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 2500): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+  ]);
+}
+
 // Save room to local storage (fallback & offline)
 function saveLocalRoom(room: BattleRoom): void {
   if (typeof window === 'undefined') return;
@@ -167,14 +180,16 @@ export async function createBattleRoom(hostUser: {
     },
   };
 
+  // Save room locally immediately so host gets instant room code & UI feedback
   saveLocalRoom(initialRoom);
 
+  // Sync to Firestore in background with a timeout so the UI never hangs
   if (isFirebaseConfigured && db) {
-    try {
-      await setDoc(doc(db, 'battles', roomId), initialRoom);
-    } catch (err) {
-      console.warn('Firestore battle create error, using local room:', err);
-    }
+    const sanitized = sanitizeForFirestore(initialRoom);
+    withTimeout(setDoc(doc(db, 'battles', roomId), sanitized), 2500)
+      .catch((err) => {
+        console.warn('Firestore battle create notice (room active locally):', err);
+      });
   }
 
   return initialRoom;
@@ -231,19 +246,19 @@ export async function joinBattleRoom(
 ): Promise<BattleRoom | null> {
   let room: BattleRoom | null = null;
 
-  if (isFirebaseConfigured && db) {
+  // 1. Check local storage first (instant)
+  room = getLocalRoom(roomId);
+
+  // 2. If not found locally, query Firestore with a 3-second timeout
+  if (!room && isFirebaseConfigured && db) {
     try {
-      const snap = await getDoc(doc(db, 'battles', roomId));
-      if (snap.exists()) {
+      const snap = await withTimeout(getDoc(doc(db, 'battles', roomId)), 3000);
+      if (snap && snap.exists()) {
         room = snap.data() as BattleRoom;
       }
     } catch (err) {
-      console.warn('Firestore fetch battle failed, checking local:', err);
+      console.warn('Firestore fetch battle warning:', err);
     }
-  }
-
-  if (!room) {
-    room = getLocalRoom(roomId);
   }
 
   if (!room) return null;
@@ -264,14 +279,15 @@ export async function joinBattleRoom(
 
   saveLocalRoom(room);
 
-  if (isFirebaseConfigured && db) {
-    try {
-      await updateDoc(doc(db, 'battles', roomId), {
-        [`players.${guestUser.id}`]: room.players[guestUser.id],
-      });
-    } catch (err) {
-      console.warn('Failed to update player in Firestore:', err);
-    }
+  // Sync join to Firestore in background
+  if (isFirebaseConfigured && db && !room.id.startsWith('BOT-')) {
+    const sanitizedPlayer = sanitizeForFirestore(room.players[guestUser.id]);
+    withTimeout(
+      updateDoc(doc(db, 'battles', roomId), {
+        [`players.${guestUser.id}`]: sanitizedPlayer,
+      }),
+      2500
+    ).catch((err) => console.warn('Failed to update player in Firestore:', err));
   }
 
   return room;
@@ -291,12 +307,11 @@ export async function startBattle(roomId: string): Promise<void> {
     saveLocalRoom(updated);
   }
 
-  if (isFirebaseConfigured && db) {
-    try {
-      await updateDoc(doc(db, 'battles', roomId), updates);
-    } catch (err) {
-      console.warn('Failed to start battle in Firestore:', err);
-    }
+  if (isFirebaseConfigured && db && !roomId.startsWith('BOT-')) {
+    withTimeout(
+      updateDoc(doc(db, 'battles', roomId), sanitizeForFirestore(updates)),
+      2500
+    ).catch((err) => console.warn('Failed to start battle in Firestore:', err));
   }
 }
 
@@ -347,13 +362,12 @@ export async function submitAnswer(
   saveLocalRoom(updatedRoom);
 
   if (isFirebaseConfigured && db && !room.id.startsWith('BOT-')) {
-    try {
-      await updateDoc(doc(db, 'battles', roomId), {
-        [`players.${playerId}`]: updatedPlayer,
-      });
-    } catch (err) {
-      console.warn('Failed to submit answer to Firestore:', err);
-    }
+    withTimeout(
+      updateDoc(doc(db, 'battles', roomId), {
+        [`players.${playerId}`]: sanitizeForFirestore(updatedPlayer),
+      }),
+      2500
+    ).catch((err) => console.warn('Failed to submit answer to Firestore:', err));
   }
 
   return updatedRoom;
@@ -375,22 +389,23 @@ export async function advanceRound(roomId: string, nextRound: number): Promise<B
     }
   }
 
-  const updates = {
+  const updates: Partial<BattleRoom> = {
     currentRound: nextRound,
     roundStartTime: Date.now(),
     status: isFinished ? ('finished' as const) : room.status,
-    winnerId: isFinished ? winnerId : undefined,
   };
+  if (winnerId) {
+    updates.winnerId = winnerId;
+  }
 
   const updatedRoom: BattleRoom = { ...room, ...updates };
   saveLocalRoom(updatedRoom);
 
   if (isFirebaseConfigured && db && !room.id.startsWith('BOT-')) {
-    try {
-      await updateDoc(doc(db, 'battles', roomId), updates);
-    } catch (err) {
-      console.warn('Failed to advance round in Firestore:', err);
-    }
+    withTimeout(
+      updateDoc(doc(db, 'battles', roomId), sanitizeForFirestore(updates)),
+      2500
+    ).catch((err) => console.warn('Failed to advance round in Firestore:', err));
   }
 
   return updatedRoom;
@@ -401,40 +416,53 @@ export function subscribeToBattleRoom(
   roomId: string,
   onUpdate: (room: BattleRoom) => void
 ): () => void {
-  // If it's a bot game or Firebase not configured, use local events
-  if (roomId.startsWith('BOT-') || !isFirebaseConfigured || !db) {
-    const handleLocal = (e: Event) => {
-      const customEvent = e as CustomEvent<BattleRoom>;
-      if (customEvent.detail && customEvent.detail.id === roomId) {
-        onUpdate(customEvent.detail);
-      }
-    };
-    window.addEventListener('sekmes-battle-update', handleLocal);
-    return () => {
-      window.removeEventListener('sekmes-battle-update', handleLocal);
-    };
+  // 1. Listen to local custom events within the window
+  const handleLocal = (e: Event) => {
+    const customEvent = e as CustomEvent<BattleRoom>;
+    if (customEvent.detail && customEvent.detail.id === roomId) {
+      onUpdate(customEvent.detail);
+    }
+  };
+  window.addEventListener('sekmes-battle-update', handleLocal);
+
+  // 2. Listen to cross-tab storage changes
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === `${LOCAL_STORAGE_PREFIX}${roomId}` && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue) as BattleRoom;
+        onUpdate(parsed);
+      } catch {}
+    }
+  };
+  window.addEventListener('storage', handleStorage);
+
+  // 3. Listen to Firestore real-time updates if connected
+  let unsubFirestore: Unsubscribe | null = null;
+  if (!roomId.startsWith('BOT-') && isFirebaseConfigured && db) {
+    try {
+      unsubFirestore = onSnapshot(
+        doc(db, 'battles', roomId),
+        (snap) => {
+          if (snap.exists()) {
+            const roomData = snap.data() as BattleRoom;
+            saveLocalRoom(roomData);
+            onUpdate(roomData);
+          }
+        },
+        (error) => {
+          console.warn('Firestore snapshot notice, falling back to local sync:', error);
+        }
+      );
+    } catch (err) {
+      console.warn('Firestore subscription failed, falling back to local events:', err);
+    }
   }
 
-  try {
-    const unsub: Unsubscribe = onSnapshot(doc(db, 'battles', roomId), (snap) => {
-      if (snap.exists()) {
-        const roomData = snap.data() as BattleRoom;
-        saveLocalRoom(roomData);
-        onUpdate(roomData);
-      }
-    });
-    return unsub;
-  } catch (err) {
-    console.warn('Firestore subscription failed, falling back to local events:', err);
-    const handleLocal = (e: Event) => {
-      const customEvent = e as CustomEvent<BattleRoom>;
-      if (customEvent.detail && customEvent.detail.id === roomId) {
-        onUpdate(customEvent.detail);
-      }
-    };
-    window.addEventListener('sekmes-battle-update', handleLocal);
-    return () => {
-      window.removeEventListener('sekmes-battle-update', handleLocal);
-    };
-  }
+  return () => {
+    window.removeEventListener('sekmes-battle-update', handleLocal);
+    window.removeEventListener('storage', handleStorage);
+    if (unsubFirestore) {
+      unsubFirestore();
+    }
+  };
 }
