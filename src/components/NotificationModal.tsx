@@ -10,7 +10,6 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  Smartphone,
   Send,
   X,
   Sparkles,
@@ -322,14 +321,6 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               Test sound, badge & delivery instantly
             </span>
           )}
-        </div>
-
-        {/* iPhone Note */}
-        <div className="mb-5 flex items-center gap-2 text-[11px] text-slate-400">
-          <Smartphone className="w-3.5 h-3.5 shrink-0" />
-          <span>
-            <strong>iPhone / iPad:</strong> Web Push requires adding app to Home Screen (Share → &quot;Add to Home Screen&quot;, iOS 16.4+).
-          </span>
         </div>
 
         {/* Done / Close Button */}
