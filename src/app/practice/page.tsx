@@ -66,21 +66,141 @@ export default function PracticePage() {
   const [drillQuestionIndex, setDrillQuestionIndex] = useState(0);
   const [drillFinished, setDrillFinished] = useState(false);
 
-  // Speed drill pool generated from curriculum exercises
+  // Speed drill pool generated from curriculum exercises with English subtitles
   const speedQuestions = useMemo(() => {
     return [
-      { q: 'How do you say "Thank you"?', correct: 'Ačiū', options: ['Ačiū', 'Prašom', 'Labas', 'Taip'] },
-      { q: 'What does "Laba diena" mean?', correct: 'Good afternoon', options: ['Good afternoon', 'Good night', 'Goodbye', 'Good morning'] },
-      { q: '"Kaip sekasi?" translates to:', correct: 'How are you?', options: ['How are you?', 'Where are you?', 'Who is it?', 'What time is it?'] },
-      { q: 'Translate "Coffee with milk":', correct: 'Kava su pienu', options: ['Kava su pienu', 'Arbata su cukrumi', 'Vanduo su citrina', 'Sultys'] },
-      { q: '"Kiek tai kainuoja?" means:', correct: 'How much does this cost?', options: ['How much does this cost?', 'Where is this place?', 'When does it start?', 'Who made this?'] },
-      { q: '"Eikite tiesiai" directs you to:', correct: 'Walk straight ahead', options: ['Walk straight ahead', 'Turn right', 'Turn left', 'Stop here'] },
-      { q: 'What is "One euro" in Lithuanian?', correct: 'Vienas euras', options: ['Vienas euras', 'Du eurai', 'Dešimt eurų', 'Nulis eurų'] },
-      { q: '"Aš esu studentas" means:', correct: 'I am a student', options: ['I am a student', 'You are a student', 'He is a teacher', 'We are studying'] },
-      { q: 'How do you say "Excuse me / Sorry"?', correct: 'Atsiprašau', options: ['Atsiprašau', 'Prašau', 'Sveiki', 'Viso'] },
-      { q: 'What does "Stotis" mean?', correct: 'Station (train/bus)', options: ['Station (train/bus)', 'Library', 'Airport', 'Hotel'] },
-      { q: '"Į dešinę" means:', correct: 'To the right', options: ['To the right', 'To the left', 'Behind', 'Straight'] },
-      { q: 'What is the Lithuanian word for "Bread"?', correct: 'Duona', options: ['Duona', 'Sūris', 'Medus', 'Pienas'] },
+      {
+        q: 'Kaip lietuviškai pasakyti „Thank you“?',
+        englishSubtitle: 'How do you say "Thank you" in Lithuanian?',
+        correct: 'Ačiū',
+        options: [
+          { lt: 'Ačiū', en: 'Thank you' },
+          { lt: 'Prašom', en: 'Please / You are welcome' },
+          { lt: 'Labas', en: 'Hello / Hi' },
+          { lt: 'Taip', en: 'Yes' },
+        ],
+      },
+      {
+        q: 'Ką reiškia pasveikinimas „Laba diena“?',
+        englishSubtitle: 'What does the greeting "Laba diena" mean?',
+        correct: 'Laba diena',
+        options: [
+          { lt: 'Laba diena', en: 'Good afternoon / Good day' },
+          { lt: 'Labanakt', en: 'Good night' },
+          { lt: 'Viso gero', en: 'Goodbye' },
+          { lt: 'Labas rytas', en: 'Good morning' },
+        ],
+      },
+      {
+        q: 'Kaip išversti klausimą „Kaip sekasi?“?',
+        englishSubtitle: 'How do you translate "Kaip sekasi?" in English?',
+        correct: 'Kaip sekasi?',
+        options: [
+          { lt: 'Kaip sekasi?', en: 'How are you / How is it going?' },
+          { lt: 'Kur esi?', en: 'Where are you?' },
+          { lt: 'Kas čia?', en: 'Who is here / What is this?' },
+          { lt: 'Kiek valandų?', en: 'What time is it?' },
+        ],
+      },
+      {
+        q: 'Kaip užsisakyti „Kavos su pienu“?',
+        englishSubtitle: 'How do you translate "Coffee with milk"?',
+        correct: 'Kava su pienu',
+        options: [
+          { lt: 'Kava su pienu', en: 'Coffee with milk' },
+          { lt: 'Arbata su citrina', en: 'Tea with lemon' },
+          { lt: 'Vanduo su ledu', en: 'Water with ice' },
+          { lt: 'Sultys be cukraus', en: 'Juice without sugar' },
+        ],
+      },
+      {
+        q: 'Ką reiškia klausimas „Kiek tai kainuoja?“?',
+        englishSubtitle: 'What does "Kiek tai kainuoja?" mean?',
+        correct: 'Kiek tai kainuoja?',
+        options: [
+          { lt: 'Kiek tai kainuoja?', en: 'How much does this cost?' },
+          { lt: 'Kur tai yra?', en: 'Where is this place?' },
+          { lt: 'Kada prasideda?', en: 'When does it start?' },
+          { lt: 'Kas tai padarė?', en: 'Who made this?' },
+        ],
+      },
+      {
+        q: 'Ką nurodo frazė „Eikite tiesiai“?',
+        englishSubtitle: 'What does the direction "Eikite tiesiai" mean?',
+        correct: 'Eikite tiesiai',
+        options: [
+          { lt: 'Eikite tiesiai', en: 'Walk straight ahead' },
+          { lt: 'Pasukite dešinėn', en: 'Turn right' },
+          { lt: 'Pasukite kairėn', en: 'Turn left' },
+          { lt: 'Sustokite čia', en: 'Stop here' },
+        ],
+      },
+      {
+        q: 'Kaip pasakyti „Vienas euras“?',
+        englishSubtitle: 'What is "One euro" in Lithuanian?',
+        correct: 'Vienas euras',
+        options: [
+          { lt: 'Vienas euras', en: 'One euro (€1)' },
+          { lt: 'Du eurai', en: 'Two euros (€2)' },
+          { lt: 'Dešimt eurų', en: 'Ten euros (€10)' },
+          { lt: 'Nulis eurų', en: 'Zero euros (€0)' },
+        ],
+      },
+      {
+        q: 'Ką reiškia „Aš esu studentas“?',
+        englishSubtitle: 'What does "Aš esu studentas" mean?',
+        correct: 'Aš esu studentas',
+        options: [
+          { lt: 'Aš esu studentas', en: 'I am a student' },
+          { lt: 'Tu esi studentas', en: 'You are a student' },
+          { lt: 'Jis yra mokytojas', en: 'He is a teacher' },
+          { lt: 'Mes mokomės', en: 'We are studying' },
+        ],
+      },
+      {
+        q: 'Kaip atsiprašyti lietuviškai („Excuse me / Sorry“)?',
+        englishSubtitle: 'How do you apologize or say "Excuse me / Sorry"?',
+        correct: 'Atsiprašau',
+        options: [
+          { lt: 'Atsiprašau', en: 'Excuse me / Sorry' },
+          { lt: 'Prašau', en: 'Please / You are welcome' },
+          { lt: 'Sveiki', en: 'Greetings / Hello' },
+          { lt: 'Viso gero', en: 'All the best / Goodbye' },
+        ],
+      },
+      {
+        q: 'Ką reiškia žodis „Stotis“?',
+        englishSubtitle: 'What does the word "Stotis" mean?',
+        correct: 'Stotis',
+        options: [
+          { lt: 'Stotis', en: 'Station (train / bus)' },
+          { lt: 'Biblioteka', en: 'Library' },
+          { lt: 'Oro uostas', en: 'Airport' },
+          { lt: 'Viešbutis', en: 'Hotel' },
+        ],
+      },
+      {
+        q: 'Kaip pasakyti kryptį „Į dešinę“?',
+        englishSubtitle: 'What does "Į dešinę" mean?',
+        correct: 'Į dešinę',
+        options: [
+          { lt: 'Į dešinę', en: 'To the right' },
+          { lt: 'Į kairę', en: 'To the left' },
+          { lt: 'Atgal', en: 'Backwards' },
+          { lt: 'Tiesiai', en: 'Straight' },
+        ],
+      },
+      {
+        q: 'Kuris žodis lietuviškai reiškia „Bread“?',
+        englishSubtitle: 'What is the Lithuanian word for "Bread"?',
+        correct: 'Duona',
+        options: [
+          { lt: 'Duona', en: 'Bread (rye/wheat)' },
+          { lt: 'Sūris', en: 'Cheese' },
+          { lt: 'Medus', en: 'Honey' },
+          { lt: 'Pienas', en: 'Milk' },
+        ],
+      },
     ];
   }, []);
 
@@ -325,24 +445,41 @@ export default function PracticePage() {
                   </div>
                 </div>
 
-                {/* Question */}
-                <div className="text-center my-6">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Question #{drillQuestionIndex + 1}</span>
+                {/* Question with English Subtitle */}
+                <div className="text-center my-6 flex flex-col items-center">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Question #{drillQuestionIndex + 1}
+                  </span>
                   <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
                     {speedQuestions[drillQuestionIndex % speedQuestions.length].q}
                   </h3>
+                  {speedQuestions[drillQuestionIndex % speedQuestions.length].englishSubtitle && (
+                    <div className="inline-flex items-center gap-1.5 mt-2.5 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800 shadow-2xs">
+                      <span className="font-black uppercase tracking-wider text-[10px] text-emerald-700">
+                        English Subtitle:
+                      </span>
+                      <span className="italic">
+                        {speedQuestions[drillQuestionIndex % speedQuestions.length].englishSubtitle}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* 4 Fast Options */}
+                {/* 4 Fast Options with English Subtitles */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
                   {speedQuestions[drillQuestionIndex % speedQuestions.length].options.map((opt, i) => (
                     <button
-                      key={`speed-opt-${opt}-${i}`}
+                      key={`speed-opt-${opt.lt}-${i}`}
                       type="button"
-                      onClick={() => handleDrillAnswer(opt)}
-                      className="btn-3d p-4 rounded-2xl bg-slate-50 hover:bg-sky-50 border-2 border-slate-200 hover:border-sky-400 text-slate-800 font-black text-base text-center transition-all active:scale-95"
+                      onClick={() => handleDrillAnswer(opt.lt)}
+                      className="btn-3d p-4 rounded-2xl bg-slate-50 hover:bg-sky-50 border-2 border-slate-200 hover:border-sky-400 text-slate-800 font-black text-center transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5"
                     >
-                      {opt}
+                      <span className="text-base font-black text-slate-900">{opt.lt}</span>
+                      {opt.en && (
+                        <span className="text-xs font-semibold text-slate-500 italic">
+                          {opt.en}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>

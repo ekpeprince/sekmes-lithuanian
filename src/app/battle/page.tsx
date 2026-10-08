@@ -160,9 +160,13 @@ function BattleArenaContent() {
     botTimerRef.current = setTimeout(async () => {
       // 85% chance bot chooses correctly
       const willBeCorrect = Math.random() < 0.85;
-      const botAnswer = willBeCorrect
-        ? currentQ.correctAnswer
-        : currentQ.options.find((o) => o !== currentQ.correctAnswer) || currentQ.options[0];
+      const firstOptLt = typeof currentQ.options[0] === 'string' ? currentQ.options[0] : currentQ.options[0].lt;
+      const incorrectOpt = currentQ.options.find((o) => {
+        const text = typeof o === 'string' ? o : o.lt;
+        return text !== currentQ.correctAnswer;
+      });
+      const incorrectLt = incorrectOpt ? (typeof incorrectOpt === 'string' ? incorrectOpt : incorrectOpt.lt) : firstOptLt;
+      const botAnswer = willBeCorrect ? currentQ.correctAnswer : incorrectLt;
 
       const updated = await submitAnswer(
         room.id,
@@ -776,18 +780,31 @@ function BattleArenaContent() {
               <h2 className="text-lg md:text-xl font-black text-slate-900 leading-snug">
                 {currentQ.prompt}
               </h2>
+              {/* English Subtitle Banner */}
+              {currentQ.englishSubtitle && (
+                <div className="mt-2 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 flex items-start gap-2 shadow-2xs">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0 mt-0.5">
+                    English Subtitle:
+                  </span>
+                  <p className="text-xs md:text-sm font-semibold text-emerald-950 italic">
+                    {currentQ.englishSubtitle}
+                  </p>
+                </div>
+              )}
               {currentQ.subPrompt && (
-                <p className="text-xs text-slate-500 font-medium mt-1">
+                <p className="text-xs text-slate-500 font-medium mt-1.5">
                   {currentQ.subPrompt}
                 </p>
               )}
             </div>
 
-            {/* 4 Interactive Answer Options */}
+            {/* 4 Interactive Answer Options with English Subtitles */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               {currentQ.options.map((opt, idx) => {
-                const isSelected = selectedOption === opt;
-                const isCorrect = opt === currentQ.correctAnswer;
+                const optLt = typeof opt === 'string' ? opt : opt.lt;
+                const optEn = typeof opt === 'string' ? '' : opt.en;
+                const isSelected = selectedOption === optLt;
+                const isCorrect = optLt === currentQ.correctAnswer;
                 const showResults = hasAnsweredCurrentRound;
 
                 let btnStyle = 'border-slate-200 bg-white hover:border-amber-400 hover:bg-amber-50/50 text-slate-800';
@@ -805,11 +822,24 @@ function BattleArenaContent() {
                 return (
                   <button
                     key={idx}
-                    onClick={() => handleSelectOption(opt)}
+                    onClick={() => handleSelectOption(optLt)}
                     disabled={hasAnsweredCurrentRound}
                     className={`p-4 rounded-2xl border-2 text-left font-bold text-sm md:text-base transition-all flex items-center justify-between gap-2 ${btnStyle}`}
                   >
-                    <span>{opt}</span>
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm md:text-base font-black text-slate-900 leading-snug">
+                        {optLt}
+                      </span>
+                      {optEn && (
+                        <span
+                          className={`text-xs font-semibold italic mt-0.5 leading-snug ${
+                            showResults && isCorrect ? 'text-emerald-700' : 'text-slate-500'
+                          }`}
+                        >
+                          {optEn}
+                        </span>
+                      )}
+                    </div>
                     {showResults && isCorrect && (
                       <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
                     )}
