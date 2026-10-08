@@ -23,6 +23,23 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left 2 Columns: Learning Tree */}
         <div className="lg:col-span-2 flex flex-col items-center">
+          {/* Mobile Friend Battle Quick Banner */}
+          <div className="w-full lg:hidden mb-6 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 p-4 text-white shadow-md flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">⚔️</span>
+              <div>
+                <h4 className="text-sm font-black text-white leading-tight">Dvikova su Draugais!</h4>
+                <p className="text-[11px] text-white/90 font-medium">5 greiti raundai prieš draugus ar DI</p>
+              </div>
+            </div>
+            <Link
+              href="/battle"
+              className="btn-3d px-3.5 py-2 rounded-xl bg-white text-slate-900 font-black text-xs uppercase tracking-wider shrink-0 shadow-sm"
+            >
+              Kovoti!
+            </Link>
+          </div>
+
           {UNITS.map((unit) => (
             <UnitCard
               key={unit.id}
@@ -73,6 +90,32 @@ export default function DashboardPage() {
             <p className="text-[11px] font-medium text-slate-400 mt-2">
               Earn {dailyXpTarget} XP daily to build long-term fluency memory.
             </p>
+          </div>
+
+          {/* Friend Battle Card */}
+          <div className="rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 p-5 text-white shadow-md flex flex-col gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-xs text-xl">
+                ⚔️
+              </span>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-100 block">
+                  Multiplayer Duel
+                </span>
+                <h4 className="text-base font-black text-white leading-tight">
+                  Dvikova su Draugais
+                </h4>
+              </div>
+            </div>
+            <p className="text-xs text-white/90 font-medium leading-relaxed">
+              Kovok realiu laiku! 5 greiti raundai, live rezultatai ir XP prizai nugalėtojui.
+            </p>
+            <Link
+              href="/battle"
+              className="btn-3d w-full py-2.5 rounded-xl bg-white text-slate-900 font-black text-xs uppercase tracking-wider text-center shadow-xs"
+            >
+              Pradėti Dvikovą ⚔️
+            </Link>
           </div>
 
           {/* Amber League Standing Card */}

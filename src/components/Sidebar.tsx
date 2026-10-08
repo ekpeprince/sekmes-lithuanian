@@ -3,10 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Dumbbell, GraduationCap, User, Sparkles, Trophy } from 'lucide-react';
+import { BookOpen, Dumbbell, GraduationCap, User, Sparkles, Trophy, Gamepad2 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Learn', mobileLabel: 'Learn', icon: BookOpen },
+  { href: '/battle', label: 'Friend Battle ⚔️', mobileLabel: 'Battle', icon: Gamepad2 },
   { href: '/tutor', label: 'AI Tutor', mobileLabel: 'Tutor', icon: Sparkles },
   { href: '/practice', label: 'Practice', mobileLabel: 'Practice', icon: Dumbbell },
   { href: '/leaderboard', label: 'Amber League', mobileLabel: 'League', icon: Trophy },
