@@ -17,6 +17,7 @@ import {
 import { sounds } from '@/lib/audio';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveProgressToCloud, loadProgressFromCloud } from '@/lib/progressSync';
+import { checkDailyNotifications } from '@/lib/notifications';
 
 interface GameContextType {
   progress: UserProgress;
@@ -94,6 +95,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
   }, [user]);
+
+  // Check and fire scheduled background notifications (streak reminder, word of the day, hearts)
+  useEffect(() => {
+    const isCompletedToday = Boolean(
+      progress.lastActiveDate &&
+      new Date(progress.lastActiveDate).toDateString() === new Date().toDateString()
+    );
+    checkDailyNotifications({
+      streak: progress.streak,
+      completedToday: isCompletedToday,
+      hearts: progress.hearts,
+    });
+  }, [progress.streak, progress.lastActiveDate, progress.hearts]);
 
   const syncToCloudIfUser = (updatedProg: UserProgress) => {
     if (user?.uid) {

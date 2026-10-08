@@ -6,6 +6,7 @@ import { getAllLessons } from '@/data/curriculum';
 import { Zap, Flame, Heart, Trophy, Award, RotateCcw, Sparkles } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
+import { NotificationSettingsCard } from '@/components/NotificationSettingsCard';
 
 export default function ProfilePage() {
   const { progress, refillHearts, resetProgress } = useGame();
@@ -195,6 +196,9 @@ export default function ProfilePage() {
 
         {/* Offline Audio Pack */}
         <OfflineAudioPackCard />
+
+        {/* Notification Center */}
+        <NotificationSettingsCard />
 
         {/* Quick Testing & Management Controls */}
         <div className="rounded-3xl bg-white border-2 border-slate-200 p-6">

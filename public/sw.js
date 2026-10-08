@@ -117,3 +117,51 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// 4. Notification Click Event: focus or open the app window
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client && targetUrl) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+// 5. Push Event (for server web push)
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'Sėkmės! • Lithuanian Practice',
+    body: 'Time to keep your Lithuanian streak burning! 🔥',
+    url: '/',
+  };
+  if (event.data) {
+    try {
+      data = { ...data, ...event.data.json() };
+    } catch {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    vibrate: [100, 50, 100],
+    data: { url: data.url || '/' },
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
