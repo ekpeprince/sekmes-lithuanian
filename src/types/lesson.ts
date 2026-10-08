@@ -75,6 +75,8 @@ export interface SpeakingPronounceExercise extends BaseExercise {
   type: 'speaking_pronounce';
   targetPhrase: string;
   phoneticHint?: string;
+  syllables?: string;
+  stressTip?: string;
   translation: string;
   acceptableVariations?: string[];
 }

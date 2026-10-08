@@ -323,7 +323,7 @@ export default function PracticePage() {
             }`}
           >
             <Mic className="h-4 w-4 text-rose-500" />
-            <span>Pronunciation Lab</span>
+            <span>Pronunciation & Stress Lab</span>
           </button>
 
           <button

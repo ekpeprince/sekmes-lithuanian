@@ -64,6 +64,8 @@ export const UNITS: Unit[] = [
             subPrompt: 'English translation: "Hello! Coffee, please."',
             targetPhrase: 'Labas! Kava, prašom!',
             phoneticHint: 'Lah-bahs! Kah-vah, prah-shohm!',
+            syllables: 'LA-bas! ka-VA, PRA-šom!',
+            stressTip: 'Stress the first syllable in LA-bas, the end of ka-VA, and the first syllable in PRA-šom.',
             translation: 'Hello! Coffee, please.',
             acceptableVariations: ['labas kava prašom', 'labas kava prasom'],
             explanation: '"Labas" is the friendly Lithuanian greeting ("Hello / Hi"), and "kava, prašom!" means "coffee, please!".'
@@ -141,6 +143,8 @@ export const UNITS: Unit[] = [
             subPrompt: 'English translation: "Nice to meet you too!"',
             targetPhrase: 'Man taip pat labai malonu!',
             phoneticHint: 'Mahn teyp paht lah-by mah-loh-nuo',
+            syllables: 'MAN TAIP PAT la-BAI ma-LO-nu!',
+            stressTip: 'Stress falls on the final syllable of la-BAI and middle syllable of ma-LO-nu.',
             translation: 'Nice to meet you too!',
             acceptableVariations: ['man taip pat labai malonu', 'man taip pat malonu'],
             explanation: '"Man taip pat labai malonu!" means "Nice to meet you too!" ("Man" = to me, "taip pat" = also/too, "labai malonu" = very pleasant).'
@@ -340,6 +344,8 @@ export const UNITS: Unit[] = [
             subPrompt: 'English translation: "Where are you from?" (formal or plural)',
             targetPhrase: 'Iš kur jūs esate?',
             phoneticHint: 'Eesh koor yoos eh-sah-teh',
+            syllables: 'IŠ KUR JŪS E-sa-te?',
+            stressTip: 'Initial syllable stress on E-sa-te.',
             translation: 'Where are you from? (formal / plural)',
             acceptableVariations: ['iš kur jūs esate', 'is kur jus esate'],
             explanation: '"Iš kur" (From where) + "jūs esate" (are you formal/plural)? To answer, say "Aš esu iš..." followed by your country/city in the Genitive case (e.g. "iš Lietuvos").'
@@ -410,6 +416,8 @@ export const UNITS: Unit[] = [
             subPrompt: 'English translation: "Yes, I speak a little bit of Lithuanian"',
             targetPhrase: 'Taip, aš truputį kalbu lietuviškai',
             phoneticHint: 'Teyp, ash troo-poo-tee kahl-boo lyeh-too-vish-key',
+            syllables: 'TAIP, aš TRU-pu-tį kal-BU lie-TU-viš-kai',
+            stressTip: 'First syllable on TRU-pu-tį; final on kal-BU; middle on lie-TU-viš-kai.',
             translation: 'Yes, I speak a little bit of Lithuanian',
             acceptableVariations: ['taip aš truputį kalbu lietuviškai', 'taip as truputi kalbu lietuviskai'],
             explanation: '"Taip" (Yes) + "aš truputį kalbu" (I speak a little bit) + "lietuviškai" (Lithuanian). "Truputį" is a very useful adverb meaning "a little bit".'

@@ -312,16 +312,52 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           {exercise.targetPhrase}
         </div>
 
-        {/* Phonetic Pronunciation Hint */}
-        {exercise.phoneticHint && (
-          <div className="text-xs font-bold text-slate-400 font-mono tracking-wider mb-1">
-            /{exercise.phoneticHint}/
+        {/* Syllable Stress Guide & Phonetics */}
+        {(exercise.syllables || exercise.phoneticHint) && (
+          <div className="flex flex-col items-center justify-center gap-1.5 my-2">
+            {exercise.syllables ? (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 bg-amber-50/90 border border-amber-300 px-3 py-1.5 rounded-xl shadow-2xs">
+                <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider mr-1">
+                  ⚡ Kirtis (Stress):
+                </span>
+                {exercise.syllables.split(' ').map((wordStr, wIdx) => (
+                  <div key={wIdx} className="flex items-center gap-0.5 bg-white border border-amber-200 px-2 py-0.5 rounded-lg">
+                    {wordStr.split('-').map((syl, sIdx) => {
+                      const isStressed = syl === syl.toUpperCase() && /[A-ZĄČĘĖĮŠŲŪŽ]/.test(syl);
+                      return (
+                        <span
+                          key={sIdx}
+                          className={`px-1.5 py-0.5 rounded text-[11px] font-black ${
+                            isStressed
+                              ? 'bg-amber-400 text-slate-950 ring-1 ring-amber-300'
+                              : 'text-slate-600'
+                          }`}
+                        >
+                          {syl}
+                          {isStressed && '⚡'}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            ) : exercise.phoneticHint ? (
+              <div className="text-xs font-bold text-slate-500 font-mono tracking-wider bg-slate-100 px-3 py-1 rounded-lg">
+                /{exercise.phoneticHint}/
+              </div>
+            ) : null}
+
+            {exercise.stressTip && (
+              <div className="text-[11px] font-semibold text-amber-900 bg-amber-50/70 border border-amber-200 px-3 py-1 rounded-xl max-w-md text-center">
+                💡 {exercise.stressTip}
+              </div>
+            )}
           </div>
         )}
 
         {/* Translation */}
         <div className="text-xs sm:text-sm font-medium text-slate-500 mb-3">
-          “{exercise.translation}”
+          &ldquo;{exercise.translation}&rdquo;
         </div>
 
         {/* Word-by-Word Matching Chips */}
