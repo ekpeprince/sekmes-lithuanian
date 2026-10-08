@@ -21,8 +21,11 @@ import {
   CheckCircle2,
   XCircle,
   Clipboard,
+  Bell,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
+import { haptics } from '@/lib/haptics';
+import { sendFriendJoinedNotification, sendDuelInviteNotification } from '@/lib/notifications';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -170,6 +173,17 @@ function BattleArenaContent() {
   useEffect(() => {
     if (!room?.id) return;
     const unsubscribe = subscribeToBattleRoom(room.id, (updatedRoom) => {
+      // Alert host with haptics & notification when a friend connects to the room
+      const prevPlayerCount = Object.keys(room?.players || {}).length;
+      const newPlayerCount = Object.keys(updatedRoom.players || {}).length;
+      if (prevPlayerCount === 1 && newPlayerCount >= 2 && view === 'lobby') {
+        const guestPlayer = Object.values(updatedRoom.players).find((p) => !p.isHost);
+        const guestName = guestPlayer?.name || 'Draugas';
+        haptics.duelAlert();
+        sounds.playSuccess();
+        sendFriendJoinedNotification(guestName, updatedRoom.id).catch(() => {});
+      }
+
       setRoom(updatedRoom);
       if (updatedRoom.status === 'in_progress' && view === 'lobby') {
         setView('in_game');
@@ -231,6 +245,9 @@ function BattleArenaContent() {
           if (timerRef.current) clearInterval(timerRef.current);
           handleTimeExpired();
           return 0;
+        }
+        if (prev <= 4) {
+          haptics.warningTick();
         }
         return prev - 1;
       });
@@ -591,6 +608,27 @@ function BattleArenaContent() {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    sounds.playClick();
+                    const success = await sendDuelInviteNotification(userName || 'Draugas', room.id);
+                    if (success) {
+                      haptics.success();
+                    }
+                  }}
+                  className="flex flex-col items-center px-3.5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition"
+                  title="Išbandyti dvikovos pranešimą šiame telefone • Test duel challenge notification"
+                >
+                  <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-black">
+                    <Bell className="h-4 w-4" />
+                    <span>Pranešimas</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-900 opacity-80">
+                    (Test Alert ⚔️)
+                  </span>
+                </button>
+
                 <button
                   onClick={handleShareInvite}
                   className="flex flex-col items-center px-4 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md transition"

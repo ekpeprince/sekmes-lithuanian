@@ -1,3 +1,5 @@
+import { haptics } from './haptics';
+
 // Web Audio API Synthesizer & Speech Synthesis for Lithuanian pronunciation
 
 class SoundManager {
@@ -28,6 +30,7 @@ class SoundManager {
 
   // Play crisp, cheerful success arpeggio (C5 -> E5 -> G5 -> C6)
   public playSuccess() {
+    haptics.success();
     if (!this.soundEnabled) return;
     try {
       const ctx = this.getAudioContext();
@@ -60,6 +63,7 @@ class SoundManager {
 
   // Play soft, gentle error thud (F3 -> C3)
   public playError() {
+    haptics.error();
     if (!this.soundEnabled) return;
     try {
       const ctx = this.getAudioContext();
@@ -88,6 +92,7 @@ class SoundManager {
 
   // UI button pop/click sound
   public playClick() {
+    haptics.tap();
     if (!this.soundEnabled) return;
     try {
       const ctx = this.getAudioContext();
@@ -115,6 +120,7 @@ class SoundManager {
 
   // Level complete fanfare
   public playLevelComplete() {
+    haptics.victory();
     if (!this.soundEnabled) return;
     try {
       const ctx = this.getAudioContext();

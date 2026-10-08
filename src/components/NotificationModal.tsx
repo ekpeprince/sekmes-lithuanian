@@ -19,6 +19,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   sendTestNotification,
+  sendDuelInviteNotification,
 } from '@/lib/notifications';
 import { sounds } from '@/lib/audio';
 
@@ -35,6 +36,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [settings, setSettings] = useState<NotificationSettings>(getNotificationSettings());
   const [testSent, setTestSent] = useState<boolean>(false);
+  const [duelTestSent, setDuelTestSent] = useState<boolean>(false);
   const [isRequesting, setIsRequesting] = useState<boolean>(false);
 
   useEffect(() => {
@@ -101,6 +103,22 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
       sounds.playSuccess();
       setTestSent(true);
       setTimeout(() => setTestSent(false), 3000);
+    }
+  };
+
+  const handleSendDuelTest = async () => {
+    sounds.playClick();
+    if (permission !== 'granted') {
+      const perm = await requestNotificationPermission();
+      setPermission(perm);
+      if (perm !== 'granted') return;
+    }
+
+    const success = await sendDuelInviteNotification('Draugas (Friend)', 'VYT-482');
+    if (success) {
+      sounds.playSuccess();
+      setDuelTestSent(true);
+      setTimeout(() => setDuelTestSent(false), 3000);
     }
   };
 
@@ -213,6 +231,23 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               />
             </div>
 
+            {/* Duel Invites */}
+            <div className="p-3 rounded-2xl border border-slate-200 bg-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">⚔️</span>
+                <div>
+                  <span className="text-xs font-black text-slate-800 block">Dvikovų kvietimai • Duel Alerts</span>
+                  <span className="text-[10px] text-slate-400 font-semibold">Gaukite pranešimą, kai draugas pakviečia kovoti</span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.duelInvites}
+                onChange={() => handleToggleChannel('duelInvites')}
+                className="h-4 w-4 accent-indigo-600 rounded cursor-pointer"
+              />
+            </div>
+
             {/* Hearts Refilled */}
             <div className="p-3 rounded-2xl border border-slate-200 bg-white flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -230,22 +265,40 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
         )}
 
         {/* Test Notification Row */}
-        <div className="flex items-center justify-between mb-4 pt-1">
-          <button
-            type="button"
-            onClick={handleSendTest}
-            className="text-xs font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>Send Test Notification</span>
-          </button>
+        <div className="flex flex-col gap-2 mb-4 pt-1">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleSendTest}
+              className="text-xs font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Test Streak Alert</span>
+            </button>
+            {testSent && (
+              <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 animate-fadeIn">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Sent!</span>
+              </span>
+            )}
+          </div>
 
-          {testSent && (
-            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 animate-fadeIn">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Sent!</span>
-            </span>
-          )}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleSendDuelTest}
+              className="text-xs font-black text-amber-600 hover:text-amber-800 flex items-center gap-1.5 cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Test Duel Challenge Alert ⚔️</span>
+            </button>
+            {duelTestSent && (
+              <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 animate-fadeIn">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Duel Sent!</span>
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Done Button */}

@@ -18,6 +18,7 @@ import {
 import { UNITS } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
 import { sounds } from '@/lib/audio';
+import { haptics } from '@/lib/haptics';
 import { AudioSpeaker } from '@/components/AudioSpeaker';
 import { SpeakingLab } from '@/components/SpeakingLab';
 
@@ -216,6 +217,9 @@ export default function PracticePage() {
           setDrillFinished(true);
           sounds.playLevelComplete();
           return 0;
+        }
+        if (prev <= 4) {
+          haptics.warningTick();
         }
         return prev - 1;
       });

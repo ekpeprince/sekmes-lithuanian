@@ -6,6 +6,7 @@ export interface NotificationSettings {
   reminderTime: string; // e.g. '19:00', '20:00'
   wordOfDay: boolean;
   heartsRefill: boolean;
+  duelInvites: boolean;
 }
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
@@ -14,6 +15,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   reminderTime: '19:00',
   wordOfDay: true,
   heartsRefill: true,
+  duelInvites: true,
 };
 
 const SETTINGS_KEY = 'sekmes_notification_settings_v1';
@@ -206,6 +208,30 @@ export async function sendHeartsRefilledNotification(): Promise<boolean> {
     body: 'Your energy is fully restored. You are ready to dive back into Lithuanian lessons!',
     url: '/',
     tag: 'hearts-refilled',
+  });
+}
+
+// Send Duel Challenge Notification (from friend or challenge alert)
+export async function sendDuelInviteNotification(
+  hostName: string,
+  roomCode: string
+): Promise<boolean> {
+  return showSekmesNotification(`⚔️ Kvietimas į dvikovą: ${roomCode}`, {
+    body: `${hostName} kviečia tave į lietuvių kalbos dvikovą! Spustelėk ir priimk iššūkį!`,
+    url: `/battle?room=${roomCode}`,
+    tag: `duel-invite-${roomCode}`,
+  });
+}
+
+// Send Friend Joined Alert to Host
+export async function sendFriendJoinedNotification(
+  friendName: string,
+  roomCode: string
+): Promise<boolean> {
+  return showSekmesNotification('⚔️ Draugas prisijungė prie dvikovos!', {
+    body: `${friendName} ką tik prisijungė prie tavo kambario (${roomCode}). Pradėkite kovą!`,
+    url: `/battle?room=${roomCode}`,
+    tag: `friend-joined-${roomCode}`,
   });
 }
 
