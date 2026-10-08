@@ -76,6 +76,8 @@ export const DEFAULT_PROGRESS: UserProgress = {
   leagueTier: 'Bronza',
   leagueRank: 4,
   speedDrillHighScore: 0,
+  streakFreezes: 1,
+  mysteryChestClaimedDate: undefined,
 };
 
 export function getStoredProgress(): UserProgress {
@@ -99,6 +101,8 @@ export function getStoredProgress(): UserProgress {
       quests: Array.isArray(parsed.quests) && parsed.quests.length > 0 ? parsed.quests : DEFAULT_QUESTS,
       leagueTier: parsed.leagueTier || getLeagueTierByXp(parsed.xp || 0),
       speedDrillHighScore: parsed.speedDrillHighScore || 0,
+      streakFreezes: typeof parsed.streakFreezes === 'number' ? parsed.streakFreezes : 1,
+      mysteryChestClaimedDate: parsed.mysteryChestClaimedDate,
     };
     return merged;
   } catch {
@@ -294,6 +298,33 @@ export function claimQuestReward(questId: string): UserProgress {
 
   saveProgress(updated);
   return updated;
+}
+
+// Claim Mystery Reward Chest when daily quests are completed
+export function claimMysteryChest(): {
+  progress: UserProgress;
+  reward: { xp: number; gems: number; streakFreeze: boolean };
+} {
+  const current = getStoredProgress();
+  const today = new Date().toISOString().split('T')[0];
+  const bonusXp = 50;
+  const bonusGems = 25;
+  const streakFreezeAwarded = true;
+
+  const updated: UserProgress = {
+    ...current,
+    xp: current.xp + bonusXp,
+    gems: current.gems + bonusGems,
+    streakFreezes: (current.streakFreezes ?? 1) + 1,
+    mysteryChestClaimedDate: today,
+    leagueTier: getLeagueTierByXp(current.xp + bonusXp),
+  };
+
+  saveProgress(updated);
+  return {
+    progress: updated,
+    reward: { xp: bonusXp, gems: bonusGems, streakFreeze: streakFreezeAwarded },
+  };
 }
 
 export function resetAllProgress(): UserProgress {

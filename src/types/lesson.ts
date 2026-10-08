@@ -153,5 +153,7 @@ export interface UserProgress {
   leagueTier?: 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras';
   leagueRank?: number;
   speedDrillHighScore?: number;
+  streakFreezes?: number;
+  mysteryChestClaimedDate?: string;
 }
 

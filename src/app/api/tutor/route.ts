@@ -15,6 +15,7 @@ interface TutorRequest {
   customTopic?: string;
   customRole?: string;
   isInitial?: boolean;
+  learnerMemory?: string;
 }
 
 const SCENARIO_CONTEXTS = {
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
       customTopic = '',
       customRole = 'Draugas (Friend)',
       isInitial = false,
+      learnerMemory = '',
     } = body;
 
     const isCustom = scenario === 'custom';
@@ -96,14 +98,17 @@ export async function POST(req: NextRequest) {
       try {
         const ai = new GoogleGenAI({ apiKey });
 
-        const systemPrompt = `You are an encouraging native Lithuanian language tutor roleplaying in this scenario:
+        const memorySection = learnerMemory ? `\n\n--- LEARNER MEMORY & CONTEXT ---\n${learnerMemory}\n---------------------------------` : '';
+
+        const systemPrompt = `You are Aistė (or the persona specified below), a warm, supportive, authentic human native Lithuanian language teacher living in Vilnius. You genuinely care about this student and act like a real person helping them learn.
 Scenario Title: ${effectiveTitle}
-Role & Situation: ${effectiveRole}
+Role & Situation: ${effectiveRole}${memorySection}
 
 Guidelines:
 1. Speak in clean, natural A1/A2 level Lithuanian (simple sentences, vocabulary appropriate for learners).
 2. Keep your answer brief: 1 to 3 conversational sentences in Lithuanian.
-3. Respond in strict JSON format with exactly the following 4 keys:
+3. If learner memory mentions their name or previous topics, weave them in naturally like a friend and real teacher!
+4. Respond in strict JSON format with the following keys:
 {
   "replyLithuanian": "your spoken Lithuanian reply",
   "replyEnglish": "accurate English translation of your reply",
@@ -111,13 +116,15 @@ Guidelines:
   "suggestedReplies": [
     { "lt": "Lithuanian option 1", "en": "English meaning" },
     { "lt": "Lithuanian option 2", "en": "English meaning" }
-  ]
+  ],
+  "extractedFact": "a concise new fact learned about the student from their last message (e.g. 'Lives in Vilnius', 'Prefers tea over coffee', 'Has a cat') or null if nothing new learned",
+  "extractedName": "student's first name if they introduced themselves or said their name, or null"
 }
 Do NOT output markdown code blocks. Output pure JSON only.`;
 
         let prompt = '';
-        if (isInitial && isCustom) {
-          prompt = `${systemPrompt}\n\nTask: Start the roleplay with an opening welcoming line in Lithuanian matching the situation ("${customTopic}") and your role ("${customRole}"). Also provide a helpful grammar/cultural tip and 3 suggested starter replies the student could say in Lithuanian.`;
+        if (isInitial) {
+          prompt = `${systemPrompt}\n\nTask: Start the conversation with an opening welcoming line in Lithuanian matching the situation ("${effectiveTitle}"). If you know the student's name or history from the memory above, greet them warmly and reference it! Provide a helpful grammar/cultural tip and 3 suggested starter replies the student could say in Lithuanian.`;
         } else {
           const conversationHistory = messages.map(m => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`).join('\n');
           prompt = `${systemPrompt}\n\nConversation so far:\n${conversationHistory}\nStudent: ${userText}\nTutor:`;

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles,
   Volume2,
+  VolumeX,
   Mic,
   MicOff,
   Send,
@@ -17,9 +18,25 @@ import {
   Sliders,
   Settings,
   X,
+  Brain,
+  Trash2,
+  User,
+  Check,
+  Flame,
+  Info,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
+import {
+  getTutorMemory,
+  saveTutorMemory,
+  recordNewSession,
+  addLearnerFact,
+  setLearnerName,
+  formatTutorMemoryPrompt,
+  clearTutorMemory,
+  TutorMemory,
+} from '@/lib/tutorMemory';
 
 type ScenarioType = 'cafe' | 'market' | 'directions' | 'free' | 'custom';
 
@@ -154,39 +171,39 @@ const SCENARIOS = [
   {
     id: 'directions' as ScenarioType,
     title: 'Klausiant kelio',
-    subtitle: 'Exploring Vilnius',
+    subtitle: 'Vilnius City Center',
     icon: Compass,
-    color: 'from-sky-500 to-blue-600',
-    greeting: 'Laba diena! Ar jūs ieškote kelio? Kur norėtumėte nueiti?',
-    greetingEn: 'Good day! Are you looking for directions? Where would you like to go?',
-    tip: 'Direction words: „tiesiai“ (straight), „į kairę“ (left), „į dešinę“ (right).',
+    color: 'from-blue-500 to-indigo-600',
+    greeting: 'Laba diena! Ar jūs pasiklydote? Kur norite nueiti Vilniuje?',
+    greetingEn: 'Good day! Are you lost? Where do you want to go in Vilnius?',
+    tip: 'Directions: „tiesiai“ (straight), „į kairę“ (left), „į dešinę“ (right).',
     initialSuggestions: [
       { lt: 'Atsiprašau, kur yra Katedros aikštė?', en: 'Excuse me, where is Cathedral Square?' },
       { lt: 'Kaip nueiti iki Gedimino pilies?', en: 'How do I walk to Gediminas Castle?' },
-      { lt: 'Ar čia toli pėsčiomis?', en: 'Is it far on foot?' },
+      { lt: 'Ar čia toli nuo geležinkelio stoties?', en: 'Is it far from the railway station?' },
     ],
   },
   {
     id: 'free' as ScenarioType,
-    title: 'Laisvas pokalbis',
-    subtitle: 'Chat with Rūta',
+    title: 'Draugiškas pokalbis',
+    subtitle: 'Conversational Tutor',
     icon: MessageCircle,
-    color: 'from-purple-500 to-indigo-600',
-    greeting: 'Labas! Labai malonu susipažinti. Kaip šiandien sekasi mokytis lietuvių kalbos?',
-    greetingEn: 'Hello! Very nice to meet you. How is learning Lithuanian going today?',
+    color: 'from-purple-500 to-pink-600',
+    greeting: 'Labas! Labai džiaugiuosi tave matydama. Kaip šiandien sekasi mokytis lietuvių kalbos?',
+    greetingEn: 'Hello! Very glad to see you. How is learning Lithuanian going today?',
     tip: 'Reply with „Puikiai!“ (Great!), „Gerai“ (Good), or „Šiaip sau“ (So-so).',
     initialSuggestions: [
       { lt: 'Labas! Sekasi labai gerai, ačiū!', en: 'Hello! Going very well, thank you!' },
       { lt: 'Lietuvių kalba labai graži, bet nelengva!', en: 'Lithuanian is very beautiful, but not easy!' },
-      { lt: 'Aš esu studentas ir gyvenu Lietuvoje.', en: 'I am a student and I live in Lithuania.' },
+      { lt: 'Aš esu studentas ir gyvenu Vilniuje.', en: 'I am a student and I live in Vilnius.' },
     ],
   },
   {
     id: 'custom' as ScenarioType,
     title: 'Tinkinta tema',
-    subtitle: 'Custom Roleplay ✨',
+    subtitle: 'Custom Roleplay & Scenarios',
     icon: Sliders,
-    color: 'from-rose-500 via-pink-600 to-rose-600',
+    color: 'from-rose-500 to-red-600',
     greeting: 'Sveiki! Aš esu pasiruošusi kalbėtis bet kokia jūsų pasirinkta tema. Apie ką norėtumėte pasikalbėti?',
     greetingEn: 'Hello! I am ready to talk on any topic of your choice. What would you like to discuss?',
     tip: 'You can customize the situation, topic, and AI roleplay partner anytime!',
@@ -218,6 +235,16 @@ export default function TutorPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
 
+  // Auto-speak voice mode
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [isSlowSpeed, setIsSlowSpeed] = useState(false);
+
+  // Long-term tutor memory
+  const [memory, setMemory] = useState<TutorMemory>(() => getTutorMemory());
+  const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
+  const [editingLearnerName, setEditingLearnerName] = useState('');
+  const [learnedFactToast, setLearnedFactToast] = useState<string | null>(null);
+
   // Custom scenario settings
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [customTopic, setCustomTopic] = useState('Buto nuoma Vilniuje (Apartment Rental)');
@@ -232,12 +259,32 @@ export default function TutorPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // Record session in tutor memory on mount
+  useEffect(() => {
+    const updated = recordNewSession(currentScenario.title);
+    setMemory(updated);
+    setEditingLearnerName(updated.learnerName || '');
+  }, []);
+
+  // Clear toast after 4s
+  useEffect(() => {
+    if (!learnedFactToast) return;
+    const timer = setTimeout(() => {
+      setLearnedFactToast(null);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [learnedFactToast]);
+
   // Audio Playout
-  const handlePlayAudio = (msgId: string, text: string) => {
+  const handlePlayAudio = (msgId: string, text: string, slowOverride?: boolean) => {
     try {
       setAudioPlayingId(msgId);
-      sounds.speak(text, () => {
-        setAudioPlayingId(null);
+      const slow = slowOverride !== undefined ? slowOverride : isSlowSpeed;
+      sounds.speak(text, {
+        slow,
+        onEnd: () => {
+          setAudioPlayingId(null);
+        },
       });
     } catch (err) {
       console.warn('Audio play error:', err);
@@ -250,11 +297,12 @@ export default function TutorPage() {
     setShowEnglishMap((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Initialize custom scenario via API
+  // Initialize custom scenario via API with long-term memory
   const initCustomScenario = async (topic: string, role: string) => {
     setLoading(true);
     setShowEnglishMap({});
     try {
+      const memoryPrompt = formatTutorMemoryPrompt(getTutorMemory());
       const res = await fetch('/api/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -263,6 +311,7 @@ export default function TutorPage() {
           customTopic: topic,
           customRole: role,
           isInitial: true,
+          learnerMemory: memoryPrompt,
         }),
       });
 
@@ -279,6 +328,10 @@ export default function TutorPage() {
       setMessages([assistantMsg]);
       if (data.suggestedReplies && data.suggestedReplies.length > 0) {
         setSuggestions(data.suggestedReplies);
+      }
+
+      if (autoSpeak) {
+        handlePlayAudio(assistantMsg.id, assistantMsg.textLt);
       }
     } catch (err) {
       console.error('Error starting custom scenario:', err);
@@ -324,6 +377,11 @@ export default function TutorPage() {
     setMessages([initialMsg]);
     setSuggestions(target.initialSuggestions);
     setShowEnglishMap({});
+    recordNewSession(target.title);
+
+    if (autoSpeak) {
+      handlePlayAudio(initialMsg.id, initialMsg.textLt);
+    }
   };
 
   // Restart conversation
@@ -342,6 +400,10 @@ export default function TutorPage() {
       setMessages([initialMsg]);
       setSuggestions(currentScenario.initialSuggestions);
       setShowEnglishMap({});
+
+      if (autoSpeak) {
+        handlePlayAudio(initialMsg.id, initialMsg.textLt);
+      }
     }
   };
 
@@ -420,6 +482,8 @@ export default function TutorPage() {
         content: m.textLt,
       }));
 
+      const memoryPrompt = formatTutorMemoryPrompt(getTutorMemory());
+
       const res = await fetch('/api/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -429,6 +493,7 @@ export default function TutorPage() {
           customRole,
           messages: apiMessages,
           userText: text,
+          learnerMemory: memoryPrompt,
         }),
       });
 
@@ -448,12 +513,52 @@ export default function TutorPage() {
         setSuggestions(data.suggestedReplies);
       }
 
+      // Automatically speak the response if autoSpeak is on
+      if (autoSpeak) {
+        handlePlayAudio(assistantMsg.id, assistantMsg.textLt);
+      }
+
+      // Memory Extraction Update
+      if (data.extractedFact) {
+        const updated = addLearnerFact(data.extractedFact);
+        setMemory(updated);
+        setLearnedFactToast(data.extractedFact);
+      }
+      if (data.extractedName) {
+        const updated = setLearnerName(data.extractedName);
+        setMemory(updated);
+        setEditingLearnerName(updated.learnerName || '');
+      }
+
       // Reward XP for active practice!
       addXp(5);
     } catch (err) {
       console.error('Error fetching tutor response:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Remove a single memory fact
+  const handleRemoveFact = (factIndex: number) => {
+    const updatedFacts = memory.facts.filter((_, i) => i !== factIndex);
+    const updated = { ...memory, facts: updatedFacts };
+    saveTutorMemory(updated);
+    setMemory(updated);
+  };
+
+  // Save student name from memory modal
+  const handleSaveLearnerName = () => {
+    const updated = setLearnerName(editingLearnerName);
+    setMemory(updated);
+  };
+
+  // Clear memory
+  const handleResetMemory = () => {
+    if (confirm('Ar tikrai norite išvalyti visą mokytojos atmintį? (Reset all tutor memory?)')) {
+      const reset = clearTutorMemory();
+      setMemory(reset);
+      setEditingLearnerName('');
     }
   };
 
@@ -469,26 +574,65 @@ export default function TutorPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl md:text-2xl font-black text-slate-800">
-                  Pokalbis su DI • AI Conversation Partner
+                  Pokalbis su Aiste • AI Tutor
                 </h1>
                 <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border border-emerald-300">
-                  Active
+                  Aistė • Vilnius
                 </span>
               </div>
               <p className="text-xs md:text-sm text-slate-500 font-medium">
                 {scenario === 'custom'
                   ? `Custom Roleplay: ${customTopic} • Role: ${customRole}`
-                  : 'Real-time spoken and written Lithuanian practice with instant audio and grammar tips.'}
+                  : 'Real-time spoken Lithuanian practice with persistent memory and voice responses.'}
               </p>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-2 self-start sm:self-center">
+          {/* Quick Actions Bar */}
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+            {/* Memory Modal Pill */}
+            <button
+              onClick={() => setIsMemoryModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-xl transition shadow-2xs"
+              title="Aistė's Memory: What she remembers about you"
+            >
+              <Brain className="h-3.5 w-3.5 text-violet-600" />
+              <span>
+                Atmintis ({memory.facts.length + (memory.learnerName ? 1 : 0)})
+              </span>
+            </button>
+
+            {/* Auto-Speak Toggle */}
+            <button
+              onClick={() => setAutoSpeak(!autoSpeak)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition shadow-2xs ${
+                autoSpeak
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+              }`}
+              title={autoSpeak ? 'Auto-Speak Responses is ON' : 'Auto-Speak Responses is OFF'}
+            >
+              {autoSpeak ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+              <span>{autoSpeak ? 'Balsas ĮJ' : 'Balsas IŠJ'}</span>
+            </button>
+
+            {/* Audio Speed Toggle */}
+            <button
+              onClick={() => setIsSlowSpeed(!isSlowSpeed)}
+              className={`px-2.5 py-2 text-xs font-bold rounded-xl border transition shadow-2xs ${
+                isSlowSpeed
+                  ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+              }`}
+              title={isSlowSpeed ? 'Slow pronunciation (0.75x)' : 'Normal speed (1.0x)'}
+            >
+              {isSlowSpeed ? '🐢 0.75x' : '🐰 1.0x'}
+            </button>
+
             {scenario === 'custom' && (
               <button
                 onClick={() => setIsCustomModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition shadow-2xs"
                 title="Edit custom topic and role"
               >
                 <Settings className="h-3.5 w-3.5" />
@@ -498,14 +642,32 @@ export default function TutorPage() {
 
             <button
               onClick={handleRestart}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition shadow-2xs"
               title="Restart conversation"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span>Iš naujo • Restart</span>
+              <span>Iš naujo</span>
             </button>
           </div>
         </div>
+
+        {/* Memory Notification Toast Banner */}
+        {learnedFactToast && (
+          <div className="max-w-4xl mx-auto mt-3 animate-in fade-in slide-in-from-top duration-300">
+            <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-2xl shadow-md text-xs font-bold">
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 shrink-0 text-violet-200 animate-pulse" />
+                <span>Aistė įsiminė apie tave: „{learnedFactToast}“</span>
+              </div>
+              <button
+                onClick={() => setLearnedFactToast(null)}
+                className="text-violet-200 hover:text-white p-1"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Scenario Selection Cards */}
         <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-2.5 mt-4">
@@ -583,17 +745,27 @@ export default function TutorPage() {
                     </p>
 
                     {isAssistant && (
-                      <button
-                        onClick={() => handlePlayAudio(msg.id, msg.textLt)}
-                        disabled={isPlayingThis}
-                        className={`shrink-0 p-2 rounded-xl transition ${isPlayingThis
-                            ? 'bg-emerald-100 text-emerald-700 animate-pulse'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                          }`}
-                        title="Listen to native pronunciation"
-                      >
-                        <Volume2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handlePlayAudio(msg.id, msg.textLt, false)}
+                          disabled={isPlayingThis}
+                          className={`p-2 rounded-xl transition ${isPlayingThis
+                              ? 'bg-emerald-100 text-emerald-700 animate-pulse'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}
+                          title="Listen at normal speed (1.0x)"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handlePlayAudio(msg.id, msg.textLt, true)}
+                          disabled={isPlayingThis}
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 text-[11px] font-bold"
+                          title="Listen slowly (0.75x)"
+                        >
+                          🐢
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -629,11 +801,11 @@ export default function TutorPage() {
           {loading && (
             <div className="flex items-center gap-2 text-slate-500 bg-white border border-slate-200 rounded-2xl p-3 w-fit">
               <div className="flex gap-1">
-                <span className="h-2 w-2 rounded-full bg-sky-500 animate-bounce"></span>
-                <span className="h-2 w-2 rounded-full bg-sky-500 animate-bounce delay-150"></span>
-                <span className="h-2 w-2 rounded-full bg-sky-500 animate-bounce delay-300"></span>
+                <span className="h-2 w-2 rounded-full bg-violet-500 animate-bounce"></span>
+                <span className="h-2 w-2 rounded-full bg-violet-500 animate-bounce delay-150"></span>
+                <span className="h-2 w-2 rounded-full bg-violet-500 animate-bounce delay-300"></span>
               </div>
-              <span className="text-xs font-bold">Rūta galvoja atsakymą... • Rūta is thinking...</span>
+              <span className="text-xs font-bold">Aistė galvoja atsakymą... • Aistė is thinking...</span>
             </div>
           )}
 
@@ -662,6 +834,22 @@ export default function TutorPage() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Listening Status Indicator */}
+        {isRecording && (
+          <div className="mb-2 flex items-center justify-between bg-red-500 text-white px-4 py-2 rounded-2xl text-xs font-bold animate-pulse shadow-md">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-white animate-ping" />
+              <span>Klausausi... Kalbėkite lietuviškai dabar (Listening...)</span>
+            </div>
+            <button
+              onClick={toggleSpeechRecognition}
+              className="text-white hover:underline uppercase text-[10px] tracking-wider"
+            >
+              Baigti (Stop)
+            </button>
           </div>
         )}
 
@@ -717,6 +905,152 @@ export default function TutorPage() {
           <span>Earn +5 XP for each completed conversation turn!</span>
         </div>
       </main>
+
+      {/* Tutor Memory Drawer / Modal */}
+      {isMemoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-100 max-h-[85vh] overflow-y-auto flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-violet-100 text-violet-700">
+                  <Brain className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Aistės Atmintis • Tutor Memory
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    What Aistė remembers about you across sessions
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMemoryModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Learner Name Input */}
+            <div className="bg-violet-50/70 border border-violet-200 rounded-2xl p-3 flex flex-col gap-1.5">
+              <label className="text-[11px] font-black uppercase tracking-wider text-violet-800 flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                <span>Tavo Vardas • Your Name:</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editingLearnerName}
+                  onChange={(e) => setEditingLearnerName(e.target.value)}
+                  placeholder="pvz.: Jonas, Laura, Alex..."
+                  className="flex-1 px-3 py-1.5 text-xs font-bold border border-violet-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveLearnerName}
+                  className="px-3 py-1.5 text-xs font-bold bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition"
+                >
+                  Išsaugoti
+                </button>
+              </div>
+            </div>
+
+            {/* Session Stats */}
+            <div className="grid grid-cols-2 gap-2 text-center text-xs">
+              <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-400 font-bold block text-[10px] uppercase">
+                  Pamokų skaičius:
+                </span>
+                <span className="text-sm font-black text-slate-800">
+                  {memory.totalSessions} {memory.totalSessions === 1 ? 'kartas' : 'kartai'}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-400 font-bold block text-[10px] uppercase">
+                  Paskutinis susitikimas:
+                </span>
+                <span className="text-sm font-black text-slate-800 truncate block">
+                  {memory.lastSessionDate || 'Šiandien'}
+                </span>
+              </div>
+            </div>
+
+            {/* Remembered Facts */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+                  Įsiminti faktai apie tave ({memory.facts.length}):
+                </span>
+              </div>
+
+              {memory.facts.length === 0 ? (
+                <div className="p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400 italic">
+                  Aistė dar mokosi apie tave! Kalbėkite apie savo pomėgius, darbą ar gyvenimą, ir ji viską įsimins natūraliai.
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {memory.facts.map((fact, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 font-medium"
+                    >
+                      <span>• {fact}</span>
+                      <button
+                        onClick={() => handleRemoveFact(idx)}
+                        className="text-slate-400 hover:text-rose-500 p-1"
+                        title="Ištrinti faktą"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Topics */}
+            {memory.recentTopics.length > 0 && (
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-700 block mb-1.5">
+                  Neseniai aptartos temos:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {memory.recentTopics.map((topic, i) => (
+                    <span
+                      key={i}
+                      className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg"
+                    >
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clear Memory Button */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleResetMemory}
+                className="text-xs font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Išvalyti visą atmintį</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsMemoryModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition"
+              >
+                Uždaryti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom Scenario Builder Modal */}
       {isCustomModalOpen && (

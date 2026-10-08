@@ -11,6 +11,7 @@ import {
   recordMistake,
   resolveMistake,
   claimQuestReward,
+  claimMysteryChest,
   recordSpeedDrillScore,
   DEFAULT_PROGRESS,
 } from '@/lib/storage';
@@ -31,6 +32,7 @@ interface GameContextType {
   addMistake: (mistake: Omit<import('@/types/lesson').MistakeItem, 'timestamp'>) => void;
   resolveMistakeById: (id: string) => void;
   claimQuestRewardById: (questId: string) => void;
+  claimMysteryChestReward: () => { xp: number; gems: number; streakFreeze: boolean };
   saveSpeedDrillScoreVal: (score: number) => void;
   addXp: (amount: number) => void;
 }
@@ -180,6 +182,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     sounds.playLevelComplete();
   };
 
+  const claimMysteryChestReward = () => {
+    const res = claimMysteryChest();
+    setProgress(res.progress);
+    sounds.playLevelComplete();
+    syncToCloudIfUser(res.progress);
+    return res.reward;
+  };
+
   const saveSpeedDrillScoreVal = (score: number) => {
     const updatedProg = recordSpeedDrillScore(score);
     setProgress(updatedProg);
@@ -206,6 +216,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addMistake,
         resolveMistakeById,
         claimQuestRewardById,
+        claimMysteryChestReward,
         saveSpeedDrillScoreVal,
         addXp,
       }}
