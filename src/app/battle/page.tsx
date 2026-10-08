@@ -397,8 +397,14 @@ function BattleArenaContent() {
               <h1 className="text-2xl md:text-3xl font-black text-white leading-tight">
                 Kovok su draugais lietuviškai!
               </h1>
-              <p className="text-xs md:text-sm text-white/90 font-medium max-w-xl mt-1">
+              <p className="text-xs md:text-sm text-amber-100 font-bold tracking-wide mt-0.5">
+                Battle with friends in Lithuanian!
+              </p>
+              <p className="text-xs md:text-sm text-white/95 font-medium max-w-xl mt-2 leading-relaxed">
                 5 greiti raundai: žodžiai, frazės ir gramatika. Kas atsakys greičiau ir surinks daugiausiai taškų?
+              </p>
+              <p className="text-[11px] md:text-xs text-white/80 italic mt-0.5 font-normal">
+                (5 quick rounds: words, phrases & grammar. Who will answer faster and score the most points?)
               </p>
             </div>
 
@@ -413,8 +419,8 @@ function BattleArenaContent() {
                   placeholder="Tavo vardas..."
                   className="bg-transparent border-b border-white/40 text-white font-bold text-sm focus:outline-none focus:border-white w-28 md:w-36"
                 />
-                <span className="block text-[10px] text-white/70 font-semibold mt-0.5">
-                  Tavo kovos vardas
+                <span className="block text-[10px] text-white/80 font-semibold mt-0.5">
+                  Tavo kovos vardas • Your battle nickname
                 </span>
               </div>
               {/* Avatar Selector Dropdown / Row */}
@@ -457,31 +463,39 @@ function BattleArenaContent() {
                   <button
                     onClick={handleCopyCode}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
-                    title="Kopijuoti kodą"
+                    title="Kopijuoti kodą • Copy code"
                   >
                     {isCopied ? <Check className="h-5 w-5 text-emerald-600" /> : <Copy className="h-5 w-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-700 font-medium mt-1">
                   Nusiųskite šį kodą draugui arba pasidalinkite tiesiogine nuoroda!
+                </p>
+                <p className="text-[11px] text-slate-400 italic">
+                  (Send this code to a friend or share the direct link!)
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleShareInvite}
-                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider shadow-md transition"
+                  className="flex flex-col items-center px-4 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md transition"
                 >
-                  <Share2 className="h-4 w-4" />
-                  <span>{isCopied ? 'Nuoroda nukopijuota!' : 'Dalintis nuoroda'}</span>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
+                    <Share2 className="h-4 w-4" />
+                    <span>{isCopied ? 'Nuoroda nukopijuota!' : 'Dalintis nuoroda'}</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-100 font-semibold">
+                    {isCopied ? '(Link copied!)' : '(Share invite link)'}
+                  </span>
                 </button>
               </div>
             </div>
 
             {/* Players Joined Status */}
             <div>
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400 block mb-2">
-                Prisijungę žaidėjai ({playersList.length} / 2):
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500 block mb-2">
+                Prisijungę žaidėjai • Joined Players ({playersList.length} / 2):
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {playersList.map((p) => (
@@ -496,11 +510,13 @@ function BattleArenaContent() {
                           <span>{p.name}</span>
                           {p.isHost && (
                             <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded-md font-bold">
-                              Kūrėjas
+                              Kūrėjas • Host
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] text-emerald-600 font-bold">Pasiruošęs kovai</span>
+                        <span className="text-[11px] text-emerald-600 font-bold">
+                          Pasiruošęs kovai • Ready for battle
+                        </span>
                       </div>
                     </div>
                     <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -512,7 +528,7 @@ function BattleArenaContent() {
                     <span className="text-2xl animate-spin">⏳</span>
                     <div>
                       <div className="text-xs font-bold">Laukiama draugo prisijungimo...</div>
-                      <span className="text-[11px] text-amber-600">Nuoroda išsiųsta?</span>
+                      <span className="text-[11px] text-amber-700 italic">Waiting for friend to connect...</span>
                     </div>
                   </div>
                 )}
@@ -523,13 +539,14 @@ function BattleArenaContent() {
             {canStart ? (
               <button
                 onClick={handleStartHostGame}
-                className="btn-3d w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-base uppercase tracking-wider shadow-lg animate-bounce"
+                className="btn-3d w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black shadow-lg animate-bounce flex flex-col items-center justify-center"
               >
-                Pradėti kovą! • Start Battle ⚔️
+                <span className="text-base uppercase tracking-wider">Pradėti kovą! • Start Battle ⚔️</span>
+                <span className="text-xs font-bold text-slate-900 opacity-80">(Both players are ready)</span>
               </button>
             ) : (
-              <div className="text-center text-xs text-slate-400 font-medium py-1">
-                Kova prasidės, kai draugas prisijungs prie kambario.
+              <div className="text-center text-xs text-slate-500 font-medium py-1">
+                Kova prasidės, kai draugas prisijungs prie kambario. • The battle will start once a friend joins.
               </div>
             )}
           </div>
@@ -544,22 +561,35 @@ function BattleArenaContent() {
                 <span className="p-2 rounded-xl bg-amber-100 text-amber-600">
                   <Crown className="h-5 w-5" />
                 </span>
-                <h3 className="text-base font-black text-slate-800">
-                  Sukurti kambarį draugui
-                </h3>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 leading-tight">
+                    Sukurti kambarį draugui
+                  </h3>
+                  <span className="text-[11px] font-bold text-amber-700 block">
+                    (Create a room for a friend)
+                  </span>
+                </div>
               </div>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
                 Sukurkite privatų kambarį, gaukite 6 simbolių kodą ir pakvieskite draugą per WhatsApp, Messenger ar SMS.
+              </p>
+              <p className="text-[11px] text-slate-400 italic mt-0.5">
+                (Create a private room, get a 6-character code, and invite a friend via WhatsApp, Messenger, or SMS.)
               </p>
             </div>
 
             <button
               onClick={handleCreateRoom}
               disabled={isCreatingRoom}
-              className="btn-3d flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md disabled:opacity-50"
+              className="btn-3d flex flex-col items-center justify-center py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black shadow-md disabled:opacity-50"
             >
-              <Sparkles className="h-4 w-4" />
-              <span>{isCreatingRoom ? 'Kuriamas kambarys...' : 'Sukurti naują dvikovą ⚔️'}</span>
+              <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                <Sparkles className="h-4 w-4" />
+                <span>{isCreatingRoom ? 'Kuriamas kambarys...' : 'Sukurti naują dvikovą ⚔️'}</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-800 tracking-normal opacity-80">
+                {isCreatingRoom ? '(Creating room...)' : '(Create New Duel)'}
+              </span>
             </button>
           </div>
 
@@ -570,12 +600,20 @@ function BattleArenaContent() {
                 <span className="p-2 rounded-xl bg-sky-100 text-sky-600">
                   <Users className="h-5 w-5" />
                 </span>
-                <h3 className="text-base font-black text-slate-800">
-                  Prisijungti su draugo kodu
-                </h3>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 leading-tight">
+                    Prisijungti su draugo kodu
+                  </h3>
+                  <span className="text-[11px] font-bold text-sky-700 block">
+                    (Join with a friend&apos;s code)
+                  </span>
+                </div>
               </div>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
                 Gavote kambario kodą iš draugo? Įveskite jį čia ir pradėkite kovą!
+              </p>
+              <p className="text-[11px] text-slate-400 italic mt-0.5">
+                (Got a room code from a friend? Enter it here and start the battle!)
               </p>
             </div>
 
@@ -584,16 +622,17 @@ function BattleArenaContent() {
                 type="text"
                 value={joinCodeInput}
                 onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                placeholder="pvz.: VYT-482"
+                placeholder="pvz.: VYT-482 (Code)"
                 maxLength={8}
                 className="flex-1 px-4 py-3 rounded-2xl border-2 border-slate-200 text-sm font-black text-slate-800 uppercase tracking-widest focus:border-sky-500 focus:outline-none"
               />
               <button
                 onClick={handleJoinRoom}
                 disabled={isJoiningRoom || !joinCodeInput.trim()}
-                className="btn-3d px-5 py-3 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-black text-xs uppercase tracking-wider shadow-md disabled:opacity-50"
+                className="btn-3d px-5 py-2 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-black shadow-md disabled:opacity-50 flex flex-col items-center justify-center"
               >
-                {isJoiningRoom ? 'Jungiamasi...' : 'Jungtis!'}
+                <span className="text-xs uppercase tracking-wider">{isJoiningRoom ? 'Jungiamasi...' : 'Jungtis!'}</span>
+                <span className="text-[9px] font-bold opacity-80">{isJoiningRoom ? '(Connecting)' : '(Join)'}</span>
               </button>
             </div>
           </div>
@@ -601,22 +640,28 @@ function BattleArenaContent() {
 
         {/* Instant AI Rivals Section */}
         <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-violet-100 text-violet-600 text-lg">
                 ⚡
               </span>
               <div>
-                <h3 className="text-base font-black text-slate-800">
+                <h3 className="text-base font-black text-slate-800 leading-tight">
                   Momentinė Dvikova su Rivalu • Practice vs AI
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <span className="text-[11px] font-bold text-violet-700 block">
+                  (Instant Duel with a Rival • Practice vs AI)
+                </span>
+                <p className="text-xs text-slate-600 font-medium mt-1">
                   Nėra draugų internete dabar? Išbandykite jėgas prieš virtualius Lietuvos varžovus!
+                </p>
+                <p className="text-[11px] text-slate-400 italic">
+                  (No friends online right now? Test your skills against virtual Lithuanian rivals!)
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-black text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-200">
-              Momentinis startas
+            <span className="text-[11px] font-black text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full border border-violet-200">
+              Momentinis startas • Instant start
             </span>
           </div>
 
@@ -642,7 +687,11 @@ function BattleArenaContent() {
                           : 'bg-rose-100 text-rose-800'
                       }`}
                     >
-                      {rival.difficulty === 'easy' ? 'Pradedantysis' : rival.difficulty === 'medium' ? 'Pažengęs' : 'Ekspertas'}
+                      {rival.difficulty === 'easy'
+                        ? 'Pradedantysis • Beginner'
+                        : rival.difficulty === 'medium'
+                        ? 'Pažengęs • Intermediate'
+                        : 'Ekspertas • Expert'}
                     </span>
                     <p className="text-[11px] text-slate-500 font-medium mt-1 leading-snug">
                       {rival.tagline}
@@ -652,10 +701,15 @@ function BattleArenaContent() {
 
                 <button
                   onClick={() => handleStartAIBattle(rival)}
-                  className="btn-3d w-full py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-black text-xs uppercase tracking-wider shadow-xs flex items-center justify-center gap-1.5"
+                  className="btn-3d w-full py-2 px-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-black shadow-xs flex flex-col items-center justify-center leading-tight"
                 >
-                  <Play className="h-3 w-3 fill-white" />
-                  <span>Kovoti su {rival.name}</span>
+                  <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                    <Play className="h-3 w-3 fill-white" />
+                    <span>Kovoti su {rival.name}</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-violet-200 tracking-normal">
+                    (Battle {rival.name})
+                  </span>
                 </button>
               </div>
             ))}
@@ -912,8 +966,18 @@ function BattleArenaContent() {
                 ? 'Pergalė! Tu nugalėjai dvikovoje!'
                 : `${winner?.name} laimėjo šį kartą!`}
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs font-bold text-amber-700 mt-0.5">
+              {isTie
+                ? "(It's a draw! Incredible match!)"
+                : isUserWinner
+                ? '(Victory! You won the battle!)'
+                : `(${winner?.name} won this match!)`}
+            </p>
+            <p className="text-xs text-slate-600 mt-1">
               Puiki treniruotė! Abu žaidėjai patobulino lietuvių kalbos žinias.
+            </p>
+            <p className="text-[11px] text-slate-400 italic">
+              (Great practice! Both players sharpened their Lithuanian skills.)
             </p>
           </div>
         </div>
@@ -921,10 +985,10 @@ function BattleArenaContent() {
         {/* Final Scoreboard Comparison */}
         <div className="w-full rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-sm flex flex-col gap-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-              Galutiniai Taškai:
+            <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+              Galutiniai Taškai • Final Scores:
             </span>
-            <span className="text-xs font-bold text-amber-600">5 Raundai</span>
+            <span className="text-xs font-bold text-amber-600">5 Raundai • 5 Rounds</span>
           </div>
 
           <div className="space-y-3">
@@ -947,12 +1011,12 @@ function BattleArenaContent() {
                         <span>{player.name}</span>
                         {isMe && (
                           <span className="text-[10px] text-sky-600 bg-sky-50 px-1.5 py-0.2 rounded-md font-bold">
-                            Tu
+                            Tu • You
                           </span>
                         )}
                       </div>
                       <span className="text-[11px] text-slate-500 font-medium">
-                        Daugiausiai serija: {player.streak}x 🔥
+                        Daugiausiai serija • Max streak: {player.streak}x 🔥
                       </span>
                     </div>
                   </div>
@@ -969,12 +1033,12 @@ function BattleArenaContent() {
           <div className="flex items-center justify-around p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-center">
             <div>
               <span className="text-base font-black text-emerald-800">+30 XP</span>
-              <span className="block text-[10px] text-emerald-600 font-bold">Patirtis</span>
+              <span className="block text-[10px] text-emerald-600 font-bold">Patirtis • XP</span>
             </div>
             <div className="h-6 w-px bg-emerald-200" />
             <div>
               <span className="text-base font-black text-amber-600">+15 💎</span>
-              <span className="block text-[10px] text-amber-700 font-bold">Brangakmeniai</span>
+              <span className="block text-[10px] text-amber-700 font-bold">Brangakmeniai • Gems</span>
             </div>
           </div>
         </div>
@@ -996,7 +1060,7 @@ function BattleArenaContent() {
             }}
             className="flex-1 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider transition text-center"
           >
-            Grįžti į Lobi • Lobby
+            Grįžti į Lobi • Return to Lobby
           </button>
         </div>
       </div>
