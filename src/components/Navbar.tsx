@@ -3,11 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, User as UserIcon, LogOut, Cloud, ChevronDown } from 'lucide-react';
+import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, User as UserIcon, LogOut, Cloud, ChevronDown, Bell } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { sounds } from '@/lib/audio';
 import { AuthModal } from '@/components/AuthModal';
+import { NotificationModal } from '@/components/NotificationModal';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -15,6 +16,7 @@ export const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   const [showHeartModal, setShowHeartModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -98,6 +100,19 @@ export const Navbar: React.FC = () => {
               ) : (
                 <VolumeX className="h-5 w-5 text-slate-400" />
               )}
+            </button>
+
+            {/* Notifications & Reminders Bell */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setShowNotificationModal(true);
+              }}
+              title="Pranešimai & Priminimai • Notifications"
+              className="flex p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <Bell className="h-5 w-5" />
             </button>
 
             {/* Native Speaker Voice Switcher (Desktop & Tablet) */}
@@ -228,6 +243,12 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Notifications Pop-up Modal */}
+      <NotificationModal
+        isOpen={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+      />
     </>
   );
 };

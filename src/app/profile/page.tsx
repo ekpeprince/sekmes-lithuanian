@@ -1,15 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { getAllLessons } from '@/data/curriculum';
-import { Zap, Flame, Heart, Trophy, Award, RotateCcw, Sparkles } from 'lucide-react';
+import { Zap, Flame, Heart, Trophy, Award, RotateCcw, Sparkles, BellRing, ChevronRight } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
-import { NotificationSettingsCard } from '@/components/NotificationSettingsCard';
+import { NotificationModal } from '@/components/NotificationModal';
 
 export default function ProfilePage() {
   const { progress, refillHearts, resetProgress } = useGame();
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const allLessons = getAllLessons();
 
   const completedCount = progress.completedLessons.length;
@@ -197,8 +198,43 @@ export default function ProfilePage() {
         {/* Offline Audio Pack */}
         <OfflineAudioPackCard />
 
-        {/* Notification Center */}
-        <NotificationSettingsCard />
+        {/* Notifications & Reminders Action Row */}
+        <button
+          type="button"
+          onClick={() => {
+            sounds.playClick();
+            setShowNotificationModal(true);
+          }}
+          className="w-full flex items-center justify-between p-5 rounded-3xl bg-white border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xs transition-all text-left cursor-pointer group"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 group-hover:scale-105 transition-transform">
+              <BellRing className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-800 text-sm sm:text-base flex items-center gap-2">
+                <span>Pranešimai & Priminimai</span>
+                <span className="text-[11px] font-bold text-slate-400 font-sans">(Notifications)</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Streak protection, Word of the Day & heart refill alerts
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-block text-xs font-black px-3 py-1 rounded-full bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              Nustatymai • Open
+            </span>
+            <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+          </div>
+        </button>
+
+        {/* Notification Modal Pop-up */}
+        <NotificationModal
+          isOpen={showNotificationModal}
+          onClose={() => setShowNotificationModal(false)}
+        />
 
         {/* Quick Testing & Management Controls */}
         <div className="rounded-3xl bg-white border-2 border-slate-200 p-6">
