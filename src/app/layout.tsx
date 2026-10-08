@@ -5,6 +5,7 @@ import { GameProvider } from '@/context/GameContext';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
+import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
 
 export const metadata: Metadata = {
   title: 'Sėkmės – Learn Lithuanian (A1 Gamified Course)',
@@ -55,6 +56,7 @@ export default function RootLayout({
               </main>
             </div>
             <PwaInstallPrompt />
+            <NotificationPermissionPrompt />
           </GameProvider>
         </AuthProvider>
       </body>
