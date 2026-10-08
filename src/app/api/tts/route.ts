@@ -6,12 +6,37 @@ export const runtime = 'nodejs';
 // High-speed in-memory audio cache (v3)
 const audioCache = new Map<string, ArrayBuffer>();
 
+// Dictionary stress marks mapping for clean lexical lookup in neural engine
+const STRESS_DIACRITICS_MAP: Record<string, string> = {
+  'á': 'a', 'à': 'a', 'ã': 'a',
+  'é': 'e', 'è': 'e', 'ẽ': 'e',
+  'í': 'i', 'ì': 'i', 'ĩ': 'i',
+  'ó': 'o', 'ò': 'o', 'õ': 'o',
+  'ú': 'u', 'ù': 'u', 'ũ': 'u',
+  'ý': 'y', 'ỳ': 'y', 'ỹ': 'y',
+};
+
 // Preprocess Lithuanian text to apply natural human conversational prosody and pitch inflection
 function formatForNaturalFlow(text: string): string {
   // 1. Remove markdown, fill blanks (___), and extra spaces
   let clean = text.replace(/[_#*]/g, '').replace(/\s+/g, ' ').trim();
-  // Remove parenthetical English hints e.g. "Labas (Hello)" -> "Labas"
-  clean = clean.replace(/\([^)]*\)/g, '').trim();
+  
+  // 2. Remove parenthetical or bracketed English translations / hints e.g. "Labas (Hello)" -> "Labas"
+  clean = clean.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
+
+  // 3. Remove syllable division characters (e.g., "van-duo", "van·duo", "van•duo", "ka-lba")
+  // so the neural voice enunciates the continuous word with natural lexical stress (kirtis)
+  clean = clean.replace(/(\p{L})[-·•|](\p{L})/gu, '$1$2');
+
+  // 4. Strip combining stress marks (\u0300 grave, \u0301 acute, \u0302 circumflex, \u0303 tilde)
+  clean = clean.replace(/[\u0300\u0301\u0302\u0303]/g, '');
+
+  // 5. Replace precomposed dictionary stress vowels into standard Lithuanian orthography
+  clean = clean.replace(/[áàãéèẽíìĩóòõúùũýỳỹ]/gi, match => {
+    const lower = match.toLowerCase();
+    const replaced = STRESS_DIACRITICS_MAP[lower] || lower;
+    return match === match.toUpperCase() ? replaced.toUpperCase() : replaced;
+  });
 
   const lower = clean.toLowerCase();
 
@@ -26,7 +51,7 @@ function formatForNaturalFlow(text: string): string {
     return 'Atsiprašau.';
   }
 
-  // Questions: Ar tu esi..., Kaip sekasi..., Kur yra..., Kiek kainuoja...
+  // Questions: Ar tu esi..., Kaip sekasi..., Kur yra..., Kiek kainuoja..., Kas tai...
   const isQuestion =
     lower.startsWith('kaip ') ||
     lower.startsWith('ar ') ||
@@ -34,14 +59,28 @@ function formatForNaturalFlow(text: string): string {
     lower.startsWith('kas ') ||
     lower.startsWith('kiek ') ||
     lower.startsWith('kodėl ') ||
-    lower.startsWith('kada ');
+    lower.startsWith('kodel ') ||
+    lower.startsWith('kada ') ||
+    lower.startsWith('kuri ') ||
+    lower.startsWith('kuris ') ||
+    lower.startsWith('kuriuos ') ||
+    lower.startsWith('kieno ') ||
+    lower.startsWith('kokia ') ||
+    lower.startsWith('koks ') ||
+    lower.startsWith('kokie ');
 
-  // Lively greetings & warm expressions
+  // Lively greetings & warm conversational expressions
   const isLivelyGreeting =
     lower.includes('labas') ||
+    lower.includes('sveiki') ||
+    lower.includes('sveikas') ||
+    lower.includes('sveika') ||
     lower.includes('viso gero') ||
     lower.includes('iki pasimatymo') ||
-    lower.includes('sveiki') ||
+    lower.includes('iki') ||
+    lower.includes('šaunu') ||
+    lower.includes('puiku') ||
+    lower.includes('sveikinu') ||
     lower.includes('ačiū') ||
     lower.includes('aciu');
 
@@ -69,11 +108,17 @@ async function generateNaturalLithuanianAudio(
   const tts = new MsEdgeTTS();
   await tts.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3, { voiceLocale: 'lt-LT' });
 
-  // Natural flow prosody settings:
-  // Normal: -4% rate gives breathing space for natural vowel transitions and diphthongs
-  // Slow: -22% rate for clear enunciated practice mode
-  const rate = speed === 'slow' ? '-22%' : '-4%';
-  const pitch = voiceName === 'lt-LT-OnaNeural' ? '+1Hz' : '+0Hz';
+  // Authentic Lithuanian Prosody Settings:
+  // Normal rate:
+  // - Microsoft Neural Lithuanian voices are trained on native announcers with precise pitch accents and syllable cadence.
+  // - Leonas (lt-LT-LeonasNeural): +0% rate and +0Hz pitch delivers natural, confident masculine Lithuanian cadence.
+  // - Rūta (lt-LT-OnaNeural): +0% rate and +1Hz pitch delivers melodic, warm native feminine prosody.
+  // Slow rate:
+  // - -14% (Leonas) and -15% (Rūta) slows articulation just enough for language learners
+  //   without breaking Lithuanian pitch contours or flattening syllable stress.
+  const isMale = voiceName.includes('Leonas');
+  const rate = speed === 'slow' ? (isMale ? '-14%' : '-15%') : '+0%';
+  const pitch = isMale ? '+0Hz' : '+1Hz';
 
   const { audioStream } = tts.toStream(text, {
     rate,
@@ -159,7 +204,7 @@ export async function GET(request: NextRequest) {
   // Format text for fluid, natural Lithuanian prosody
   const formattedText = formatForNaturalFlow(text.slice(0, 200));
   const voice = gender === 'male' ? 'lt-LT-LeonasNeural' : 'lt-LT-OnaNeural';
-  const cacheKey = `v4:${voice}:${speed}:${formattedText.toLowerCase()}`;
+  const cacheKey = `v5-prosody:${voice}:${speed}:${formattedText.toLowerCase()}`;
 
   // Return cached audio if present
   if (audioCache.has(cacheKey)) {

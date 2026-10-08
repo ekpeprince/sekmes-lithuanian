@@ -194,7 +194,7 @@ class SoundManager {
 
     try {
       const speed = slow ? 'slow' : 'normal';
-      const audioUrl = `/api/tts?text=${encodeURIComponent(cleanText)}&gender=${this.voiceGender}&speed=${speed}&v=natural-v4`;
+      const audioUrl = `/api/tts?text=${encodeURIComponent(cleanText)}&gender=${this.voiceGender}&speed=${speed}&v=natural-v5-prosody`;
       const audio = new Audio(audioUrl);
       this.currentAudio = audio;
 

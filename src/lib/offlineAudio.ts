@@ -131,7 +131,7 @@ export async function downloadOfflineAudioPack(
 
   for (const phrase of phrases) {
     try {
-      const audioUrl = `/api/tts?text=${encodeURIComponent(phrase)}&gender=female&speed=normal&v=natural-v4`;
+      const audioUrl = `/api/tts?text=${encodeURIComponent(phrase)}&gender=female&speed=normal&v=natural-v5-prosody`;
       const request = new Request(audioUrl, { method: 'GET' });
 
       // Check if already in cache
