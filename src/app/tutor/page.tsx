@@ -883,7 +883,7 @@ export default function TutorPage() {
                 ? 'Klausausi... Kalbėkite lietuviškai...'
                 : 'Atsakykite lietuviškai... (Type or use mic)'
             }
-            className="flex-1 px-3 py-2 text-sm md:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none"
+            className="flex-1 px-3 py-2 text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none"
           />
 
           {/* Send Button */}
@@ -945,7 +945,7 @@ export default function TutorPage() {
                   value={editingLearnerName}
                   onChange={(e) => setEditingLearnerName(e.target.value)}
                   placeholder="pvz.: Jonas, Laura, Alex..."
-                  className="flex-1 px-3 py-1.5 text-xs font-bold border border-violet-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  className="flex-1 px-3 py-1.5 text-base font-bold border border-violet-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
                 />
                 <button
                   type="button"
@@ -1123,7 +1123,7 @@ export default function TutorPage() {
                   value={customTopic}
                   onChange={(e) => setCustomTopic(e.target.value)}
                   placeholder="e.g. Buto nuoma, pas gydytoją, restoranas, draugystė..."
-                  className="w-full px-4 py-2.5 text-sm font-semibold border-2 border-slate-200 rounded-2xl focus:border-rose-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-slate-200 rounded-2xl focus:border-rose-500 focus:outline-none"
                 />
               </div>
 
@@ -1136,7 +1136,7 @@ export default function TutorPage() {
                   value={customRole}
                   onChange={(e) => setCustomRole(e.target.value)}
                   placeholder="e.g. Nuomotojas, Gydytojas, Vadovas, Viešbučio registratorius..."
-                  className="w-full px-4 py-2.5 text-sm font-semibold border-2 border-slate-200 rounded-2xl focus:border-rose-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-slate-200 rounded-2xl focus:border-rose-500 focus:outline-none"
                 />
               </div>
             </div>

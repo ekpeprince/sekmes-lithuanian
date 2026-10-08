@@ -20,6 +20,7 @@ import {
   Play,
   CheckCircle2,
   XCircle,
+  Clipboard,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
@@ -62,6 +63,33 @@ function BattleArenaContent() {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isJoiningRoom, setIsJoiningRoom] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isStandalone, setIsStandalone] = useState(true);
+
+  // Detect if opened in standalone PWA or browser webview (e.g. WhatsApp on iOS)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isStandaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+      setIsStandalone(Boolean(isStandaloneMode));
+    }
+  }, []);
+
+  // Paste code from clipboard
+  const handlePasteCode = async () => {
+    try {
+      if (!navigator.clipboard?.readText) return;
+      const text = await navigator.clipboard.readText();
+      const match = text.match(/[A-Z0-9]{3}-[A-Z0-9]{3}/i);
+      const code = match ? match[0].toUpperCase() : text.trim().toUpperCase();
+      if (code) {
+        setJoinCodeInput(code);
+        sounds.playClick();
+      }
+    } catch {
+      // Permission denied or unavailable
+    }
+  };
 
   // In-Game state
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -374,14 +402,17 @@ function BattleArenaContent() {
   const handleShareInvite = () => {
     if (!room) return;
     const shareUrl = `${window.location.origin}/battle?room=${room.id}`;
+    const shareTitle = `⚔️ Lietuvių kalbos dvikova: ${room.id}`;
+    const shareText = `⚔️ Kviečiu tave į lietuvių kalbos dvikovą!\n\n👉 Dvikovos kodas: ${room.id}\n\n📱 Turi „Sėkmės!“ savo iPhone ekrane?\nAtidaryk programėlę ir suvesk arba įklijuok kodą: ${room.id}\n\n🌐 Arba žaisk tiesiogiai per naršyklę:\n${shareUrl}`;
+
     if (navigator.share) {
       navigator.share({
-        title: 'Sėkmės! – Lietuvių kalbos dvikova',
-        text: `Kviečiu tave į lietuvių kalbos dvikovą! Ar įveiksi mane? Prisijunk su kodu: ${room.id}`,
+        title: shareTitle,
+        text: shareText,
         url: shareUrl,
       }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(shareUrl);
+      navigator.clipboard.writeText(shareText);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2500);
     }
@@ -467,7 +498,7 @@ function BattleArenaContent() {
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="Tavo vardas..."
-                  className="bg-transparent border-b border-white/40 text-white font-bold text-sm focus:outline-none focus:border-white w-28 md:w-36"
+                  className="bg-transparent border-b border-white/40 text-white font-bold text-base focus:outline-none focus:border-white w-28 md:w-36"
                 />
                 <span className="block text-[10px] text-white/80 font-semibold mt-0.5">
                   Tavo kovos vardas • Your battle nickname
@@ -495,6 +526,39 @@ function BattleArenaContent() {
         {errorMessage && (
           <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold animate-in fade-in">
             {errorMessage}
+          </div>
+        )}
+
+        {/* iOS / Browser Webview Helper Banner */}
+        {roomParam && !isStandalone && (
+          <div className="rounded-2xl bg-gradient-to-r from-sky-50 to-indigo-50 border-2 border-sky-300 p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📱</span>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">
+                  Turi „Sėkmės!“ programėlę pagrindiniame ekrane?
+                </h4>
+                <p className="text-[11px] text-slate-600 font-medium">
+                  Apple iOS atidaro nuorodas naršyklėje. Jei nori žaisti savo įdiegtoje programėlėje su visu progresu, nukopijuok kodą <span className="font-mono font-black text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-200">{roomParam}</span> ir atidaryk programėlę!
+                </p>
+                <p className="text-[10px] text-slate-400 italic">
+                  (Installed app on home screen? Copy the code and open your home screen app to play!)
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(roomParam);
+                setIsCopied(true);
+                setTimeout(() => setIsCopied(false), 2500);
+                sounds.playClick();
+              }}
+              className="shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs flex items-center gap-1.5 shadow-2xs transition"
+            >
+              {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              <span>{isCopied ? 'Nukopijuota! ✓' : 'Kopijuoti kodą'}</span>
+            </button>
           </div>
         )}
 
@@ -668,18 +732,29 @@ function BattleArenaContent() {
             </div>
 
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={joinCodeInput}
-                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                placeholder="pvz.: VYT-482 (Code)"
-                maxLength={8}
-                className="flex-1 px-4 py-3 rounded-2xl border-2 border-slate-200 text-sm font-black text-slate-800 uppercase tracking-widest focus:border-sky-500 focus:outline-none"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={joinCodeInput}
+                  onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                  placeholder="pvz.: VYT-482"
+                  maxLength={8}
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 text-base font-black text-slate-800 uppercase tracking-widest focus:border-sky-500 focus:outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handlePasteCode}
+                className="px-3.5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition border border-slate-200 shadow-2xs shrink-0"
+                title="Įklijuoti kodą iš iškarpinės • Paste code from clipboard"
+              >
+                <Clipboard className="h-4 w-4 text-sky-600" />
+                <span className="hidden sm:inline">Įklijuoti</span>
+              </button>
               <button
                 onClick={handleJoinRoom}
                 disabled={isJoiningRoom || !joinCodeInput.trim()}
-                className="btn-3d px-5 py-2 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-black shadow-md disabled:opacity-50 flex flex-col items-center justify-center"
+                className="btn-3d px-5 py-2.5 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-black shadow-md disabled:opacity-50 flex flex-col items-center justify-center shrink-0"
               >
                 <span className="text-xs uppercase tracking-wider">{isJoiningRoom ? 'Jungiamasi...' : 'Jungtis!'}</span>
                 <span className="text-[9px] font-bold opacity-80">{isJoiningRoom ? '(Connecting)' : '(Join)'}</span>

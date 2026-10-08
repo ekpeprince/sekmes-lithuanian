@@ -21,12 +21,31 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Eliminate iOS Safari automatic zoom-in when tapping input fields */
-@media screen and (max-width: 768px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
+/* Complete iOS Safari Zoom & Tap Protection */
+html,
+body,
+button,
+input,
+select,
+textarea,
+a,
+[role="button"],
+.btn-3d {
+  touch-action: manipulation;
+}
+
+/* Force minimum 16px font-size to permanently prevent iOS Safari auto-zoom on focus */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100% !important;
+}
+
+/* Safe area insets for iPhone dynamic island, notch, and home bar */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 

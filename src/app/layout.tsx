@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/context/GameContext';
@@ -6,6 +6,7 @@ import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
+import { IosZoomLock } from '@/components/IosZoomLock';
 
 export const metadata: Metadata = {
   title: 'Sėkmės – Learn Lithuanian (A1 Gamified Course)',
@@ -30,12 +31,14 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: '#059669',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({
@@ -48,6 +51,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#f7fafc] text-slate-800 flex flex-col antialiased">
         <AuthProvider>
           <GameProvider>
+            <IosZoomLock />
             <Navbar />
             <div className="flex-1 flex w-full">
               <Sidebar />
