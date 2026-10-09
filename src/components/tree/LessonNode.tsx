@@ -30,7 +30,9 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
 
   return (
     <div
-      className="relative flex flex-col items-center my-3 transition-transform duration-300"
+      className={`relative flex flex-col items-center my-6 transition-transform duration-300 ${
+        showTooltip ? 'z-50' : 'z-10'
+      }`}
       style={{ transform: `translateX(${offset}px)` }}
     >
       {/* Stepping Stone Node Button */}
@@ -75,12 +77,12 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
         <>
           {/* Backdrop click away */}
           <div
-            className="fixed inset-0 z-30"
+            className="fixed inset-0 z-40"
             onClick={() => setShowTooltip(false)}
           />
-          <div className="absolute top-24 z-40 w-[280px] max-w-[calc(100vw-32px)] -translate-x-1/2 left-1/2 rounded-2xl bg-white p-4 shadow-xl border-2 border-slate-200 animate-pop">
+          <div className="absolute top-24 z-50 w-[300px] max-w-[calc(100vw-32px)] -translate-x-1/2 left-1/2 rounded-3xl bg-white p-4.5 sm:p-5 shadow-2xl border-2 border-slate-200 animate-pop">
             {/* Triangular arrow pointing up */}
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-t-2 border-l-2 border-slate-200 rotate-45" />
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-t-2 border-l-2 border-slate-200 rotate-45 z-10" />
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-1">

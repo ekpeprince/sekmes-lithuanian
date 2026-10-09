@@ -19,7 +19,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) =>
   };
 
   return (
-    <div className="w-full mb-10">
+    <div className="w-full mb-16">
       {/* Unit Header Banner */}
       <div
         className="rounded-3xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden mb-6"
@@ -59,7 +59,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) =>
       </div>
 
       {/* Lesson Nodes Tree Path */}
-      <div className="relative flex flex-col items-center py-4">
+      <div className="relative flex flex-col items-center py-6">
         {unit.lessons.map((lesson, idx) => {
           const isCompleted = completedLessons.includes(lesson.id);
 
