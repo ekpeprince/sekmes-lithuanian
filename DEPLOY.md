@@ -39,11 +39,26 @@ In the **Environment Variables** section during import, add the following keys f
 ### Step 4: Click Deploy!
 - Click **Deploy**. Within 60 seconds, your site is live with a permanent public URL (e.g. `https://sekmes-lithuanian.vercel.app`).
 
-### Step 5: Authorize Your Domain in Firebase
+### Step 5: Connect Your Custom Domain (labasapp.com via Spaceship)
+1. In your **Vercel Project Dashboard**, go to **Settings** &rarr; **Domains**.
+2. Type `labasapp.com` and click **Add**.
+   - Vercel will recommend adding both `labasapp.com` and `www.labasapp.com`.
+3. Vercel will display the required DNS records:
+   - **Type `A`**: Name `@` &rarr; Value `76.76.21.21`
+   - **Type `CNAME`**: Name `www` &rarr; Value `cname.vercel-dns.com`
+4. Log into [Spaceship.com](https://www.spaceship.com):
+   - Go to **Launchpad** &rarr; **Domains** &rarr; Select `labasapp.com`.
+   - Go to **DNS** / **Advanced DNS**.
+   - Add/Update the two records:
+     - `A` Record: Host `@` &rarr; IP `76.76.21.21`
+     - `CNAME` Record: Host `www` &rarr; Target `cname.vercel-dns.com`
+5. Within 5–10 minutes, Vercel will verify the domain and automatically issue a free SSL certificate!
+
+### Step 6: Authorize Your Domain in Firebase
 1. Open [Firebase Console](https://console.firebase.google.com/project/sekmes/authentication).
 2. Go to **Authentication** &rarr; **Settings** &rarr; **Authorized domains**.
-3. Click **Add domain** and enter your Vercel domain (e.g. `sekmes-lithuanian.vercel.app`).
-4. Now you and your learners can sign in and sync progress from any phone, tablet, or laptop worldwide!
+3. Click **Add domain** and enter `labasapp.com` and `www.labasapp.com`.
+4. Now Google Sign-In, email magic links, and progress sync will work seamlessly on `https://labasapp.com`!
 
 ---
 
