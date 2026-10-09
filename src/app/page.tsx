@@ -19,17 +19,17 @@ export default function DashboardPage() {
   const dailyXpProgress = Math.min(100, Math.round((progress.xp % dailyXpTarget) / dailyXpTarget * 100));
 
   return (
-    <div className="flex-1 w-full max-w-5xl mx-auto px-4 py-8 pb-28 md:pb-12">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left 2 Columns: Learning Tree */}
-        <div className="lg:col-span-2 flex flex-col items-center">
+    <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-28 md:pb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Left Columns: Learning Tree */}
+        <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
           {/* Mobile Friend Battle Quick Banner */}
           <div className="w-full lg:hidden mb-6 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 p-4 text-white shadow-md flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">⚔️</span>
-              <div>
-                <h4 className="text-sm font-black text-white leading-tight">Dvikova su Draugais!</h4>
-                <p className="text-[11px] text-white/90 font-medium">5 greiti raundai prieš draugus ar DI</p>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-3xl shrink-0">⚔️</span>
+              <div className="min-w-0">
+                <h4 className="text-sm font-black text-white leading-tight truncate">Dvikova su Draugais!</h4>
+                <p className="text-[11px] text-white/90 font-medium truncate">5 greiti raundai prieš draugus ar DI</p>
               </div>
             </div>
             <Link
@@ -62,20 +62,20 @@ export default function DashboardPage() {
               className="btn-3d btn-green-3d py-2.5 px-6 inline-flex items-center gap-2 text-xs font-bold"
             >
               <span>ENTER PRACTICE GYM</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 shrink-0" />
             </Link>
           </div>
         </div>
 
         {/* Right Column: Daily Goals, Phrase of Day, Quests, Amber League */}
-        <div className="hidden lg:flex flex-col gap-5 sticky top-24">
+        <div className="hidden lg:flex lg:col-span-5 xl:col-span-5 flex-col gap-4 min-w-0 w-full sticky top-20 max-h-[calc(100vh-5.5rem)] overflow-y-auto pr-1">
           {/* Daily Goal Card */}
           <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+            <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500 truncate">
                 Daily Goal • Dienos tikslas
               </span>
-              <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+              <span className="text-xs font-bold text-amber-500 flex items-center gap-1 shrink-0">
                 <Zap className="h-3.5 w-3.5 fill-amber-500" />
                 {progress.xp % dailyXpTarget} / {dailyXpTarget} XP
               </span>
@@ -94,15 +94,15 @@ export default function DashboardPage() {
 
           {/* Friend Battle Card */}
           <div className="rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 p-5 text-white shadow-md flex flex-col gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-xs text-xl">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-xs text-xl">
                 ⚔️
               </span>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-100 block">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-100 block truncate">
                   Multiplayer Duel
                 </span>
-                <h4 className="text-base font-black text-white leading-tight">
+                <h4 className="text-base font-black text-white leading-tight truncate">
                   Dvikova su Draugais
                 </h4>
               </div>
@@ -124,15 +124,16 @@ export default function DashboardPage() {
           {/* Daily Quests Card */}
           <DailyQuestsCard />
 
-
           {/* Phrase of the Day Card */}
           <div className="rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 flex items-center gap-1">
-                <Sparkles className="h-3.5 w-3.5" />
-                Phrase of the Day
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 flex items-center gap-1 min-w-0 truncate">
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Phrase of the Day</span>
               </span>
-              <AudioSpeaker text="Kaip sekasi? Viskas gerai!" size="sm" />
+              <div className="shrink-0">
+                <AudioSpeaker text="Kaip sekasi? Viskas gerai!" size="sm" />
+              </div>
             </div>
 
             <h4 className="text-lg font-black text-slate-900 leading-snug">
@@ -159,7 +160,7 @@ export default function DashboardPage() {
               onClick={() => sounds.playClick()}
               className="btn-3d btn-blue-3d w-full py-2.5 text-center text-xs font-extrabold flex items-center justify-center gap-2"
             >
-              <BookOpen className="h-4 w-4" />
+              <BookOpen className="h-4 w-4 shrink-0" />
               <span>OPEN GRAMMAR BANK</span>
             </Link>
           </div>

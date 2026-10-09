@@ -58,47 +58,47 @@ export const AmberLeagueCard: React.FC = () => {
     <>
       <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 shadow-xs">
         {/* League Tier Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
               <Trophy className="h-4 w-4" />
             </span>
-            <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
               {tierConfig.name} • {tierConfig.englishName}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
             <Clock className="h-3 w-3 text-amber-600" />
-            <span>Savaitė {timeInfo.weekNumber} • Liko {timeInfo.formatted} ({timeInfo.englishFormatted})</span>
+            <span>Sav. {timeInfo.weekNumber} • {timeInfo.formatted}</span>
           </div>
         </div>
 
         {/* Tier Banner */}
         <div
-          className={`rounded-2xl bg-gradient-to-r ${tierConfig.bgGradient} p-4 text-white shadow-sm flex items-center justify-between mb-4`}
+          className={`rounded-2xl bg-gradient-to-r ${tierConfig.bgGradient} p-3.5 text-white shadow-sm flex items-center justify-between gap-2.5 mb-4`}
         >
-          <div className="flex items-center gap-3">
-            <span className="text-3xl drop-shadow-sm">{tierConfig.icon}</span>
-            <div>
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <span className="text-2xl sm:text-3xl drop-shadow-sm shrink-0">{tierConfig.icon}</span>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h4 className="text-lg font-black tracking-tight">{tierConfig.name}</h4>
-                {currentTier === 'Gintaras' && <Sparkles className="w-4 h-4 text-yellow-200 animate-spin-slow" />}
+                <h4 className="text-base sm:text-lg font-black tracking-tight truncate">{tierConfig.name}</h4>
+                {currentTier === 'Gintaras' && <Sparkles className="w-3.5 h-3.5 text-yellow-200 shrink-0" />}
               </div>
-              <span className="text-[11px] font-bold text-amber-100 block">
+              <span className="text-[10px] font-bold text-amber-100 block truncate">
                 {tierConfig.englishName}
               </span>
-              <p className="text-[11px] text-white/90 font-medium mt-0.5">
+              <p className="text-[11px] text-white/90 font-medium mt-0.5 truncate">
                 {isPromoting ? (
                   <span className="text-emerald-200 font-bold flex items-center gap-1">
-                    <ArrowUp className="w-3 h-3" /> #{userRank} vieta • Pakilimo zonoje! (Promotion Zone)
+                    <ArrowUp className="w-3 h-3 shrink-0" /> #{userRank} vieta • Pakilimas
                   </span>
                 ) : isDemoting ? (
                   <span className="text-rose-200 font-bold flex items-center gap-1">
-                    <ArrowDown className="w-3 h-3" /> #{userRank} vieta • Iškritimo zonoje! (Demotion Zone)
+                    <ArrowDown className="w-3 h-3 shrink-0" /> #{userRank} vieta • Iškritimas
                   </span>
                 ) : (
-                  <span>#{userRank} vieta iš 30 mokinių (Rank #{userRank} of 30)</span>
+                  <span>#{userRank} vieta iš 30 mokinių</span>
                 )}
               </p>
             </div>
@@ -107,12 +107,12 @@ export const AmberLeagueCard: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowRewardsModal(true)}
-            className="flex flex-col items-end bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl transition border border-white/20 text-right cursor-pointer"
+            className="shrink-0 flex flex-col items-end bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl transition border border-white/20 text-right cursor-pointer"
             title="Peržiūrėti prizus • View prizes"
           >
-            <span className="text-xl font-black">{progress.xp}</span>
+            <span className="text-base sm:text-lg font-black leading-tight">{progress.xp}</span>
             <span className="text-[9px] font-bold block uppercase tracking-wider opacity-90 text-amber-200">
-              Tavo XP • XP
+              XP
             </span>
           </button>
         </div>
@@ -124,15 +124,15 @@ export const AmberLeagueCard: React.FC = () => {
             return (
               <div
                 key={comp.id}
-                className={`flex items-center justify-between p-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center justify-between gap-2 p-2 rounded-xl text-xs font-bold transition-all ${
                   comp.isUser
                     ? 'bg-amber-50 text-amber-950 border-2 border-amber-300 ring-2 ring-amber-100 shadow-2xs'
                     : 'hover:bg-slate-50 text-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span
-                    className={`w-5 text-center font-black ${
+                    className={`w-4 shrink-0 text-center font-black ${
                       comp.rank === 1
                         ? 'text-yellow-500'
                         : comp.rank === 2
@@ -157,21 +157,19 @@ export const AmberLeagueCard: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="min-w-0">
-                    <span className={`truncate block ${comp.isUser ? 'font-black text-amber-950' : 'font-medium'}`}>
-                      {comp.name}
-                    </span>
-                  </div>
+                  <span className={`truncate min-w-0 flex-1 ${comp.isUser ? 'font-black text-amber-950' : 'font-medium'}`}>
+                    {comp.name}
+                  </span>
 
                   <span className="text-xs shrink-0" title={comp.city}>
                     {comp.flag}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-slate-500 text-[11px] font-mono">{comp.xp} XP</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-slate-500 text-[11px] font-mono whitespace-nowrap">{comp.xp} XP</span>
                   {isTop3 && (
-                    <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200 shrink-0">
                       Top 3
                     </span>
                   )}
@@ -183,25 +181,27 @@ export const AmberLeagueCard: React.FC = () => {
           {/* If user is below top 5, show a pinned row for the user */}
           {userRank > 5 && (
             <div className="mt-1 pt-1.5 border-t border-dashed border-slate-200">
-              <div className="flex items-center justify-between p-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-950 border-2 border-amber-300 ring-2 ring-amber-100 shadow-2xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="w-5 text-center font-black text-amber-800">
+              <div className="flex items-center justify-between gap-2 p-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-950 border-2 border-amber-300 ring-2 ring-amber-100 shadow-2xs">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="w-4 shrink-0 text-center font-black text-amber-800">
                     #{userRank}
                   </span>
-                  <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[10px] font-black flex items-center justify-center">
+                  <div className="h-6 w-6 shrink-0 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[10px] font-black flex items-center justify-center">
                     TU
                   </div>
-                  <span className="truncate font-black text-amber-950">
-                    {userName} (Tu • You)
+                  <span className="truncate min-w-0 flex-1 font-black text-amber-950">
+                    {userName}
                   </span>
-                  <span className="text-xs">🇱🇹</span>
+                  <span className="text-xs shrink-0">🇱🇹</span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-amber-900 text-[11px] font-mono font-black">{progress.xp} XP</span>
-                  <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                    Liko {leaderboard[2] ? Math.max(0, leaderboard[2].xp - progress.xp + 1) : 0} XP iki Top 3 (Need XP for Top 3)
-                  </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-amber-900 text-[11px] font-mono font-black whitespace-nowrap">{progress.xp} XP</span>
+                  {leaderboard[2] && (
+                    <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded whitespace-nowrap" title="Need XP for Top 3">
+                      +{Math.max(0, leaderboard[2].xp - progress.xp + 1)} XP
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -209,22 +209,22 @@ export const AmberLeagueCard: React.FC = () => {
         </div>
 
         {/* Links to Full Standings & Rewards Breakdown */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
           <button
             type="button"
             onClick={() => setShowRewardsModal(true)}
             className="text-[11px] font-extrabold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
           >
-            <Award className="h-3.5 w-3.5" />
-            <span>Prizai • Prizes (Gems)</span>
+            <Award className="h-3.5 w-3.5 shrink-0" />
+            <span>Prizai • Prizes</span>
           </button>
 
           <Link
             href="/leaderboard"
             className="text-xs font-black text-sky-600 hover:text-sky-700 hover:underline flex items-center gap-1"
           >
-            <span>Visa lentelė • Standings (30)</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <span>Visa lentelė (30)</span>
+            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
           </Link>
         </div>
       </div>

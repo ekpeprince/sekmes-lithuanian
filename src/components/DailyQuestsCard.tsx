@@ -33,32 +33,32 @@ export const DailyQuestsCard: React.FC = () => {
   return (
     <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 shadow-xs flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
             <Target className="h-4 w-4" />
           </span>
-          <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
             Daily Quests • Užduotys
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Streak Freeze Badge */}
           <span
-            className="flex items-center gap-1 text-[11px] font-black text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full"
+            className="flex items-center gap-1 text-[10px] font-black text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full"
             title="Streak Freeze shield protects your streak if you miss a practice day"
           >
             <span>🧊</span>
             <span>{progress.streakFreezes ?? 1} Freeze</span>
           </span>
-          <span className="text-[11px] font-bold text-slate-400">
+          <span className="text-[10px] font-bold text-slate-400">
             Resets daily
           </span>
         </div>
       </div>
 
       {/* Quests List */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5">
         {quests.map((quest) => {
           const percent = Math.min(100, Math.round((quest.current / quest.target) * 100));
 
@@ -67,47 +67,44 @@ export const DailyQuestsCard: React.FC = () => {
               key={quest.id}
               className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">{quest.icon}</span>
-                  <div>
-                    <h5 className="text-xs font-black text-slate-800 flex items-center gap-1.5 flex-wrap">
-                      <span>{quest.title}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span className="text-lg shrink-0">{quest.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <h5 className="text-xs font-black text-slate-800 truncate">
+                      {quest.title}
                       {quest.englishTitle && (
-                        <span className="text-[10px] font-bold text-slate-400">
-                          • {quest.englishTitle}
+                        <span className="text-[10px] font-bold text-slate-400 font-normal">
+                          {' '}({quest.englishTitle})
                         </span>
                       )}
                     </h5>
-                    <p className="text-[11px] text-slate-600 font-medium line-clamp-1 mt-0.5">
+                    <p className="text-[11px] text-slate-600 font-medium truncate mt-0.5">
                       {quest.description}
                     </p>
-                    {quest.englishDescription && (
-                      <p className="text-[10px] text-slate-400 font-normal italic line-clamp-1">
-                        {quest.englishDescription}
-                      </p>
-                    )}
                   </div>
                 </div>
 
-                {quest.completed && !quest.claimed ? (
-                  <button
-                    type="button"
-                    onClick={() => claimQuestRewardById(quest.id)}
-                    className="btn-3d px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-[11px] uppercase tracking-wider shadow-xs animate-bounce"
-                  >
-                    Claim!
-                  </button>
-                ) : quest.claimed ? (
-                  <span className="flex items-center gap-1 text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
-                    <Check className="h-3 w-3 stroke-[3]" />
-                    Done
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-bold text-slate-400">
-                    {quest.current}/{quest.target}
-                  </span>
-                )}
+                <div className="shrink-0 flex items-center">
+                  {quest.completed && !quest.claimed ? (
+                    <button
+                      type="button"
+                      onClick={() => claimQuestRewardById(quest.id)}
+                      className="btn-3d px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-[11px] uppercase tracking-wider shadow-xs animate-bounce"
+                    >
+                      Claim!
+                    </button>
+                  ) : quest.claimed ? (
+                    <span className="flex items-center gap-1 text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                      <Check className="h-3 w-3 stroke-[3]" />
+                      Done
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">
+                      {quest.current}/{quest.target}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Progress Bar */}
@@ -131,7 +128,7 @@ export const DailyQuestsCard: React.FC = () => {
 
       {/* Mystery Reward Chest Section */}
       <div
-        className={`relative overflow-hidden rounded-2xl p-3.5 border-2 transition-all ${
+        className={`relative overflow-hidden rounded-2xl p-3 border-2 transition-all ${
           isChestClaimedToday
             ? 'bg-slate-50 border-slate-200'
             : isAllCompleted
@@ -139,10 +136,10 @@ export const DailyQuestsCard: React.FC = () => {
             : 'bg-slate-50/70 border-dashed border-slate-300'
         }`}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div
-              className={`flex h-11 w-11 items-center justify-center rounded-2xl text-2xl shadow-xs transition-transform ${
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-xs transition-transform ${
                 isChestClaimedToday
                   ? 'bg-slate-200 text-slate-400'
                   : isAllCompleted
@@ -152,30 +149,30 @@ export const DailyQuestsCard: React.FC = () => {
             >
               {isChestClaimedToday ? '✨' : '🎁'}
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-slate-800">
-                  Paslapties Skrynia • Mystery Chest
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-black text-slate-800 truncate">
+                  Paslapties Skrynia
                 </span>
                 {isAllCompleted && !isChestClaimedToday && (
-                  <span className="bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-1.5 py-0.2 rounded-md">
+                  <span className="bg-amber-400 text-slate-950 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md shrink-0">
                     Ready!
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate mt-0.5">
                 {isChestClaimedToday
-                  ? 'Šiandien jau atidaryta! Sugrįžkite rytoj • Claimed today!'
+                  ? 'Šiandien jau atidaryta! Sugrįžkite rytoj'
                   : isAllCompleted
-                  ? 'Visos užduotys atliktos! Atidarykite dovaną • All quests done!'
-                  : `Atlikite visas užduotis (${completedCount}/${totalQuests}) skryniai atrakinti`}
+                  ? 'Visos užduotys atliktos! Atidarykite dovaną'
+                  : `Atlikite užduotis (${completedCount}/${totalQuests})`}
               </p>
             </div>
           </div>
 
-          <div>
+          <div className="shrink-0">
             {isChestClaimedToday ? (
-              <span className="flex items-center gap-1 text-[11px] font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-xl">
+              <span className="flex items-center gap-1 text-[11px] font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-xl whitespace-nowrap">
                 <Check className="h-3.5 w-3.5 stroke-[3]" />
                 Atidaryta
               </span>
@@ -183,13 +180,13 @@ export const DailyQuestsCard: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenChest}
-                className="btn-3d flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md animate-pulse"
+                className="btn-3d flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md animate-pulse whitespace-nowrap"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 <span>Atidaryti!</span>
               </button>
             ) : (
-              <span className="text-[11px] font-black text-slate-400 bg-slate-100 px-2.5 py-1 rounded-xl">
+              <span className="text-[11px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-xl whitespace-nowrap">
                 {completedCount}/{totalQuests}
               </span>
             )}
