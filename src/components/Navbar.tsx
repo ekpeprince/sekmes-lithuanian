@@ -40,15 +40,17 @@ export const Navbar: React.FC = () => {
       <header className="sticky top-0 z-40 w-full border-b-2 border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-green-400 p-1 shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-              <span className="text-xl">🇱🇹</span>
+          <Link href="/" className="flex items-center gap-2.5 group select-none">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 p-1 shadow-md shadow-emerald-500/25 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200">
+              <span className="text-xl select-none">🇱🇹</span>
             </div>
-            <div>
-              <span className="notranslate text-xl font-extrabold tracking-wider text-emerald-600 block leading-tight" translate="no">
-                LABASAPP
-              </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+            <div className="flex flex-col">
+              <div className="flex items-center notranslate text-xl font-black tracking-tight leading-tight" translate="no">
+                <span className="text-slate-900 group-hover:text-emerald-700 transition-colors">Labas</span>
+                <span className="text-emerald-600 font-extrabold">App</span>
+                <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block -mt-0.5">
                 Lithuanian A1
               </span>
             </div>
