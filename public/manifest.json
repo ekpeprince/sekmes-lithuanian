@@ -1,7 +1,7 @@
 {
-  "name": "LabasApp – Learn Lithuanian (A1)",
+  "name": "LabasApp – Learn Lithuanian",
   "short_name": "LabasApp",
-  "description": "Gamified interactive A1 Lithuanian language course with AI conversation partner, grammar bank, and native audio.",
+  "description": "Gamified interactive Lithuanian language learning platform with AI conversation partner, grammar bank, and native audio.",
   "start_url": "/",
   "id": "/",
   "scope": "/",

@@ -55,7 +55,7 @@ export default function DashboardPage() {
               Sveikiname! More Lessons Coming Soon!
             </h4>
             <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
-              You are mastering A1 Lithuanian. Revisit any node above to sharpen your vocabulary or test your memory in the Practice Gym!
+              You are mastering Lithuanian! Revisit any lesson above to sharpen your vocabulary, build speaking confidence, or test your skills in the Practice Gym!
             </p>
             <Link
               href="/practice"

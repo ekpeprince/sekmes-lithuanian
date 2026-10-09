@@ -51,7 +51,7 @@ export const Navbar: React.FC = () => {
                 <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
               </div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block -mt-0.5">
-                Lithuanian A1
+                Learn Lithuanian
               </span>
             </div>
           </Link>

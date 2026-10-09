@@ -72,7 +72,7 @@ export default function ProfilePage() {
                   Lietuvių Mokinys • Learner
                 </h1>
                 <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mt-0.5">
-                  Lithuanian A1 Learner • Level {level}
+                  Lithuanian Learner • Level {level}
                 </p>
               </div>
 

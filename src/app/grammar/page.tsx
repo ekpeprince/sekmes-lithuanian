@@ -44,17 +44,17 @@ export default function GrammarPage() {
               <BookOpen className="h-5 w-5" />
             </span>
             <span className="text-xs font-black uppercase tracking-wider text-emerald-600">
-              Lithuanian A1 Curriculum Reference • Žinynas
+              Lithuanian Grammar & Curriculum Reference • Žinynas
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
             Gramatikos ir Žodyno Gidas • Grammar & Vocabulary Guide
           </h1>
           <p className="mt-2 text-base text-slate-600 max-w-2xl font-medium">
-            Akademinė lietuvių kalbos programa (1–4 skyriai): 7 linksniai, šauksmininkas, vietininkas, prielinksniai, laiko reiškimas ir interaktyvios užduotys.
+            Akademinė lietuvių kalbos programa: 7 linksniai, šauksmininkas, vietininkas, prielinksniai, laiko reiškimas ir interaktyvios užduotys.
           </p>
           <p className="mt-0.5 text-xs text-slate-400 font-medium italic">
-            Academic Lithuanian A1 syllabus: 7 noun cases, vocative, locative, prepositions, time expressions, and drills.
+            Comprehensive Lithuanian grammar guide: 7 noun cases, vocative, locative, prepositions, time expressions, and drills.
           </p>
         </div>
 
