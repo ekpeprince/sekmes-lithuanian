@@ -29,7 +29,7 @@ In the **Environment Variables** section during import, add the following keys f
 | Variable Name | Value |
 |---|---|
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | `AIzaSyA-nzjId5zB-KNRJSq2kt_2AbdMoo3fKqU` |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `sekmes.firebaseapp.com` |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `auth.labasapp.com` |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `sekmes` |
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `sekmes.firebasestorage.app` |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `844007390724` |
