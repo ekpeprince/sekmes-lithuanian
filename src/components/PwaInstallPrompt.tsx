@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Download, X, Share } from 'lucide-react';
+import { autoPromptNotificationsOnAuth } from '@/lib/notifications';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -66,6 +67,7 @@ export const PwaInstallPrompt: React.FC = () => {
       setDeferredPrompt(null);
       setIsDismissed(true);
       console.log('LabasApp PWA was installed successfully!');
+      void autoPromptNotificationsOnAuth();
     });
 
     return () => {
@@ -76,7 +78,10 @@ export const PwaInstallPrompt: React.FC = () => {
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        void autoPromptNotificationsOnAuth();
+      }
       setDeferredPrompt(null);
       setIsDismissed(true);
     } else if (isIos) {

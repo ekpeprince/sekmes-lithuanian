@@ -261,6 +261,23 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                 className="h-4 w-4 accent-indigo-600 rounded cursor-pointer"
               />
             </div>
+
+            {/* Marketing & Feature Updates */}
+            <div className="p-3 rounded-2xl border border-slate-200 bg-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🎁</span>
+                <div>
+                  <span className="text-xs font-black text-slate-800 block">Naujienos ir pasiūlymai</span>
+                  <span className="text-[10px] text-slate-400 font-semibold">Special offers, new lessons & updates</span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.marketingUpdates ?? true}
+                onChange={() => handleToggleChannel('marketingUpdates')}
+                className="h-4 w-4 accent-indigo-600 rounded cursor-pointer"
+              />
+            </div>
           </div>
         )}
 

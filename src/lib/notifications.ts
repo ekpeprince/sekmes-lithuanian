@@ -7,15 +7,17 @@ export interface NotificationSettings {
   wordOfDay: boolean;
   heartsRefill: boolean;
   duelInvites: boolean;
+  marketingUpdates: boolean;
 }
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
-  enabled: false,
+  enabled: true,
   streakReminders: true,
   reminderTime: '19:00',
   wordOfDay: true,
   heartsRefill: true,
   duelInvites: true,
+  marketingUpdates: true,
 };
 
 const SETTINGS_KEY = 'sekmes_notification_settings_v1';
@@ -90,6 +92,31 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   if (!isNotificationSupported()) return 'denied';
   try {
     const permission = await Notification.requestPermission();
+    return permission;
+  } catch {
+    return 'denied';
+  }
+}
+
+// Auto-prompt permission and enable all notification channels upon sign-in or installation
+export async function autoPromptNotificationsOnAuth(): Promise<NotificationPermission> {
+  if (!isNotificationSupported()) return 'unsupported' as NotificationPermission;
+  try {
+    if (Notification.permission === 'granted') {
+      const settings = getNotificationSettings();
+      saveNotificationSettings({ ...settings, enabled: true });
+      return 'granted';
+    }
+    if (Notification.permission === 'denied') {
+      return 'denied';
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const settings = getNotificationSettings();
+      saveNotificationSettings({ ...settings, enabled: true });
+      await sendTestNotification();
+    }
     return permission;
   } catch {
     return 'denied';

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, AlertCircle, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { autoPromptNotificationsOnAuth } from '@/lib/notifications';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     try {
       if (mode === 'signin') {
         await signInWithEmail(email, password);
+        void autoPromptNotificationsOnAuth();
         onClose();
       } else if (mode === 'signup') {
         if (password.length < 6) {
@@ -38,6 +40,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           return;
         }
         await signUpWithEmail(email, password, name || undefined);
+        void autoPromptNotificationsOnAuth();
         onClose();
       } else if (mode === 'forgot') {
         await sendPasswordReset(email);
@@ -67,6 +70,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
     try {
       await signInWithGoogle();
+      void autoPromptNotificationsOnAuth();
       onClose();
     } catch (err: unknown) {
       const authErr = err as { code?: string; message?: string };
@@ -243,10 +247,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-3d btn-green-3d mt-2 w-full py-3 text-center text-sm font-black tracking-wide"
+            className="btn-3d btn-green-3d mt-2 w-full py-3 text-center text-sm font-black tracking-wide cursor-pointer"
           >
             {isSubmitting ? 'Kraunama...' : mode === 'signin' ? 'PRISIJUNGTI' : mode === 'signup' ? 'SUKURTI PASKYRĄ' : 'SIŲSTI NUORODĄ'}
           </button>
+
+          {mode !== 'forgot' && (
+            <p className="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400 font-medium">
+              Prisijungdami sutinkate su{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-slate-600 underline hover:text-emerald-600">
+                Sąlygomis
+              </a>
+              ,{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-slate-600 underline hover:text-emerald-600">
+                Privatumo politika
+              </a>{' '}
+              ir sutinkate gauti kasdienius mokymosi priminimus bei naujienas.
+            </p>
+          )}
         </form>
 
         {/* Mode Switcher */}
