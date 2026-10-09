@@ -46,7 +46,7 @@ export const Navbar: React.FC = () => {
             </div>
             <div>
               <span className="notranslate text-xl font-extrabold tracking-wider text-emerald-600 block leading-tight" translate="no">
-                SĖKMĖS!
+                LABASAPP
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
                 Lithuanian A1

@@ -143,7 +143,7 @@ self.addEventListener('notificationclick', (event) => {
 // 5. Push Event (for server web push)
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Sėkmės! • Lithuanian Practice',
+    title: 'LabasApp • Lithuanian Practice',
     body: 'Time to keep your Lithuanian streak burning! 🔥',
     url: '/',
   };

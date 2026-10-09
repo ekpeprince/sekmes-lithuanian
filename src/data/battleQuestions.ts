@@ -453,17 +453,17 @@ export const BATTLE_QUESTIONS: BattleQuestion[] = [
   {
     id: 'bq-29',
     category: 'Kultūra ir Gyvenimas • Culture & Daily Life',
-    prompt: 'Ką reiškia mūsų programėlės vardas „Sėkmės!“?',
-    englishSubtitle: 'What does our app name "Sėkmės!" mean in English?',
-    audioText: 'Sėkmės!',
+    prompt: 'Ką reiškia mūsų programėlės vardas „LabasApp“ (žodis „Labas“)?',
+    englishSubtitle: 'What does the word "Labas" in our app name "LabasApp" mean in English?',
+    audioText: 'Labas!',
     options: [
+      { lt: 'Labas!', en: 'Hello / Hi!' },
       { lt: 'Sėkmės!', en: 'Good luck / Success!' },
-      { lt: 'Sveiki!', en: 'Hello / Welcome!' },
       { lt: 'Ačiū!', en: 'Thank you!' },
       { lt: 'Viso gero!', en: 'All the best / Goodbye!' },
     ],
-    correctAnswer: 'Sėkmės!',
-    explanation: '„Sėkmės!“ comes from „sėkmė“ (success/fortune) and means "Good luck! / Wishing you success!".',
+    correctAnswer: 'Labas!',
+    explanation: '„Labas!“ is the universal, friendly Lithuanian greeting meaning "Hello / Hi!".',
   },
   {
     id: 'bq-30',

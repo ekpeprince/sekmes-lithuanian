@@ -420,7 +420,7 @@ function BattleArenaContent() {
     if (!room) return;
     const shareUrl = `${window.location.origin}/battle?room=${room.id}`;
     const shareTitle = `⚔️ Lietuvių kalbos dvikova: ${room.id}`;
-    const shareText = `⚔️ Kviečiu tave į lietuvių kalbos dvikovą!\n\n👉 Dvikovos kodas: ${room.id}\n\n📱 Turi „Sėkmės!“ savo iPhone ekrane?\nAtidaryk programėlę ir suvesk arba įklijuok kodą: ${room.id}\n\n🌐 Arba žaisk tiesiogiai per naršyklę:\n${shareUrl}`;
+    const shareText = `⚔️ Kviečiu tave į lietuvių kalbos dvikovą!\n\n👉 Dvikovos kodas: ${room.id}\n\n📱 Turi „LabasApp“ savo iPhone ekrane?\nAtidaryk programėlę ir suvesk arba įklijuok kodą: ${room.id}\n\n🌐 Arba žaisk tiesiogiai per naršyklę:\n${shareUrl}`;
 
     if (navigator.share) {
       navigator.share({
@@ -553,7 +553,7 @@ function BattleArenaContent() {
               <span className="text-2xl">📱</span>
               <div>
                 <h4 className="text-xs font-black text-slate-900">
-                  Turi „Sėkmės!“ programėlę pagrindiniame ekrane?
+                  Turi „LabasApp“ programėlę pagrindiniame ekrane?
                 </h4>
                 <p className="text-[11px] text-slate-600 font-medium">
                   Apple iOS atidaro nuorodas naršyklėje. Jei nori žaisti savo įdiegtoje programėlėje su visu progresu, nukopijuok kodą <span className="font-mono font-black text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-200">{roomParam}</span> ir atidaryk programėlę!

@@ -1,4 +1,4 @@
-# Deploying Sėkmės! to the Web 🚀
+# Deploying LabasApp to the Web 🚀
 
 Your app is built with **Next.js 16 (App Router)** and includes dynamic Node.js serverless API routes (`/api/tts` for Lithuanian neural voice and `/api/tutor` for the AI conversation partner), along with **Firebase Authentication** and **Cloud Firestore**.
 

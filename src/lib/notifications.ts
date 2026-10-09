@@ -164,7 +164,7 @@ export async function showSekmesNotification(
 
 // Send Test Notification
 export async function sendTestNotification(): Promise<boolean> {
-  return showSekmesNotification('🇱🇹 Sėkmės! Notification Active', {
+  return showSekmesNotification('🇱🇹 LabasApp Notification Active', {
     body: 'Puikiai! Your Lithuanian daily streak reminders & practice alerts are now connected.',
     url: '/practice',
     tag: 'test-notification',

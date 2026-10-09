@@ -65,7 +65,7 @@ export const PwaInstallPrompt: React.FC = () => {
     window.addEventListener('appinstalled', () => {
       setDeferredPrompt(null);
       setIsDismissed(true);
-      console.log('Sėkmės PWA was installed successfully!');
+      console.log('LabasApp PWA was installed successfully!');
     });
 
     return () => {
@@ -107,7 +107,7 @@ export const PwaInstallPrompt: React.FC = () => {
   return (
     <>
       {/* Floating Bottom PWA Install Banner */}
-      <aside aria-label="Install Sėkmės App" className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-[410px] z-50 animate-pop">
+      <aside aria-label="Install LabasApp" className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-[410px] z-50 animate-pop">
         <div className="rounded-2xl bg-slate-900/95 backdrop-blur-md p-4 text-white shadow-2xl border border-slate-700/60 flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-11 w-11 shrink-0 rounded-xl bg-gradient-to-tr from-emerald-500 to-green-400 p-0.5 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/20 font-black text-white">
@@ -115,7 +115,7 @@ export const PwaInstallPrompt: React.FC = () => {
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-sm font-bold tracking-tight text-white">
-                Install <span className="notranslate" translate="no">Sėkmės!</span> App
+                Install <span className="notranslate" translate="no">LabasApp</span>
               </h4>
               <p className="text-xs text-slate-400 font-normal leading-tight mt-0.5">
                 Fast, offline-ready & fullscreen learning

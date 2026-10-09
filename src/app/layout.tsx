@@ -9,7 +9,7 @@ import { NotificationPermissionPrompt } from '@/components/NotificationPermissio
 import { IosZoomLock } from '@/components/IosZoomLock';
 
 export const metadata: Metadata = {
-  title: 'Sėkmės – Learn Lithuanian (A1 Gamified Course)',
+  title: 'LabasApp – Learn Lithuanian (A1 Gamified Course)',
   description: 'Duolingo-style gamified interactive web app for learning Lithuanian vocabulary, verb conjugations, noun cases, and AI conversations.',
   manifest: '/manifest.json',
   icons: {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Sėkmės!',
+    title: 'LabasApp',
   },
   other: {
     google: 'notranslate',
