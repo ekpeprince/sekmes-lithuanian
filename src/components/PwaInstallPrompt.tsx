@@ -26,18 +26,38 @@ export const PwaInstallPrompt: React.FC = () => {
   });
 
   useEffect(() => {
-    // 1. Register Service Worker
+    // 1. Service Worker registration & iOS WebKit safety
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/sw.js')
-          .then((registration) => {
-            console.log('PWA ServiceWorker registered successfully with scope:', registration.scope);
-          })
-          .catch((error) => {
-            console.warn('PWA ServiceWorker registration notice:', error);
-          });
-      });
+      const ua = window.navigator.userAgent.toLowerCase();
+      const isIosThirdPartyBrowser = /iphone|ipad|ipod/.test(ua) && /crios|fxios|optios|edgios/.test(ua);
+
+      if (isIosThirdPartyBrowser) {
+        // Third-party iOS browsers (Chrome, Firefox, Edge on iOS) use WKWebView which does NOT support PWA install
+        // and aggressively crashes on Service Worker intercepted navigations.
+        // Unregister any active service worker to heal broken sessions immediately.
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const reg of registrations) {
+            reg.unregister().catch(() => {});
+          }
+        });
+      } else {
+        const registerSw = () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => {
+              console.log('PWA ServiceWorker registered with scope:', registration.scope);
+            })
+            .catch((error) => {
+              console.warn('PWA ServiceWorker registration notice:', error);
+            });
+        };
+
+        if (document.readyState === 'complete') {
+          registerSw();
+        } else {
+          window.addEventListener('load', registerSw);
+        }
+      }
     }
 
     // 2. Check if already installed / running as standalone PWA

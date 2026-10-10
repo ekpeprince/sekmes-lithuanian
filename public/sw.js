@@ -1,5 +1,4 @@
-// LabasApp Service Worker v5
-const CACHE_VERSION = 'labasapp-sw-v5';
+const CACHE_VERSION = 'labasapp-sw-v7';
 const CACHE_STATIC = `labasapp-static-${CACHE_VERSION}`;
 const CACHE_AUDIO = `labasapp-audio-${CACHE_VERSION}`;
 
@@ -91,27 +90,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 5. Navigation requests (loading an HTML page):
-  // CRITICAL for iOS Safari & Chrome on iOS:
-  // If the request is for page navigation, let the native browser network stack handle it!
-  // This allows domain redirects (labasapp.com -> www.labasapp.com) to succeed without WebKit Service Worker errors.
-  // Only fall back to cache when the device is completely offline.
+  // NEVER intercept HTML page navigation in Service Worker!
+  // Allowing the browser to fetch navigation requests natively ensures all redirects
+  // (e.g. labasapp.com -> www.labasapp.com) and WebKit WKWebView navigation on iOS work 100% reliably.
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(async () => {
-        const cache = await caches.open(CACHE_STATIC);
-        const cached = await cache.match(event.request);
-        if (cached) return cached;
-        const fallback = await cache.match('/');
-        if (fallback) return fallback;
-        return new Response(
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline • LabasApp</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:48px 20px;background:#f7fafc;color:#1e293b"><h2 style="font-size:24px;margin-bottom:8px">LabasApp</h2><p style="color:#64748b;margin-bottom:24px">Esate neprisijungęs prie interneto (Offline).</p><button onclick="window.location.reload()" style="padding:12px 24px;border-radius:14px;background:#059669;color:white;border:none;font-size:16px;font-weight:bold;cursor:pointer">Atnaujinti</button></body></html>',
-          {
-            status: 200,
-            headers: { 'Content-Type': 'text/html; charset=utf-8' },
-          }
-        );
-      })
-    );
     return;
   }
 

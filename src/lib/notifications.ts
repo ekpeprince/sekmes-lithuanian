@@ -76,18 +76,37 @@ export const LITHUANIAN_WORDS_OF_THE_DAY = [
   },
 ];
 
-// Check if browser supports notifications
+// Check if browser supports notifications safely across all platforms
 export function isNotificationSupported(): boolean {
-  return typeof window !== 'undefined' && 'Notification' in window;
+  if (typeof window === 'undefined') return false;
+  if (!('Notification' in window)) return false;
+  try {
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(ua);
+    if (isIos) {
+      // In iOS browsers (Safari & Chrome on iOS), Web Notifications are only supported in standalone PWA mode (added to Home Screen)
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+      if (!isStandalone) return false;
+    }
+    return Boolean(window.Notification && Notification.permission);
+  } catch {
+    return false;
+  }
 }
 
-// Get current browser permission
+// Get current browser permission safely
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
   if (!isNotificationSupported()) return 'unsupported';
-  return Notification.permission;
+  try {
+    return Notification.permission;
+  } catch {
+    return 'unsupported';
+  }
 }
 
-// Request permission
+// Request permission safely
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!isNotificationSupported()) return 'denied';
   try {

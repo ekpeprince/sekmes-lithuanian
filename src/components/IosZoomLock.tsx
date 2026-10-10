@@ -12,7 +12,9 @@ export function IosZoomLock() {
 
     // Prevent iOS Safari multi-touch pinch zoom
     const handleGestureStart = (e: Event) => {
-      e.preventDefault();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
     };
 
     // Prevent rapid double-tap to zoom on iOS Safari
@@ -23,7 +25,7 @@ export function IosZoomLock() {
         // If the tap target is not a text input or textarea, prevent the default double-tap zoom
         const target = e.target as HTMLElement | null;
         const isEditable = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
-        if (!isEditable) {
+        if (!isEditable && e.cancelable) {
           e.preventDefault();
         }
       }
