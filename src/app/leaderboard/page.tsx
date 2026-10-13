@@ -263,6 +263,34 @@ export default function LeaderboardPage() {
           </div>
         )}
 
+        {/* 1v1 Friend Battle Hub Card */}
+        <div className="mb-6 rounded-3xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 p-4 sm:p-5 text-white shadow-md border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-amber-500/30 border border-amber-300/30 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+              ⚔️
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black tracking-tight text-white">
+                  Draugų Dvikova • 1v1 Friend Battle
+                </h3>
+                <span className="bg-amber-400/20 text-amber-200 border border-amber-300/30 text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
+                  +XP Boost
+                </span>
+              </div>
+              <p className="text-xs text-amber-100/90 font-medium mt-0.5">
+                Challenge friends to fast 5-round speed battles or train against AI to rise up the weekly ranks!
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/battle"
+            className="btn-3d px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-white text-amber-950 font-black text-xs uppercase tracking-wider shrink-0 shadow-sm border border-amber-200/40 self-stretch sm:self-center text-center"
+          >
+            Kovoti dabar • Battle Now
+          </Link>
+        </div>
+
         {/* Top 3 Podium Cards */}
         <section className="mb-8">
           <div className="text-xs font-black uppercase tracking-wider text-slate-400 mb-4 text-center">

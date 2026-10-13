@@ -24,17 +24,22 @@ export default function DashboardPage() {
         {/* Left Columns: Learning Tree */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
           {/* Mobile Friend Battle Quick Banner */}
-          <div className="w-full lg:hidden mb-6 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 p-4 text-white shadow-md flex items-center justify-between gap-3">
+          <div className="w-full lg:hidden mb-6 rounded-3xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 p-4 text-white shadow-md border border-amber-500/20 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="text-3xl shrink-0">⚔️</span>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/30 border border-amber-300/30 text-2xl shrink-0 shadow-inner">
+                ⚔️
+              </div>
               <div className="min-w-0">
-                <h4 className="text-sm font-black text-white leading-tight truncate">Dvikova su Draugais!</h4>
-                <p className="text-[11px] text-white/90 font-medium truncate">5 greiti raundai prieš draugus ar DI</p>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-sm font-black text-amber-50 leading-tight truncate">Dvikova su Draugais!</h4>
+                  <span className="text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-200 border border-amber-300/30 px-1.5 py-0.5 rounded-full">Amber</span>
+                </div>
+                <p className="text-[11px] text-amber-200/90 font-medium truncate">5 greiti raundai prieš draugus ar DI</p>
               </div>
             </div>
             <Link
               href="/battle"
-              className="btn-3d px-3.5 py-2 rounded-xl bg-white text-slate-900 font-black text-xs uppercase tracking-wider shrink-0 shadow-sm"
+              className="btn-3d px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-white text-amber-950 font-black text-xs uppercase tracking-wider shrink-0 shadow-sm border border-amber-200/40"
             >
               Kovoti!
             </Link>

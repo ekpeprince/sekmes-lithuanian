@@ -14,6 +14,7 @@ import {
   Clock,
   Flame,
   Mic,
+  GraduationCap,
 } from 'lucide-react';
 import { UNITS } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
@@ -393,6 +394,15 @@ export default function PracticePage() {
             <CheckCircle2 className="h-4 w-4" />
             <span>Completed Lessons</span>
           </button>
+
+          <Link
+            href="/grammar"
+            onClick={() => sounds.playClick()}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs ml-auto"
+          >
+            <GraduationCap className="h-4 w-4" />
+            <span>Grammar Bank & Cases 📖</span>
+          </Link>
         </div>
 
         {/* TAB 0: PRONUNCIATION / SPEAKING LAB */}

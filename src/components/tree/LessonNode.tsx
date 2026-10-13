@@ -66,8 +66,8 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
       </button>
 
       {/* Title under node */}
-      <div className="mt-2 text-center max-w-[120px]">
-        <span className={`text-xs font-bold leading-tight line-clamp-1 ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
+      <div className="mt-2 text-center max-w-[84px]">
+        <span className={`text-xs text-center line-clamp-2 leading-tight font-bold ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
           {lesson.title}
         </span>
       </div>

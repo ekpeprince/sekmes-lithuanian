@@ -37,54 +37,49 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b-2 border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+      <header className="sticky top-0 z-40 w-full border-b-2 border-slate-200 bg-white/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
           {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-2.5 group select-none">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 p-1 shadow-md shadow-emerald-500/25 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200">
-              <span className="text-xl select-none">🇱🇹</span>
+          <Link href="/" className="flex items-center gap-2 group select-none shrink-0">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 p-1 shadow-md shadow-emerald-500/25 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200">
+              <span className="text-lg sm:text-xl select-none">🇱🇹</span>
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center notranslate text-xl font-black tracking-tight leading-tight" translate="no">
-                <span className="text-slate-900 group-hover:text-emerald-700 transition-colors">Labas</span>
-                <span className="text-emerald-600 font-extrabold">App</span>
-                <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block -mt-0.5">
-                Learn Lithuanian
-              </span>
+            <div className="flex items-center notranslate text-lg sm:text-xl font-black tracking-tight leading-tight" translate="no">
+              <span className="text-slate-900 group-hover:text-emerald-700 transition-colors">Labas</span>
+              <span className="text-emerald-600 font-extrabold">App</span>
+              <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
             </div>
           </Link>
 
           {/* Gamification Stats */}
-          <div className="flex items-center gap-1.5 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             {/* Streak */}
             <div 
-              className="flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1.5 font-bold text-orange-500 hover:bg-orange-50 transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 font-bold text-orange-500 hover:bg-orange-50 transition-colors shrink-0"
               title="Daily Learning Streak"
             >
-              <Flame className="h-4.5 w-4.5 sm:h-5 sm:w-5 fill-orange-500 animate-bounce-slow text-orange-500" />
-              <span className="text-xs sm:text-base">{progress.streak}</span>
+              <Flame className="h-4 w-4 sm:h-5 sm:w-5 fill-orange-500 animate-bounce-slow text-orange-500" />
+              <span className="text-xs sm:text-base font-black">{progress.streak}</span>
             </div>
 
             {/* XP */}
             <div 
-              className="flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1.5 font-bold text-amber-500 hover:bg-amber-50 transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 font-bold text-amber-500 hover:bg-amber-50 transition-colors shrink-0"
               title="Total Experience Points"
             >
-              <Zap className="h-4.5 w-4.5 sm:h-5 sm:w-5 fill-amber-500 text-amber-500" />
-              <span className="text-xs sm:text-base">{progress.xp} <span className="hidden sm:inline text-xs font-semibold text-amber-600/70">XP</span></span>
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5 fill-amber-500 text-amber-500" />
+              <span className="text-xs sm:text-base font-black">{progress.xp} <span className="hidden sm:inline text-xs font-semibold text-amber-600/70">XP</span></span>
             </div>
 
             {/* Hearts */}
             <button
               type="button"
               onClick={() => setShowHeartModal(true)}
-              className="flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1.5 font-bold text-rose-500 hover:bg-rose-50 transition-all cursor-pointer group"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 font-bold text-rose-500 hover:bg-rose-50 transition-all cursor-pointer group shrink-0"
               title="Hearts remaining (Click to refill)"
             >
-              <Heart className={`h-4.5 w-4.5 sm:h-5 sm:w-5 fill-rose-500 text-rose-500 transition-transform ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110'}`} />
-              <span className="text-xs sm:text-base">{progress.hearts}</span>
+              <Heart className={`h-4 w-4 sm:h-5 sm:w-5 fill-rose-500 text-rose-500 transition-transform ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110'}`} />
+              <span className="text-xs sm:text-base font-black">{progress.hearts}</span>
               {progress.hearts < 5 && (
                 <PlusCircle className="h-3.5 w-3.5 text-emerald-500 hidden sm:inline" />
               )}
@@ -112,7 +107,7 @@ export const Navbar: React.FC = () => {
                 setShowNotificationModal(true);
               }}
               title="Pranešimai & Priminimai • Notifications"
-              className="flex p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="hidden sm:flex p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <Bell className="h-5 w-5" />
             </button>
@@ -138,7 +133,7 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowProfileMenu((prev) => !prev)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full sm:rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 transition-all cursor-pointer shadow-2xs shrink-0"
                   title="Paskyros nustatymai"
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
@@ -152,7 +147,7 @@ export const Navbar: React.FC = () => {
                   <span className="hidden sm:inline max-w-[100px] truncate">
                     {user.displayName || user.email?.split('@')[0]}
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-emerald-600" />
+                  <ChevronDown className="h-3.5 w-3.5 text-emerald-600 hidden sm:inline" />
                 </button>
 
                 {/* Profile Dropdown */}
@@ -189,10 +184,11 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAuthModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
+                title="Log in to save progress"
               >
                 <UserIcon className="h-3.5 w-3.5" />
-                <span>Prisijungti • Sign In</span>
+                <span>Log in</span>
               </button>
             )}
           </div>

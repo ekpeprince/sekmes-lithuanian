@@ -47,9 +47,9 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) =>
 
           <Link
             href="/grammar"
-            className="self-start sm:self-center shrink-0 flex items-center gap-2 bg-white text-slate-800 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-2xl shadow-md hover:bg-slate-50 active:scale-95 transition-all"
+            className="self-start sm:self-center shrink-0 flex items-center gap-2 bg-white/15 text-white border border-white/30 font-extrabold text-xs sm:text-sm px-3.5 py-2 rounded-2xl shadow-sm backdrop-blur-xs hover:bg-white/25 active:scale-95 transition-all"
           >
-            <BookOpen className="h-4 w-4 text-emerald-600" />
+            <BookOpen className="h-4 w-4 text-white" />
             <span>Guidebook</span>
           </Link>
         </div>
