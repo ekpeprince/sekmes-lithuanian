@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/context/GameContext';
@@ -7,6 +8,12 @@ import { Sidebar } from '@/components/Sidebar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 // import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
 // import { IosZoomLock } from '@/components/IosZoomLock';
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.labasapp.com'),
@@ -117,7 +124,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-screen bg-[#f7fafc] text-slate-800 flex flex-col antialiased">
+      <body className={`${plusJakartaSans.variable} font-sans min-h-screen bg-[#f7fafc] text-slate-800 flex flex-col antialiased`}>
         <AuthProvider>
           <GameProvider>
             {/* Guarded for iOS WebKit stability */}

@@ -23,25 +23,25 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Columns: Learning Tree */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
-          {/* Mobile Friend Battle Quick Banner */}
-          <div className="w-full lg:hidden mb-6 rounded-3xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 p-4 text-white shadow-md border border-amber-500/20 flex items-center justify-between gap-3">
+          {/* Mobile Amber League Quick Banner */}
+          <div className="w-full lg:hidden mb-6 rounded-3xl bg-amber-50/80 border-2 border-amber-300/80 p-4 shadow-sm flex items-center justify-between gap-3 text-amber-950">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/30 border border-amber-300/30 text-2xl shrink-0 shadow-inner">
-                ⚔️
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 border border-amber-300/60 text-2xl shrink-0 shadow-inner">
+                🏆
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-sm font-black text-amber-50 leading-tight truncate">Dvikova su Draugais!</h4>
-                  <span className="text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-200 border border-amber-300/30 px-1.5 py-0.5 rounded-full">Amber</span>
+                  <h4 className="text-sm font-black text-amber-950 leading-tight truncate">Gintaro Lyga</h4>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">Amber</span>
                 </div>
-                <p className="text-[11px] text-amber-200/90 font-medium truncate">5 greiti raundai prieš draugus ar DI</p>
+                <p className="text-[11px] text-amber-800/90 font-medium truncate">Top 3 advance to Silver League • Rank #4</p>
               </div>
             </div>
             <Link
-              href="/battle"
-              className="btn-3d px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-white text-amber-950 font-black text-xs uppercase tracking-wider shrink-0 shadow-sm border border-amber-200/40"
+              href="/leaderboard"
+              className="btn-tactile btn-tactile-amber px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider shrink-0 shadow-xs"
             >
-              Kovoti!
+              Rodyti
             </Link>
           </div>
 
@@ -98,26 +98,26 @@ export default function DashboardPage() {
           </div>
 
           {/* Friend Battle Card */}
-          <div className="rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 p-5 text-white shadow-md flex flex-col gap-3">
+          <div className="rounded-3xl bg-amber-50/70 border-2 border-amber-300/80 p-5 shadow-xs flex flex-col gap-3 text-slate-800">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-xs text-xl">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-xl">
                 ⚔️
               </span>
               <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-100 block truncate">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block truncate">
                   Multiplayer Duel
                 </span>
-                <h4 className="text-base font-black text-white leading-tight truncate">
+                <h4 className="text-base font-black text-slate-900 leading-tight truncate">
                   Dvikova su Draugais
                 </h4>
               </div>
             </div>
-            <p className="text-xs text-white/90 font-medium leading-relaxed">
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
               Kovok realiu laiku! 5 greiti raundai, live rezultatai ir XP prizai nugalėtojui.
             </p>
             <Link
               href="/battle"
-              className="btn-3d w-full py-2.5 rounded-xl bg-white text-slate-900 font-black text-xs uppercase tracking-wider text-center shadow-xs"
+              className="btn-tactile btn-tactile-amber w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-center shadow-xs"
             >
               Pradėti Dvikovą ⚔️
             </Link>

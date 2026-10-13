@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-sans), 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+}
+
 @layer base {
   :root {
     --bg-main: #f7f9fa;
@@ -14,7 +24,7 @@ body {
   width: 100%;
   background-color: #f7fafc;
   color: #1e293b;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: var(--font-sans), 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -30,7 +40,8 @@ select,
 textarea,
 a,
 [role="button"],
-.btn-3d {
+.btn-3d,
+.btn-tactile {
   touch-action: manipulation;
 }
 
@@ -47,6 +58,49 @@ textarea {
   body {
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* Enterprise Tactile 3D Button Mechanics */
+.btn-tactile {
+  position: relative;
+  font-weight: 700;
+  border-bottom-width: 4px;
+  border-bottom-style: solid;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-tactile:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.btn-tactile-emerald {
+  background-color: #10b981;
+  border-bottom-color: #059669;
+  color: #ffffff;
+}
+.btn-tactile-emerald:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.btn-tactile-amber {
+  background-color: #f59e0b;
+  border-bottom-color: #d97706;
+  color: #ffffff;
+}
+.btn-tactile-amber:hover:not(:disabled) {
+  background-color: #d97706;
+}
+
+.btn-tactile-slate {
+  background-color: #f1f5f9;
+  border-bottom-color: #cbd5e1;
+  color: #1e293b;
+}
+.btn-tactile-slate:hover:not(:disabled) {
+  background-color: #e2e8f0;
 }
 
 /* Duolingo-style Tactile 3D Buttons */

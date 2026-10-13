@@ -30,24 +30,24 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) =>
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-black uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-black uppercase tracking-wider bg-white/20 px-3 py-0.5 rounded-full">
                 Unit {unit.number}
               </span>
-              <span className="text-xs font-semibold text-white/80">
+              <span className="text-xs sm:text-sm font-bold text-white/85 tracking-wide">
                 {unit.subtitle}
               </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight">
+            <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight mt-1">
               {unit.title}
             </h3>
-            <p className="mt-1 text-xs sm:text-sm text-white/90 max-w-xl font-medium">
+            <p className="mt-1.5 text-xs sm:text-sm text-white/90 max-w-xl font-medium leading-relaxed">
               {unit.description}
             </p>
           </div>
 
           <Link
             href="/grammar"
-            className="self-start sm:self-center shrink-0 flex items-center gap-2 bg-white/15 text-white border border-white/30 font-extrabold text-xs sm:text-sm px-3.5 py-2 rounded-2xl shadow-sm backdrop-blur-xs hover:bg-white/25 active:scale-95 transition-all"
+            className="self-start sm:self-center shrink-0 flex items-center gap-2 bg-white/15 backdrop-blur border border-white/20 text-white font-black text-xs sm:text-sm px-4 py-2 rounded-full shadow-sm hover:bg-white/25 active:scale-95 transition-all"
           >
             <BookOpen className="h-4 w-4 text-white" />
             <span>Guidebook</span>

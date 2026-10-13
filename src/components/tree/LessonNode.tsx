@@ -40,12 +40,12 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
         type="button"
         onClick={handleNodeClick}
         disabled={!isUnlocked}
-        className={`group relative flex h-20 w-20 items-center justify-center rounded-full transition-all duration-150 ${
+        className={`group relative flex h-20 w-20 items-center justify-center rounded-full select-none transition-all duration-150 cursor-pointer ${
           isCompleted
-            ? 'bg-amber-400 border-4 border-amber-500 shadow-[0_6px_0_#d97706] hover:bg-amber-300 active:translate-y-1 active:shadow-[0_2px_0_#d97706]'
+            ? 'bg-amber-400 border-t border-x border-amber-300/40 border-b-[6px] border-b-amber-600 shadow-sm hover:bg-amber-300 active:translate-y-1 active:border-b-2'
             : isUnlocked
-            ? 'bg-emerald-500 border-4 border-emerald-600 shadow-[0_6px_0_#059669] hover:bg-emerald-400 active:translate-y-1 active:shadow-[0_2px_0_#059669] ring-8 ring-emerald-100'
-            : 'bg-slate-200 border-4 border-slate-300 shadow-[0_6px_0_#cbd5e1] cursor-not-allowed opacity-80'
+            ? 'bg-emerald-500 border-t border-x border-emerald-400/40 border-b-[6px] border-b-emerald-700 shadow-sm hover:bg-emerald-400 ring-8 ring-emerald-100 active:translate-y-1 active:border-b-2'
+            : 'bg-slate-200 border-t border-x border-slate-200 border-b-[6px] border-b-slate-300 cursor-not-allowed opacity-75'
         }`}
       >
         {isCompleted ? (
@@ -65,9 +65,9 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
         )}
       </button>
 
-      {/* Title under node */}
-      <div className="mt-2 text-center max-w-[84px]">
-        <span className={`text-xs text-center line-clamp-2 leading-tight font-bold ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
+      {/* Multi-line centered title under node */}
+      <div className="mt-2.5 text-center max-w-[92px] px-1">
+        <span className={`text-xs text-center line-clamp-2 leading-tight font-black transition-colors ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
           {lesson.title}
         </span>
       </div>
@@ -116,8 +116,8 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
               <Link
                 href={`/lesson/${lesson.id}`}
                 onClick={() => sounds.playClick()}
-                className={`btn-3d w-full py-3 flex items-center justify-center gap-2 text-center text-sm font-extrabold ${
-                  isCompleted ? 'btn-blue-3d' : 'btn-green-3d'
+                className={`btn-tactile w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-center text-sm font-black shadow-xs ${
+                  isCompleted ? 'btn-tactile-amber' : 'btn-tactile-emerald'
                 }`}
               >
                 <Play className="h-4 w-4 fill-white" />

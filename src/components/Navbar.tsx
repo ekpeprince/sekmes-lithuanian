@@ -52,34 +52,34 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Gamification Stats */}
-          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-            {/* Streak */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Streak Pill */}
             <div 
-              className="flex items-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 font-bold text-orange-500 hover:bg-orange-50 transition-colors shrink-0"
+              className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-slate-800/60 border border-slate-200/70 rounded-full px-2.5 py-1 font-black text-xs sm:text-sm text-orange-600 shadow-2xs shrink-0"
               title="Daily Learning Streak"
             >
-              <Flame className="h-4 w-4 sm:h-5 sm:w-5 fill-orange-500 animate-bounce-slow text-orange-500" />
-              <span className="text-xs sm:text-base font-black">{progress.streak}</span>
+              <Flame className="h-4 w-4 fill-orange-500 text-orange-500 animate-bounce-slow" />
+              <span>{progress.streak}</span>
             </div>
 
-            {/* XP */}
+            {/* XP / Energy Pill */}
             <div 
-              className="flex items-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 font-bold text-amber-500 hover:bg-amber-50 transition-colors shrink-0"
+              className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-slate-800/60 border border-slate-200/70 rounded-full px-2.5 py-1 font-black text-xs sm:text-sm text-amber-600 shadow-2xs shrink-0"
               title="Total Experience Points"
             >
-              <Zap className="h-4 w-4 sm:h-5 sm:w-5 fill-amber-500 text-amber-500" />
-              <span className="text-xs sm:text-base font-black">{progress.xp} <span className="hidden sm:inline text-xs font-semibold text-amber-600/70">XP</span></span>
+              <Zap className="h-4 w-4 fill-amber-500 text-amber-500" />
+              <span>{progress.xp} <span className="hidden sm:inline text-[11px] font-bold text-slate-400">XP</span></span>
             </div>
 
-            {/* Hearts */}
+            {/* Hearts Pill */}
             <button
               type="button"
               onClick={() => setShowHeartModal(true)}
-              className="flex items-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 py-1 sm:py-1.5 font-bold text-rose-500 hover:bg-rose-50 transition-all cursor-pointer group shrink-0"
+              className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-slate-800/60 hover:bg-rose-50 border border-slate-200/70 hover:border-rose-200 rounded-full px-2.5 py-1 font-black text-xs sm:text-sm text-rose-600 shadow-2xs transition-colors cursor-pointer group shrink-0"
               title="Hearts remaining (Click to refill)"
             >
-              <Heart className={`h-4 w-4 sm:h-5 sm:w-5 fill-rose-500 text-rose-500 transition-transform ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110'}`} />
-              <span className="text-xs sm:text-base font-black">{progress.hearts}</span>
+              <Heart className={`h-4 w-4 fill-rose-500 text-rose-500 transition-transform ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110'}`} />
+              <span>{progress.hearts}</span>
               {progress.hearts < 5 && (
                 <PlusCircle className="h-3.5 w-3.5 text-emerald-500 hidden sm:inline" />
               )}
@@ -184,11 +184,11 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAuthModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
-                title="Log in to save progress"
+                className="btn-tactile btn-tactile-emerald flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white text-xs font-black shadow-xs shrink-0"
+                title="Log In to save progress"
               >
                 <UserIcon className="h-3.5 w-3.5" />
-                <span>Log in</span>
+                <span>Log In</span>
               </button>
             )}
           </div>

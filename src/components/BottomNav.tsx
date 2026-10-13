@@ -68,20 +68,20 @@ export const BottomNav: React.FC = () => {
           <Link
             key={item.href}
             href={item.href}
-            className={`group relative flex-1 flex flex-col items-center justify-center min-h-[44px] h-12 py-1 px-1 rounded-xl transition-all duration-150 active:scale-95 select-none ${
+            className={`group relative flex-1 flex flex-col items-center justify-center min-h-[48px] h-12 py-1 px-1 rounded-xl transition-all duration-150 active:scale-95 select-none ${
               isActive
-                ? 'text-emerald-600 font-extrabold'
-                : 'text-slate-400 hover:text-slate-600 font-bold'
+                ? 'text-emerald-600 font-extrabold bg-emerald-50/50'
+                : 'text-slate-400 hover:text-slate-600 font-bold hover:bg-slate-50/50'
             }`}
           >
             {/* Active Pill Indicator */}
             {isActive && (
-              <span className="absolute -top-1 w-8 h-1 rounded-full bg-emerald-500 animate-fadeIn" />
+              <span className="absolute -top-1 w-8 h-1 rounded-full bg-emerald-500 shadow-xs" />
             )}
 
             <div
               className={`flex items-center justify-center rounded-xl transition-all duration-150 ${
-                isActive ? 'scale-105 text-emerald-600' : 'group-hover:scale-105 text-slate-400'
+                isActive ? 'scale-110 text-emerald-600' : 'group-hover:scale-105 text-slate-400'
               }`}
             >
               <Icon className={`h-5 w-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
