@@ -15,12 +15,7 @@ const STATIC_ASSETS = [
   '/icons/icon.svg',
 ];
 
-// If running on non-www apex domain while canonical domain is www, unregister to prevent redirect interception issues on iOS WebKit
-if (self.location.hostname === 'labasapp.com') {
-  self.registration.unregister().catch(() => {});
-}
-
-// Install event: Pre-cache core shell pages and icons
+// Failsafe Service Worker: Cache assets cleanly without crashing iOS WebKit
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_STATIC).then((cache) => {

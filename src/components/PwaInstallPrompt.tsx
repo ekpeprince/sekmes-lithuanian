@@ -29,17 +29,16 @@ export const PwaInstallPrompt: React.FC = () => {
     // 1. Service Worker registration & iOS WebKit safety
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       const ua = window.navigator.userAgent.toLowerCase();
-      const isIosThirdPartyBrowser = /iphone|ipad|ipod/.test(ua) && /crios|fxios|optios|edgios/.test(ua);
+      const isIosDevice = /iphone|ipad|ipod/.test(ua);
 
-      if (isIosThirdPartyBrowser) {
-        // Third-party iOS browsers (Chrome, Firefox, Edge on iOS) use WKWebView which does NOT support PWA install
-        // and aggressively crashes on Service Worker intercepted navigations.
-        // Unregister any active service worker to heal broken sessions immediately.
+      if (isIosDevice) {
+        // iOS WebKit has known issues with Service Worker lifecycles and does not support full PWA installation outside Safari.
+        // Bypassing Service Worker on iOS guarantees standard, flawless web loading without process shutdowns or memory errors.
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (const reg of registrations) {
             reg.unregister().catch(() => {});
           }
-        });
+        }).catch(() => {});
       } else {
         const registerSw = () => {
           navigator.serviceWorker
