@@ -20,8 +20,22 @@ export const NotificationPermissionPrompt: React.FC = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
 
+  // Guard: Disable Web Push prompts in regular Safari since iOS only permits it in standalone PWA mode
+  const isIosNonStandalone =
+    typeof window !== 'undefined' &&
+    /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+    !window.matchMedia('(display-mode: standalone)').matches;
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Guard: Disable Web Push prompts in regular Safari since iOS only permits it in standalone PWA mode
+    if (
+      /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+      !window.matchMedia('(display-mode: standalone)').matches
+    ) {
+      return;
+    }
 
     // Do not show during active lessons
     if (pathname.startsWith('/lesson/')) return;
@@ -29,8 +43,9 @@ export const NotificationPermissionPrompt: React.FC = () => {
     // Check if notification is supported
     if (!isNotificationSupported()) return;
 
-    // Only show if user hasn't made a choice yet (permission === 'default')
-    if (Notification.permission !== 'default') return;
+    // Ensure 'Notification' in window is checked before accessing Notification.permission
+    if (!('Notification' in window) || !window.Notification) return;
+    if (window.Notification.permission !== 'default') return;
 
     // Check if user dismissed recently (within 3 days)
     const dismissedAt = localStorage.getItem(STORAGE_KEY_DISMISSED);
@@ -52,6 +67,7 @@ export const NotificationPermissionPrompt: React.FC = () => {
     setIsEnabling(true);
 
     try {
+      // Notification.requestPermission() is ONLY triggered on this explicit user button tap
       const permission = await requestNotificationPermission();
 
       if (permission === 'granted') {
@@ -77,7 +93,7 @@ export const NotificationPermissionPrompt: React.FC = () => {
     setShowPrompt(false);
   };
 
-  if (!showPrompt || pathname.startsWith('/lesson/')) {
+  if (isIosNonStandalone || !showPrompt || pathname.startsWith('/lesson/')) {
     return null;
   }
 

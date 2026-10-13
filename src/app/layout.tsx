@@ -5,8 +5,8 @@ import { GameProvider } from '@/context/GameContext';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
-import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
-import { IosZoomLock } from '@/components/IosZoomLock';
+// import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
+// import { IosZoomLock } from '@/components/IosZoomLock';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.labasapp.com'),
@@ -120,7 +120,8 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#f7fafc] text-slate-800 flex flex-col antialiased">
         <AuthProvider>
           <GameProvider>
-            <IosZoomLock />
+            {/* Guarded for iOS WebKit stability */}
+            {/* <IosZoomLock /> */}
             <Navbar />
             <div className="flex-1 flex w-full">
               <Sidebar />
@@ -129,7 +130,7 @@ export default function RootLayout({
               </main>
             </div>
             <PwaInstallPrompt />
-            <NotificationPermissionPrompt />
+            {/* <NotificationPermissionPrompt /> */}
           </GameProvider>
         </AuthProvider>
       </body>

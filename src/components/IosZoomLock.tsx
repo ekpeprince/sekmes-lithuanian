@@ -8,21 +8,23 @@ import { useEffect } from 'react';
  */
 export function IosZoomLock() {
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // Only attach on non-iOS environments; iOS Mobile Safari must NOT have e.preventDefault() on document gestures
+    if (typeof window === 'undefined' || /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      return;
+    }
 
-    // Prevent iOS Safari multi-touch pinch zoom
+    // Prevent multi-touch pinch zoom
     const handleGestureStart = (e: Event) => {
       if (e.cancelable) {
         e.preventDefault();
       }
     };
 
-    // Prevent rapid double-tap to zoom on iOS Safari
+    // Prevent rapid double-tap to zoom
     let lastTouchEnd = 0;
     const handleTouchEnd = (e: TouchEvent) => {
       const now = Date.now();
       if (now - lastTouchEnd <= 300) {
-        // If the tap target is not a text input or textarea, prevent the default double-tap zoom
         const target = e.target as HTMLElement | null;
         const isEditable = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
         if (!isEditable && e.cancelable) {

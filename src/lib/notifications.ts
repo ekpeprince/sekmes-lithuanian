@@ -79,7 +79,7 @@ export const LITHUANIAN_WORDS_OF_THE_DAY = [
 // Check if browser supports notifications safely across all platforms
 export function isNotificationSupported(): boolean {
   if (typeof window === 'undefined') return false;
-  if (!('Notification' in window)) return false;
+  if (!('Notification' in window) || !window.Notification) return false;
   try {
     const ua = window.navigator.userAgent.toLowerCase();
     const isIos = /iphone|ipad|ipod/.test(ua);
@@ -90,7 +90,7 @@ export function isNotificationSupported(): boolean {
         (window.navigator as unknown as { standalone?: boolean }).standalone === true;
       if (!isStandalone) return false;
     }
-    return Boolean(window.Notification && Notification.permission);
+    return Boolean('Notification' in window && window.Notification && window.Notification.permission);
   } catch {
     return false;
   }
@@ -99,44 +99,40 @@ export function isNotificationSupported(): boolean {
 // Get current browser permission safely
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
   if (!isNotificationSupported()) return 'unsupported';
+  if (typeof window === 'undefined' || !('Notification' in window) || !window.Notification) return 'unsupported';
   try {
-    return Notification.permission;
+    return window.Notification.permission;
   } catch {
     return 'unsupported';
   }
 }
 
-// Request permission safely
+// Request permission safely (MUST be called only via explicit user gesture)
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!isNotificationSupported()) return 'denied';
+  if (typeof window === 'undefined' || !('Notification' in window) || !window.Notification) return 'denied';
   try {
-    const permission = await Notification.requestPermission();
+    const permission = await window.Notification.requestPermission();
     return permission;
   } catch {
     return 'denied';
   }
 }
 
-// Auto-prompt permission and enable all notification channels upon sign-in or installation
+// Enable notification channels upon sign-in or installation ONLY if user has already granted permission.
+// NEVER triggers Notification.requestPermission() automatically without an explicit user button tap.
 export async function autoPromptNotificationsOnAuth(): Promise<NotificationPermission> {
   if (!isNotificationSupported()) return 'unsupported' as NotificationPermission;
+  if (typeof window === 'undefined' || !('Notification' in window) || !window.Notification) return 'unsupported' as NotificationPermission;
   try {
-    if (Notification.permission === 'granted') {
+    if (window.Notification.permission === 'granted') {
       const settings = getNotificationSettings();
       saveNotificationSettings({ ...settings, enabled: true });
       return 'granted';
     }
-    if (Notification.permission === 'denied') {
-      return 'denied';
-    }
-
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      const settings = getNotificationSettings();
-      saveNotificationSettings({ ...settings, enabled: true });
-      await sendTestNotification();
-    }
-    return permission;
+    // NEVER trigger Notification.requestPermission() automatically on mount/auth!
+    // iOS Safari and modern WebKit reject or crash on auto-prompting without an explicit user gesture.
+    return window.Notification.permission;
   } catch {
     return 'denied';
   }
@@ -172,7 +168,13 @@ export async function showSekmesNotification(
     icon?: string;
   }
 ): Promise<boolean> {
-  if (!isNotificationSupported() || Notification.permission !== 'granted') {
+  if (
+    !isNotificationSupported() ||
+    typeof window === 'undefined' ||
+    !('Notification' in window) ||
+    !window.Notification ||
+    window.Notification.permission !== 'granted'
+  ) {
     return false;
   }
 
@@ -194,14 +196,17 @@ export async function showSekmesNotification(
     }
 
     // Fallback to standard window Notification
-    const notif = new Notification(title, notificationOptions);
-    notif.onclick = () => {
-      window.focus();
-      if (options.url) {
-        window.location.href = options.url;
-      }
-    };
-    return true;
+    if (typeof window !== 'undefined' && 'Notification' in window && window.Notification) {
+      const notif = new window.Notification(title, notificationOptions);
+      notif.onclick = () => {
+        window.focus();
+        if (options.url) {
+          window.location.href = options.url;
+        }
+      };
+      return true;
+    }
+    return false;
   } catch (err) {
     console.warn('Notification delivery error:', err);
     return false;
@@ -290,7 +295,15 @@ export function checkDailyNotifications(params: {
   if (typeof window === 'undefined') return;
 
   const settings = getNotificationSettings();
-  if (!settings.enabled || Notification.permission !== 'granted') return;
+  if (
+    !settings.enabled ||
+    typeof window === 'undefined' ||
+    !('Notification' in window) ||
+    !window.Notification ||
+    window.Notification.permission !== 'granted'
+  ) {
+    return;
+  }
 
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
