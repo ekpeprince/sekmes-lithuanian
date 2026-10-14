@@ -20,6 +20,7 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
   offset,
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const displayTitle = lesson.title.includes('•') ? lesson.title.split('•')[0].trim() : lesson.title;
 
   const handleNodeClick = () => {
     sounds.playClick();
@@ -40,12 +41,12 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
         type="button"
         onClick={handleNodeClick}
         disabled={!isUnlocked}
-        className={`group relative flex h-20 w-20 items-center justify-center rounded-full select-none transition-all duration-150 cursor-pointer ${
+        className={`group relative flex h-20 w-20 items-center justify-center rounded-full select-none cursor-pointer ${
           isCompleted
-            ? 'bg-amber-400 border-t border-x border-amber-300/40 border-b-[6px] border-b-amber-600 shadow-sm hover:bg-amber-300 active:translate-y-1 active:border-b-2'
+            ? 'bg-amber-400 shadow-sm border-b-4 border-amber-600 hover:bg-amber-300 active:border-b-0 active:translate-y-1 transition-all'
             : isUnlocked
-            ? 'bg-emerald-500 border-t border-x border-emerald-400/40 border-b-[6px] border-b-emerald-700 shadow-sm hover:bg-emerald-400 ring-8 ring-emerald-100 active:translate-y-1 active:border-b-2'
-            : 'bg-slate-200 border-t border-x border-slate-200 border-b-[6px] border-b-slate-300 cursor-not-allowed opacity-75'
+            ? 'bg-emerald-500 hover:bg-emerald-400 ring-8 ring-emerald-100 shadow-sm border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 transition-all'
+            : 'bg-slate-200 shadow-sm border-b-4 border-slate-300 cursor-not-allowed opacity-75'
         }`}
       >
         {isCompleted ? (
@@ -66,9 +67,9 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
       </button>
 
       {/* Multi-line centered title under node */}
-      <div className="mt-2.5 text-center max-w-[92px] px-1">
-        <span className={`text-xs text-center line-clamp-2 leading-tight font-black transition-colors ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
-          {lesson.title}
+      <div className="mt-2 text-center max-w-[100px]">
+        <span className={`text-[11px] font-semibold text-center leading-tight line-clamp-2 break-words transition-colors ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
+          {displayTitle}
         </span>
       </div>
 

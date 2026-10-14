@@ -19,29 +19,35 @@ export default function DashboardPage() {
   const dailyXpProgress = Math.min(100, Math.round((progress.xp % dailyXpTarget) / dailyXpTarget * 100));
 
   return (
-    <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-28 md:pb-12">
+    <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-40 md:pb-12">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Columns: Learning Tree */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
           {/* Mobile Amber League Quick Banner */}
-          <div className="w-full lg:hidden mb-6 rounded-3xl bg-amber-50/80 border-2 border-amber-300/80 p-4 shadow-sm flex items-center justify-between gap-3 text-amber-950">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 border border-amber-300/60 text-2xl shrink-0 shadow-inner">
+          <div className="w-full lg:hidden mb-6 rounded-3xl bg-amber-50/80 border-2 border-amber-300/80 p-3.5 sm:p-4 shadow-sm flex items-center justify-between gap-2.5 text-amber-950">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-amber-100 border border-amber-300/60 text-xl sm:text-2xl shrink-0 shadow-inner">
                 🏆
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-sm font-black text-amber-950 leading-tight truncate">Gintaro Lyga</h4>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">Amber</span>
+              <div className="min-w-0 flex flex-col justify-center">
+                {/* Row 1: Gintaro Lyga & AMBER badge */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h4 className="text-sm font-black text-amber-950 leading-tight">Gintaro Lyga</h4>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full">
+                    AMBER
+                  </span>
                 </div>
-                <p className="text-[11px] text-amber-800/90 font-medium truncate">Top 3 advance to Silver League • Rank #4</p>
+                {/* Row 2: Status & rank info */}
+                <p className="text-xs text-amber-900/70 font-medium leading-tight mt-0.5">
+                  Top 3 advance to Silver League • Rank #4
+                </p>
               </div>
             </div>
             <Link
               href="/leaderboard"
-              className="btn-tactile btn-tactile-amber px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider shrink-0 shadow-xs"
+              className="btn-tactile btn-tactile-amber px-3 py-1.5 text-xs font-bold rounded-lg shrink-0 shadow-xs uppercase tracking-wider"
             >
-              Rodyti
+              RODYTI
             </Link>
           </div>
 

@@ -142,7 +142,7 @@ export const PwaInstallPrompt: React.FC = () => {
                 Install <span className="notranslate" translate="no">LabasApp</span>
               </h4>
               <p className="text-xs text-slate-400 font-normal leading-tight mt-0.5">
-                Fast, offline-ready & fullscreen learning
+                Fast, offline-ready & fullscreen voice practice
               </p>
             </div>
           </div>
