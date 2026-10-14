@@ -37,8 +37,8 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b-2 border-slate-200 bg-white/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
+      <header className="sticky top-0 z-40 w-full border-b-2 border-slate-200 bg-white/95 backdrop-blur-md">
+        <div className="flex items-center justify-between w-full px-3 py-2 max-w-7xl mx-auto">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-2 group select-none shrink-0">
             <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 p-1 shadow-md shadow-emerald-500/25 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200">
@@ -52,36 +52,36 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Gamification Stats */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Streak Pill */}
             <div 
-              className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-slate-800/60 border border-slate-200/70 rounded-full px-2.5 py-1 font-black text-xs sm:text-sm text-orange-600 shadow-2xs shrink-0"
+              className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0"
               title="Daily Learning Streak"
             >
-              <Flame className="h-4 w-4 fill-orange-500 text-orange-500 animate-bounce-slow" />
+              <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-orange-500 text-orange-500 shrink-0" />
               <span>{progress.streak}</span>
             </div>
 
             {/* XP / Energy Pill */}
             <div 
-              className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-slate-800/60 border border-slate-200/70 rounded-full px-2.5 py-1 font-black text-xs sm:text-sm text-amber-600 shadow-2xs shrink-0"
+              className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0"
               title="Total Experience Points"
             >
-              <Zap className="h-4 w-4 fill-amber-500 text-amber-500" />
-              <span>{progress.xp} <span className="hidden sm:inline text-[11px] font-bold text-slate-400">XP</span></span>
+              <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-500 text-amber-500 shrink-0" />
+              <span>{progress.xp} <span className="hidden md:inline text-[10px] font-semibold text-slate-400">XP</span></span>
             </div>
 
             {/* Hearts Pill */}
             <button
               type="button"
               onClick={() => setShowHeartModal(true)}
-              className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-slate-800/60 hover:bg-rose-50 border border-slate-200/70 hover:border-rose-200 rounded-full px-2.5 py-1 font-black text-xs sm:text-sm text-rose-600 shadow-2xs transition-colors cursor-pointer group shrink-0"
+              className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0 transition-colors cursor-pointer group"
               title="Hearts remaining (Click to refill)"
             >
-              <Heart className={`h-4 w-4 fill-rose-500 text-rose-500 transition-transform ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110'}`} />
+              <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 fill-rose-500 text-rose-500 shrink-0 ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110 transition-transform'}`} />
               <span>{progress.hearts}</span>
               {progress.hearts < 5 && (
-                <PlusCircle className="h-3.5 w-3.5 text-emerald-500 hidden sm:inline" />
+                <PlusCircle className="h-3 w-3 text-emerald-500 hidden sm:inline shrink-0" />
               )}
             </button>
 
@@ -184,11 +184,11 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAuthModal(true)}
-                className="btn-tactile btn-tactile-emerald flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white text-xs font-black shadow-xs shrink-0"
+                className="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
                 title="Log In to save progress"
               >
-                <UserIcon className="h-3.5 w-3.5" />
-                <span>Log In</span>
+                <UserIcon className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden min-[360px]:inline">Log In</span>
               </button>
             )}
           </div>

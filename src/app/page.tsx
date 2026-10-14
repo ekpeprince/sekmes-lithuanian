@@ -19,12 +19,12 @@ export default function DashboardPage() {
   const dailyXpProgress = Math.min(100, Math.round((progress.xp % dailyXpTarget) / dailyXpTarget * 100));
 
   return (
-    <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-40 md:pb-12">
+    <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 pt-3 sm:pt-6 pb-44 md:pb-12">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Columns: Learning Tree */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
           {/* Mobile Amber League Quick Banner */}
-          <div className="w-full lg:hidden mb-6 rounded-3xl bg-amber-50/80 border-2 border-amber-300/80 p-3.5 sm:p-4 shadow-sm flex items-center justify-between gap-2.5 text-amber-950">
+          <div className="w-full lg:hidden mb-4 rounded-2xl bg-amber-50/80 border-2 border-amber-300/80 py-2 px-3.5 shadow-sm flex items-center justify-between gap-2.5 text-amber-950">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-amber-100 border border-amber-300/60 text-xl sm:text-2xl shrink-0 shadow-inner">
                 🏆

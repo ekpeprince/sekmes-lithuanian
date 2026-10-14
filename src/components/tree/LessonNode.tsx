@@ -31,7 +31,7 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
 
   return (
     <div
-      className={`relative flex flex-col items-center my-6 transition-transform duration-300 ${
+      className={`relative flex flex-col items-center my-4 sm:my-5 transition-transform duration-300 ${
         showTooltip ? 'z-50' : 'z-10'
       }`}
       style={{ transform: `translateX(${offset}px)` }}
@@ -67,8 +67,8 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
       </button>
 
       {/* Multi-line centered title under node */}
-      <div className="mt-2 text-center max-w-[100px]">
-        <span className={`text-[11px] font-semibold text-center leading-tight line-clamp-2 break-words transition-colors ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
+      <div className="max-w-[100px] text-[11px] font-semibold text-center leading-tight line-clamp-2 break-words mt-2">
+        <span className={`transition-colors ${isUnlocked ? 'text-slate-800' : 'text-slate-400'}`}>
           {displayTitle}
         </span>
       </div>
