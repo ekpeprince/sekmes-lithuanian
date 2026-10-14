@@ -67,7 +67,7 @@ export default function LeaderboardPage() {
 
   // Generate deterministic weekly cohort for the selected tier
   const competitors = useMemo(() => {
-    const userName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Tu (You)');
+    const userName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'You');
     const cohort = getWeeklyCohort(activeTier, isViewingUserTier ? progress.xp : -1, {
       name: userName,
       photoURL: user?.photoURL || undefined,
@@ -93,6 +93,8 @@ export default function LeaderboardPage() {
   }, [activeTier, isViewingUserTier, progress.xp, user, realMembers]);
 
   const top3 = competitors.slice(0, 3);
+  // Start the list directly from Rank 4 so Top 3 are NOT duplicated in the list
+  const listCompetitors = competitors.slice(3);
   const userComp = competitors.find((c) => c.isUser);
   const userRank = userComp?.rank || 4;
 
@@ -101,56 +103,61 @@ export default function LeaderboardPage() {
       ? Math.max(1, top3[2].xp - progress.xp + 1)
       : 0;
 
+  const formatPodiumName = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length > 1) {
+      return `${parts[0]} ${parts[1][0]}.`;
+    }
+    return fullName;
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 md:pb-12">
+    <div className="min-h-screen bg-slate-50 pb-36 md:pb-24">
       {/* Top Header */}
-      <header className="bg-white border-b-2 border-slate-200 px-4 py-6 md:px-8">
+      <header className="bg-white border-b-2 border-slate-200 px-4 py-5 md:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${activeTierConfig.bgGradient} text-white shadow-md text-3xl`}
+                className={`flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${activeTierConfig.bgGradient} text-white shadow-md text-2xl sm:text-3xl shrink-0`}
               >
                 {activeTierConfig.icon}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl md:text-3xl font-black text-slate-800">
-                    {activeTierConfig.name}
-                  </h1>
-                  <span className={`text-xs font-black uppercase tracking-wider ${activeTierConfig.badgeBg} ${activeTierConfig.badgeText} border border-slate-300 px-2.5 py-0.5 rounded-full`}>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800">
                     {activeTierConfig.englishName}
+                  </h1>
+                  <span className="text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+                    {activeTierConfig.name}
                   </span>
                 </div>
-                <p className="text-xs md:text-sm text-slate-700 font-bold mt-0.5">
-                  {activeTierConfig.description}
-                </p>
-                <p className="text-[11px] md:text-xs text-slate-400 font-medium italic">
+                <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
                   {activeTierConfig.englishDescription}
                 </p>
               </div>
             </div>
 
             {/* Time & Rewards Actions */}
-            <div className="flex items-center gap-2.5 self-start sm:self-center">
+            <div className="flex items-center gap-2 self-start sm:self-center">
               <button
                 type="button"
                 onClick={() => setShowRewardsModal(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-2xl text-xs font-bold transition cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
               >
                 <Award className="h-4 w-4 text-amber-600" />
-                <span>Prizai • Prizes ({activeTierConfig.rewards.first} 💎)</span>
+                <span>Prizes ({activeTierConfig.rewards.first} 💎)</span>
               </button>
 
-              <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700 shadow-2xs">
+              <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 shadow-2xs">
                 <Clock className="h-4 w-4 text-amber-600" />
-                <span>Liko • Left: {timeInfo.formatted} ({timeInfo.englishFormatted})</span>
+                <span>{timeInfo.englishFormatted} left</span>
               </div>
             </div>
           </div>
 
           {/* Tier Division Navigation Carousel */}
-          <div className="flex items-center gap-2 mt-6 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex items-center gap-2 mt-5 overflow-x-auto pb-1 scrollbar-none">
             {(Object.keys(LEAGUE_TIERS) as LeagueTier[]).map((tierKey) => {
               const tier = LEAGUE_TIERS[tierKey];
               const isSelected = tierKey === activeTier;
@@ -160,24 +167,19 @@ export default function LeaderboardPage() {
                 <button
                   key={tier.id}
                   onClick={() => setActiveTier(tier.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl font-bold text-xs shrink-0 transition-all border-2 cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold text-xs shrink-0 transition-all border-2 cursor-pointer ${
                     isSelected
-                      ? 'bg-amber-500 text-white border-amber-500 shadow-md ring-2 ring-amber-200'
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-sm ring-2 ring-amber-200'
                       : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
                   <span className="text-base">{tier.icon}</span>
-                  <div className="flex flex-col text-left leading-tight">
-                    <span>{tier.name}</span>
-                    <span className={`text-[10px] font-semibold ${isSelected ? 'text-amber-100' : 'text-slate-400'}`}>
-                      {tier.englishName}
-                    </span>
-                  </div>
+                  <span>{tier.englishName}</span>
                   {isUserCurrent && (
                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
                       isSelected ? 'bg-white text-amber-600' : 'bg-amber-100 text-amber-800'
                     }`}>
-                      Tavo • You
+                      You
                     </span>
                   )}
                 </button>
@@ -188,180 +190,160 @@ export default function LeaderboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 mt-6">
+      <main className="max-w-4xl mx-auto px-4 mt-5">
         {/* Banner if viewing another division */}
         {!isViewingUserTier && (
-          <div className="mb-6 bg-sky-50 border-2 border-sky-200 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-3">
-              <Info className="h-5 w-5 text-sky-600 shrink-0" />
+          <div className="mb-5 bg-sky-50 border-2 border-sky-200 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <Info className="h-4 w-4 text-sky-600 shrink-0" />
               <div>
-                <span className="font-extrabold text-sky-900 block">
-                  Peržiūrite {activeTierConfig.name} diviziją • Viewing {activeTierConfig.englishName}
+                <span className="font-bold text-sky-900 block">
+                  Viewing {activeTierConfig.englishName}
                 </span>
                 <span className="text-sky-700 font-medium">
-                  Tavo aktyvi divizija yra <strong>{LEAGUE_TIERS[userAssignedTier].name}</strong> ({LEAGUE_TIERS[userAssignedTier].englishName}). Užbaik pamokas, kad pakiltum! (Complete lessons to advance!)
+                  Your current division is <strong>{LEAGUE_TIERS[userAssignedTier].englishName}</strong>. Complete lessons to advance!
                 </span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setActiveTier(userAssignedTier)}
-              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shrink-0 shadow-2xs"
+              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shrink-0 shadow-2xs"
             >
-              Grįžti į savo lygą • Back to your league
+              Back to your league
             </button>
           </div>
         )}
 
-        {/* User Active Standing Hero Card */}
+        {/* Compact League Status Header */}
         {isViewingUserTier && (
-          <div className="mb-6 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-2xl border border-white/30">
-                {userRank === 1 ? '👑' : userRank <= 3 ? '🏆' : '🇱🇹'}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-amber-100">
-                    Tavo statusas šią savaitę • Your Status This Week
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 sm:p-3.5 mb-3.5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 border border-amber-200 text-lg shrink-0">
+                {activeTierConfig.icon}
+              </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h3 className="text-sm font-black text-slate-800">{activeTierConfig.englishName}</h3>
+                  <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">
+                    {timeInfo.englishFormatted} left
                   </span>
-                  {userRank <= 3 && (
-                    <span className="bg-emerald-400 text-emerald-950 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
-                      Pakilimo zona ▲ • Promotion
-                    </span>
-                  )}
                 </div>
-                <h3 className="text-xl font-black">
-                  #{userRank} vieta iš 30 mokinių ({progress.xp} XP)
-                </h3>
-                <span className="text-xs text-amber-100 font-medium block">
-                  Rank #{userRank} of 30 learners ({progress.xp} XP)
-                </span>
-                <div className="text-xs text-white/95 font-medium mt-1">
-                  {userRank <= 3 ? (
-                    <div>
-                      <span>🎉 Puiku! Išlaikyk šią poziciją iki sekmadienio ir pakilsi į aukštesnę lygą!</span>
-                      <span className="block text-[11px] text-amber-100 italic">Great job! Keep this rank until Sunday to get promoted!</span>
-                    </div>
-                  ) : (
-                    <div>
-                      <span>Liko {xpNeededForPromotion} XP iki 3-iosios vietos ir pakilimo zonos!</span>
-                      <span className="block text-[11px] text-amber-100 italic">{xpNeededForPromotion} XP needed to reach top 3 and promotion zone!</span>
-                    </div>
-                  )}
-                </div>
+                <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                  {userRank <= 3
+                    ? `Rank #${userRank} • In Promotion Zone`
+                    : `Rank #${userRank} • ${xpNeededForPromotion} XP to Top 3`}
+                </p>
               </div>
             </div>
 
-            <Link
-              href="/practice"
-              className="btn-3d py-2.5 px-5 bg-white text-slate-900 hover:bg-slate-50 font-black text-xs uppercase tracking-wider rounded-2xl shadow-sm inline-flex items-center justify-center gap-1.5 shrink-0"
-            >
-              <Zap className="h-4 w-4 fill-amber-500 text-amber-500" />
-              <span>Gauti daugiau XP • Earn XP</span>
-            </Link>
+            {/* Subtle XP Goal Pill */}
+            <div className="flex items-center gap-2 self-stretch sm:self-center justify-between sm:justify-end">
+              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 shrink-0">
+                <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                <span>{progress.xp} XP</span>
+                {xpNeededForPromotion > 0 && (
+                  <span className="text-[11px] font-semibold text-amber-700/80">({xpNeededForPromotion} to Top 3)</span>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* 1v1 Friend Battle Hub Card */}
-        <div className="mb-6 rounded-3xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 p-4 sm:p-5 text-white shadow-md border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-amber-500/30 border border-amber-300/30 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+        {/* Compact 56px 1v1 Battle Banner */}
+        <div className="h-14 min-h-[56px] rounded-2xl bg-amber-500/10 border border-amber-500/20 px-3.5 sm:px-4 flex items-center justify-between gap-3 text-amber-950 mb-6 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 text-base shrink-0">
               ⚔️
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-black tracking-tight text-white">
-                  Draugų Dvikova • 1v1 Friend Battle
-                </h3>
-                <span className="bg-amber-400/20 text-amber-200 border border-amber-300/30 text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
-                  +XP Boost
-                </span>
-              </div>
-              <p className="text-xs text-amber-100/90 font-medium mt-0.5">
-                Challenge friends to fast 5-round speed battles or train against AI to rise up the weekly ranks!
+            <div className="min-w-0">
+              <h4 className="text-xs sm:text-sm font-black text-amber-950 leading-tight truncate">
+                1v1 Battle
+              </h4>
+              <p className="text-[11px] text-amber-900/80 font-medium truncate hidden sm:block">
+                Challenge friends to 5-round speed battles or train against AI
               </p>
             </div>
           </div>
           <Link
             href="/battle"
-            className="btn-3d px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-white text-amber-950 font-black text-xs uppercase tracking-wider shrink-0 shadow-sm border border-amber-200/40 self-stretch sm:self-center text-center"
+            className="btn-tactile btn-tactile-amber px-3.5 py-1.5 text-xs font-bold rounded-xl shrink-0 shadow-2xs uppercase tracking-wider"
           >
-            Kovoti dabar • Battle Now
+            Play
           </Link>
         </div>
 
         {/* Top 3 Podium Cards */}
-        <section className="mb-8">
-          <div className="text-xs font-black uppercase tracking-wider text-slate-400 mb-4 text-center">
-            {activeTierConfig.name} • Lyderių Pakyla (Top 3) • Top 3 Podium
+        <section className="mb-6">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
+            Top 3 Podium
           </div>
-          <div className="grid grid-cols-3 gap-2 md:gap-4 items-end max-w-2xl mx-auto">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end max-w-lg mx-auto">
             {/* 2nd Place */}
             {top3[1] && (
               <div className="flex flex-col items-center">
                 <div className="relative mb-2">
                   {top3[1].photoURL ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={top3[1].photoURL} alt={top3[1].name} className="h-12 w-12 md:h-14 md:w-14 rounded-2xl object-cover shadow-sm" />
+                    <img src={top3[1].photoURL} alt={top3[1].name} className="h-11 w-11 sm:h-12 sm:w-12 rounded-full object-cover shadow-sm ring-2 ring-slate-300" />
                   ) : (
-                    <div className={`h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-gradient-to-br ${top3[1].avatarColor} text-white font-black text-sm md:text-base flex items-center justify-center shadow-sm`}>
+                    <div className={`h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br ${top3[1].avatarColor} text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-sm ring-2 ring-slate-300`}>
                       {top3[1].initials}
                     </div>
                   )}
-                  <span className="absolute -top-2 -right-2 bg-slate-200 text-slate-700 text-[10px] font-black px-1.5 py-0.5 rounded-full border border-slate-300">
+                  <span className="absolute -top-1.5 -right-1.5 bg-slate-200 text-slate-700 text-[10px] font-black px-1.5 py-0.2 rounded-full border border-slate-300">
                     2
                   </span>
                 </div>
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl p-3 text-center shadow-xs">
-                  <div className="text-xs font-black text-slate-800 truncate" title={top3[1].name}>
-                    {top3[1].name}
+                <div className="w-full bg-slate-100/90 border border-slate-200/90 rounded-2xl p-2.5 sm:p-3 text-center shadow-xs flex flex-col items-center">
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800 text-center leading-tight whitespace-nowrap">
+                    {formatPodiumName(top3[1].name)}
                   </div>
                   <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
                     <span>{top3[1].flag}</span>
                     <span>{top3[1].city}</span>
                   </div>
-                  <div className="text-[11px] font-bold text-amber-600 flex items-center justify-center gap-1 mt-1">
-                    <Zap className="h-3 w-3 fill-amber-500" />
+                  <div className="text-[11px] font-bold text-amber-700 flex items-center justify-center gap-0.5 mt-1">
+                    <Zap className="h-3 w-3 fill-amber-500 text-amber-500" />
                     <span>{top3[1].xp} XP</span>
                   </div>
-                  <div className="mt-2 h-14 md:h-18 bg-gradient-to-t from-slate-200 to-slate-100 rounded-xl flex items-center justify-center font-black text-slate-500 text-xl">
+                  <div className="mt-2 h-10 sm:h-12 w-full bg-gradient-to-t from-slate-200 to-slate-100/60 rounded-xl flex items-center justify-center font-black text-slate-600 text-base sm:text-lg">
                     🥈
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 1st Place (Center & Taller) */}
+            {/* 1st Place (Center & Slightly Elevated) */}
             {top3[0] && (
               <div className="flex flex-col items-center">
                 <div className="relative mb-2">
-                  <Crown className="h-6 w-6 text-yellow-500 fill-yellow-400 absolute -top-5 left-1/2 -translate-x-1/2 animate-bounce" />
+                  <Crown className="h-4 w-4 text-amber-500 fill-amber-400 absolute -top-4 left-1/2 -translate-x-1/2" />
                   {top3[0].photoURL ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={top3[0].photoURL} alt={top3[0].name} className="h-14 w-14 md:h-16 md:w-16 rounded-2xl object-cover shadow-md ring-2 ring-yellow-400" />
+                    <img src={top3[0].photoURL} alt={top3[0].name} className="h-13 w-13 sm:h-14 sm:w-14 rounded-full object-cover shadow-md ring-2 ring-amber-400" />
                   ) : (
-                    <div className={`h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-gradient-to-br ${top3[0].avatarColor} text-white font-black text-base md:text-lg flex items-center justify-center shadow-md ring-2 ring-yellow-400`}>
+                    <div className={`h-13 w-13 sm:h-14 sm:w-14 rounded-full bg-gradient-to-br ${top3[0].avatarColor} text-white font-bold text-sm sm:text-base flex items-center justify-center shadow-md ring-2 ring-amber-400`}>
                       {top3[0].initials}
                     </div>
                   )}
-                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-950 text-[10px] font-black px-1.5 py-0.5 rounded-full border border-yellow-500">
+                  <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-amber-950 text-[10px] font-black px-1.5 py-0.2 rounded-full border border-amber-500">
                     1
                   </span>
                 </div>
-                <div className="w-full bg-gradient-to-b from-amber-50 to-white border-2 border-amber-300 rounded-2xl p-3 text-center shadow-md">
-                  <div className="text-xs font-black text-slate-900 truncate" title={top3[0].name}>
-                    {top3[0].name}
+                <div className="w-full bg-amber-50/90 border-2 border-amber-300/80 rounded-2xl p-2.5 sm:p-3 text-center shadow-md flex flex-col items-center">
+                  <div className="text-xs sm:text-sm font-semibold text-slate-900 text-center leading-tight whitespace-nowrap">
+                    {formatPodiumName(top3[0].name)}
                   </div>
                   <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
                     <span>{top3[0].flag}</span>
                     <span>{top3[0].city}</span>
                   </div>
-                  <div className="text-[11px] font-bold text-amber-600 flex items-center justify-center gap-1 mt-1">
-                    <Zap className="h-3 w-3 fill-amber-500" />
+                  <div className="text-[11px] font-bold text-amber-700 flex items-center justify-center gap-0.5 mt-1">
+                    <Zap className="h-3 w-3 fill-amber-500 text-amber-500" />
                     <span>{top3[0].xp} XP</span>
                   </div>
-                  <div className="mt-2 h-20 md:h-26 bg-gradient-to-t from-amber-300 to-amber-100 rounded-xl flex items-center justify-center font-black text-amber-800 text-2xl">
+                  <div className="mt-2 h-14 sm:h-16 w-full bg-gradient-to-t from-amber-300 to-amber-100 rounded-xl flex items-center justify-center font-black text-amber-800 text-xl sm:text-2xl shadow-inner">
                     🥇
                   </div>
                 </div>
@@ -374,29 +356,29 @@ export default function LeaderboardPage() {
                 <div className="relative mb-2">
                   {top3[2].photoURL ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={top3[2].photoURL} alt={top3[2].name} className="h-12 w-12 md:h-14 md:w-14 rounded-2xl object-cover shadow-sm" />
+                    <img src={top3[2].photoURL} alt={top3[2].name} className="h-11 w-11 sm:h-12 sm:w-12 rounded-full object-cover shadow-sm ring-2 ring-amber-700/60" />
                   ) : (
-                    <div className={`h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-gradient-to-br ${top3[2].avatarColor} text-white font-black text-sm md:text-base flex items-center justify-center shadow-sm`}>
+                    <div className={`h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br ${top3[2].avatarColor} text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-sm ring-2 ring-amber-700/60`}>
                       {top3[2].initials}
                     </div>
                   )}
-                  <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-amber-800">
+                  <span className="absolute -top-1.5 -right-1.5 bg-amber-700 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full border border-amber-800">
                     3
                   </span>
                 </div>
-                <div className="w-full bg-white border-2 border-slate-200 rounded-2xl p-3 text-center shadow-xs">
-                  <div className="text-xs font-black text-slate-800 truncate" title={top3[2].name}>
-                    {top3[2].name}
+                <div className="w-full bg-amber-100/50 border border-amber-200/80 rounded-2xl p-2.5 sm:p-3 text-center shadow-xs flex flex-col items-center">
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800 text-center leading-tight whitespace-nowrap">
+                    {formatPodiumName(top3[2].name)}
                   </div>
                   <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
                     <span>{top3[2].flag}</span>
                     <span>{top3[2].city}</span>
                   </div>
-                  <div className="text-[11px] font-bold text-amber-600 flex items-center justify-center gap-1 mt-1">
-                    <Zap className="h-3 w-3 fill-amber-500" />
+                  <div className="text-[11px] font-bold text-amber-700 flex items-center justify-center gap-0.5 mt-1">
+                    <Zap className="h-3 w-3 fill-amber-500 text-amber-500" />
                     <span>{top3[2].xp} XP</span>
                   </div>
-                  <div className="mt-2 h-10 md:h-14 bg-gradient-to-t from-amber-200 to-amber-100 rounded-xl flex items-center justify-center font-black text-amber-900 text-xl">
+                  <div className="mt-2 h-8 sm:h-10 w-full bg-gradient-to-t from-amber-200 to-amber-100/60 rounded-xl flex items-center justify-center font-black text-amber-900 text-base sm:text-lg">
                     🥉
                   </div>
                 </div>
@@ -405,51 +387,38 @@ export default function LeaderboardPage() {
           </div>
         </section>
 
-        {/* Promotion & Demotion Zone Indicators */}
-        <div className="flex items-center justify-between text-xs font-bold bg-white border border-slate-200 rounded-2xl px-4 py-2.5 mb-3 shadow-2xs">
-          <div className="flex items-center gap-1.5 text-emerald-700">
+        {/* Promotion & Demotion Zone Header */}
+        <div className="flex items-center justify-between text-xs font-bold bg-white border border-slate-200 rounded-xl px-3.5 py-2 mb-3 shadow-2xs">
+          <div className="flex items-center gap-1 text-emerald-700">
             <ChevronUp className="h-4 w-4" />
-            <span>Top 3 keliauja į aukštesnę diviziją • Top 3 promoted</span>
+            <span>Top 3 Promoted</span>
           </div>
-          <div className="flex items-center gap-1.5 text-rose-500">
+          <div className="flex items-center gap-1 text-rose-500">
             <ChevronDown className="h-4 w-4" />
-            <span>Paskutiniai 5 iškrenta • Bottom 5 demoted</span>
+            <span>Bottom 5 Demoted</span>
           </div>
         </div>
 
-        {/* Full 30-Learner Cohort Table */}
-        <div className="bg-white border-2 border-slate-200 rounded-3xl overflow-hidden shadow-xs divide-y divide-slate-100">
-          {competitors.map((item) => {
-            const isTop3 = item.rank <= 3;
+        {/* Learner Cohort List (Starting cleanly from Rank 4) */}
+        <div className="space-y-1.5">
+          {listCompetitors.map((item) => {
             const isDemotion = item.rank >= 26;
 
             return (
               <div
                 key={item.id}
-                className={`flex items-center justify-between p-3.5 md:p-4 transition-all ${
+                className={`flex items-center justify-between p-3 sm:p-3.5 rounded-2xl border transition-all ${
                   item.isUser
-                    ? 'bg-amber-50/90 border-l-4 border-l-amber-500 ring-2 ring-amber-400/40'
-                    : isTop3
-                    ? 'hover:bg-emerald-50/30'
+                    ? 'bg-amber-50/80 border-amber-300/80 ring-1 ring-amber-300/50 shadow-xs'
                     : isDemotion
-                    ? 'hover:bg-red-50/30'
-                    : 'hover:bg-slate-50'
+                    ? 'bg-white border-rose-200/60 shadow-2xs hover:bg-rose-50/30'
+                    : 'bg-white border-slate-200/80 shadow-2xs hover:border-slate-300 hover:bg-slate-50/50'
                 }`}
               >
                 {/* Left: Rank, Avatar, Name, Country */}
-                <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div className="flex flex-col items-center justify-center w-7 text-center">
-                    <span
-                      className={`text-sm md:text-base font-black ${
-                        item.rank === 1
-                          ? 'text-yellow-600'
-                          : item.rank === 2
-                          ? 'text-slate-500'
-                          : item.rank === 3
-                          ? 'text-amber-700'
-                          : 'text-slate-400'
-                      }`}
-                    >
+                <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                  <div className="flex flex-col items-center justify-center w-6 text-center shrink-0">
+                    <span className="text-xs sm:text-sm font-bold text-slate-400">
                       {item.rank}
                     </span>
                   </div>
@@ -458,22 +427,22 @@ export default function LeaderboardPage() {
                   <div className="relative shrink-0">
                     {item.photoURL ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={item.photoURL} alt={item.name} className="h-10 w-10 md:h-11 md:w-11 rounded-2xl object-cover shadow-2xs" />
+                      <img src={item.photoURL} alt={item.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover shadow-2xs" />
                     ) : (
-                      <div className={`h-10 w-10 md:h-11 md:w-11 rounded-2xl bg-gradient-to-br ${item.avatarColor} text-white font-black text-xs md:text-sm flex items-center justify-center shadow-2xs`}>
+                      <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br ${item.avatarColor} text-white font-bold text-xs flex items-center justify-center shadow-2xs`}>
                         {item.initials}
                       </div>
                     )}
                   </div>
 
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs md:text-sm font-black truncate ${item.isUser ? 'text-amber-950 font-black' : 'text-slate-800'}`}>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs sm:text-sm font-semibold truncate ${item.isUser ? 'text-amber-950 font-bold' : 'text-slate-800'}`}>
                         {item.name}
                       </span>
                       {item.isUser && (
                         <span className="text-[10px] font-black bg-amber-500 text-white px-1.5 py-0.2 rounded-md">
-                          Tu • You
+                          You
                         </span>
                       )}
                       <span className="text-xs shrink-0" title={item.city}>
@@ -481,34 +450,29 @@ export default function LeaderboardPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 mt-0.5">
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mt-0.5">
                       <span className="truncate">{item.city}</span>
                       <span>•</span>
-                      <span className="flex items-center gap-0.5 text-orange-500">
-                        <Flame className="h-3 w-3 fill-orange-500" />
-                        {item.streak} d. serija ({item.streak}d streak)
+                      <span className="flex items-center gap-0.5 text-orange-500 font-semibold">
+                        <Flame className="h-3 w-3 fill-orange-500 text-orange-500 shrink-0" />
+                        {item.streak}d streak
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Right: Promotion Zone Tag & XP */}
-                <div className="flex items-center gap-2.5 shrink-0">
-                  {isTop3 && (
-                    <span className="hidden sm:inline text-[10px] font-extrabold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
-                      Pakilimas ▲ • Promotion
-                    </span>
-                  )}
+                {/* Right: Demotion Tag & XP */}
+                <div className="flex items-center gap-2 shrink-0">
                   {isDemotion && (
-                    <span className="hidden sm:inline text-[10px] font-extrabold uppercase text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg">
-                      Iškritimas ▼ • Demotion
+                    <span className="hidden sm:inline text-[10px] font-bold uppercase text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg">
+                      Demoted
                     </span>
                   )}
 
-                  <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-xl">
-                    <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                    <span className="text-xs md:text-sm font-black text-amber-800">
-                      {item.xp} <span className="text-[10px] text-amber-600">XP</span>
+                  <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-xl">
+                    <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500 shrink-0" />
+                    <span className="text-xs sm:text-sm font-bold text-amber-900">
+                      {item.xp} <span className="text-[10px] text-amber-700/80">XP</span>
                     </span>
                   </div>
                 </div>
@@ -518,43 +482,85 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Motivation Card */}
-        <div className="mt-6 rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-black">Nori pakilti aukščiau lygoje? • Want to rank higher?</h3>
-            <p className="text-xs md:text-sm text-emerald-100 font-medium">
-              Užbaikite pamokas arba praktikuokitės su DI tutoriumi ir gaukite papildomų XP! (Complete lessons or practice with AI Tutor to earn bonus XP!)
+            <h3 className="text-sm sm:text-base font-black">Want to rank higher?</h3>
+            <p className="text-xs text-emerald-100 font-medium mt-0.5">
+              Complete lessons or practice in the Gym to earn bonus XP!
             </p>
           </div>
           <Link
             href="/practice"
-            className="flex items-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition shadow-sm shrink-0"
+            className="flex items-center gap-1.5 bg-white text-emerald-800 hover:bg-emerald-50 px-4 py-2 rounded-xl font-bold text-xs transition shadow-2xs shrink-0"
           >
-            <span>Mokytis dabar • Practice</span>
-            <ArrowRight className="h-4 w-4" />
+            <span>Practice</span>
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </main>
 
+      {/* Sticky User Rank Bar (Pinned above navigation) */}
+      <div className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom))] md:bottom-5 left-0 right-0 z-30 max-w-4xl mx-auto px-3 sm:px-4 pointer-events-none">
+        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/80 rounded-2xl p-2.5 sm:px-4 shadow-2xl flex items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className={`px-2 py-0.5 rounded-lg font-black text-[11px] sm:text-xs shrink-0 ${
+              userRank <= 3
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                : 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+            }`}>
+              Rank #{userRank}
+            </span>
+
+            {user?.photoURL ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={user.photoURL} alt="You" className="h-7 w-7 rounded-full object-cover shrink-0 ring-1 ring-white/30" />
+            ) : (
+              <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-emerald-500 to-emerald-400 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                {userComp?.initials || 'U'}
+              </div>
+            )}
+
+            <div className="min-w-0 flex items-center gap-1.5 truncate">
+              <span className="font-bold text-white truncate">You</span>
+              <span className="text-slate-400">•</span>
+              <span className="text-amber-400 font-bold shrink-0">{progress.xp} XP</span>
+              <span className="text-slate-400 hidden sm:inline">|</span>
+              <span className="text-slate-300 font-medium truncate hidden sm:inline">
+                {xpNeededForPromotion > 0 ? `${xpNeededForPromotion} XP to Top 3` : 'Promoting!'}
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/practice"
+            className="btn-tactile btn-tactile-emerald px-3 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1 shrink-0 shadow-2xs"
+          >
+            <Zap className="h-3.5 w-3.5 fill-current" />
+            <span>Earn XP</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Rewards Breakdown Modal */}
       {showRewardsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-pop">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-100">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border-2 border-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{activeTierConfig.icon}</span>
                 <div>
                   <h3 className="text-base font-black text-slate-900">
-                    {activeTierConfig.name} Prizai • Prizes
+                    {activeTierConfig.englishName} Prizes
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Turnyras baigiasi sekmadienį 23:59 • Ends Sunday 23:59
+                    Tournament ends Sunday 23:59
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowRewardsModal(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 ✕
               </button>
@@ -565,46 +571,46 @@ export default function LeaderboardPage() {
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥇</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">1-oji vieta • 1st Place</h4>
-                    <p className="text-[10px] text-slate-500">Čempiono statusas + Pakilimas (Promotion)</p>
+                    <h4 className="text-xs font-black text-slate-900">1st Place</h4>
+                    <p className="text-[10px] text-slate-500 font-medium">Champion status + Promotion</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-amber-700">+{activeTierConfig.rewards.first} 💎 Gintarai (Gems)</span>
+                <span className="text-sm font-black text-amber-700">+{activeTierConfig.rewards.first} 💎 Gems</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥈</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">2-oji vieta • 2nd Place</h4>
-                    <p className="text-[10px] text-slate-500">Sidabrinis medalis + Pakilimas (Promotion)</p>
+                    <h4 className="text-xs font-black text-slate-900">2nd Place</h4>
+                    <p className="text-[10px] text-slate-500 font-medium">Silver medal + Promotion</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-slate-700">+{activeTierConfig.rewards.second} 💎 Gintarai (Gems)</span>
+                <span className="text-sm font-black text-slate-700">+{activeTierConfig.rewards.second} 💎 Gems</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 border border-amber-200 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🥉</span>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900">3-ioji vieta • 3rd Place</h4>
-                    <p className="text-[10px] text-slate-500">Bronzinis medalis + Pakilimas (Promotion)</p>
+                    <h4 className="text-xs font-black text-slate-900">3rd Place</h4>
+                    <p className="text-[10px] text-slate-500 font-medium">Bronze medal + Promotion</p>
                   </div>
                 </div>
-                <span className="text-sm font-black text-amber-800">+{activeTierConfig.rewards.third} 💎 Gintarai (Gems)</span>
+                <span className="text-sm font-black text-amber-800">+{activeTierConfig.rewards.third} 💎 Gems</span>
               </div>
             </div>
 
             <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-semibold leading-relaxed">
-              💡 <strong>Kaip pakilti į aukštesnę lygą? • How to promote:</strong> Užbaikite dienos pamokas ir praktikuokitės su DI tutoriumi, kad pasiektumėte Top 3 iki sekmadienio vakaro! (Complete lessons and practice with AI Tutor to reach Top 3 by Sunday!)
+              💡 <strong>How to promote:</strong> Complete daily lessons and practice in the Gym to reach the Top 3 by Sunday!
             </div>
 
             <button
               type="button"
               onClick={() => setShowRewardsModal(false)}
-              className="btn-3d w-full mt-4 py-2.5 rounded-xl bg-slate-900 text-white font-black text-xs uppercase tracking-wider"
+              className="btn-tactile btn-tactile-slate w-full mt-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider"
             >
-              Supratau • Got it
+              Got it
             </button>
           </div>
         </div>
