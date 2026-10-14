@@ -3,18 +3,41 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Dumbbell, GraduationCap, User, Sparkles, Trophy, Gamepad2 } from 'lucide-react';
-
+import { BookOpen, Dumbbell, User, Sparkles, Trophy } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
+import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
 
 const DESKTOP_NAV_ITEMS = [
-  { href: '/', label: 'Learn', icon: BookOpen },
-  { href: '/tutor', label: 'Aistė AI', icon: Sparkles },
-  { href: '/practice', label: 'Practice Hub', icon: Dumbbell },
-  { href: '/leaderboard', label: 'Amber League', icon: Trophy },
-  { href: '/grammar', label: 'Grammar Bank', icon: GraduationCap },
-  { href: '/battle', label: '1v1 Battle ⚔️', icon: Gamepad2 },
-  { href: '/profile', label: 'Profile', icon: User },
+  {
+    href: '/',
+    label: 'Learn',
+    icon: BookOpen,
+    matches: (pathname: string) => pathname === '/',
+  },
+  {
+    href: '/tutor',
+    label: 'Aistė AI',
+    icon: Sparkles,
+    matches: (pathname: string) => pathname.startsWith('/tutor'),
+  },
+  {
+    href: '/practice',
+    label: 'Practice',
+    icon: Dumbbell,
+    matches: (pathname: string) => pathname.startsWith('/practice') || pathname.startsWith('/grammar'),
+  },
+  {
+    href: '/leaderboard',
+    label: 'League',
+    icon: Trophy,
+    matches: (pathname: string) => pathname.startsWith('/leaderboard') || pathname.startsWith('/battle'),
+  },
+  {
+    href: '/profile',
+    label: 'Profile',
+    icon: User,
+    matches: (pathname: string) => pathname.startsWith('/profile'),
+  },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -32,7 +55,7 @@ export const Sidebar: React.FC = () => {
         <nav className="flex flex-col gap-1.5">
           {DESKTOP_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = item.matches(pathname);
             return (
               <Link
                 key={item.href}
@@ -52,8 +75,8 @@ export const Sidebar: React.FC = () => {
 
         {/* Quick motivation card in sidebar */}
         <div className="mt-auto rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">🇱🇹</span>
+          <div className="flex items-center gap-2 mb-1.5">
+            <LithuanianFlagEmblem size="sm" />
             <span className="text-xs font-extrabold uppercase tracking-wider text-amber-700">Lithuanian Fact</span>
           </div>
           <p className="text-xs text-amber-900/80 leading-relaxed font-medium">

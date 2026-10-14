@@ -31,21 +31,21 @@ export const DailyQuestsCard: React.FC = () => {
   };
 
   return (
-    <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 shadow-xs flex flex-col gap-4">
+    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs flex flex-col gap-4">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400">
             <Target className="h-4 w-4" />
           </span>
-          <span className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
-            Daily Quests • Užduotys
+          <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 truncate">
+            Daily Quests
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Streak Freeze Badge */}
           <span
-            className="flex items-center gap-1 text-[10px] font-black text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full"
+            className="flex items-center gap-1 text-[10px] font-black text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 px-2 py-0.5 rounded-full"
             title="Streak Freeze shield protects your streak if you miss a practice day"
           >
             <span>🧊</span>
@@ -61,26 +61,23 @@ export const DailyQuestsCard: React.FC = () => {
       <div className="flex flex-col gap-2.5">
         {quests.map((quest) => {
           const percent = Math.min(100, Math.round((quest.current / quest.target) * 100));
+          const title = quest.englishTitle || quest.title;
+          const description = quest.englishDescription || quest.description;
 
           return (
             <div
               key={quest.id}
-              className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2"
+              className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex flex-col gap-2"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <span className="text-lg shrink-0">{quest.icon}</span>
                   <div className="min-w-0 flex-1">
-                    <h5 className="text-xs font-black text-slate-800 truncate">
-                      {quest.title}
-                      {quest.englishTitle && (
-                        <span className="text-[10px] font-bold text-slate-400 font-normal">
-                          {' '}({quest.englishTitle})
-                        </span>
-                      )}
+                    <h5 className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                      {title}
                     </h5>
-                    <p className="text-[11px] text-slate-600 font-medium truncate mt-0.5">
-                      {quest.description}
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium truncate mt-0.5">
+                      {description}
                     </p>
                   </div>
                 </div>

@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { sounds } from '@/lib/audio';
 import { AuthModal } from '@/components/AuthModal';
 import { NotificationModal } from '@/components/NotificationModal';
+import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -40,10 +41,8 @@ export const Navbar: React.FC = () => {
       <header className="sticky top-0 z-40 w-full border-b-2 border-slate-200 bg-white/95 backdrop-blur-md">
         <div className="flex items-center justify-between w-full px-3 py-2 max-w-7xl mx-auto">
           {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-2 group select-none shrink-0">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 p-1 shadow-md shadow-emerald-500/25 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200">
-              <span className="text-lg sm:text-xl select-none">🇱🇹</span>
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 group select-none shrink-0">
+            <LithuanianFlagEmblem size="md" className="group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200" />
             <div className="flex items-center notranslate text-lg sm:text-xl font-black tracking-tight leading-tight" translate="no">
               <span className="text-slate-900 group-hover:text-emerald-700 transition-colors">Labas</span>
               <span className="text-emerald-600 font-extrabold">App</span>

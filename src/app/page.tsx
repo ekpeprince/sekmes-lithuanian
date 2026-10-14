@@ -23,36 +23,26 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Columns: Learning Tree */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
-          {/* Sleek Compact Daily Goal Tracker Card */}
-          <div className="w-full max-h-[58px] py-2 px-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs mb-3 flex flex-col justify-center">
+          {/* Sleek Compact Daily Goal Tracker Card (Mobile & Tablet only) */}
+          <div className="md:hidden w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xs mb-3">
             {/* Header Row */}
-            <div className="flex items-center justify-between mb-1.5 leading-none">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-xs shrink-0">🎯</span>
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 shrink-0">Daily Goal</span>
-                {isGoalMet ? (
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded-md shrink-0">
-                    Goal Met! 🎉
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">
-                    ⏱️ {activeMinutesToday}m today
-                  </span>
-                )}
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100 shrink-0">Daily Goal</span>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full shrink-0">
+                  {isGoalMet ? 'Goal Met! 🎉' : `⏱️ ${activeMinutesToday}m today`}
+                </span>
               </div>
-              <span className={`text-xs font-black shrink-0 ${isGoalMet ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-500'}`}>
-                {dailyXp} / 30 XP
+              <span className="text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
+                {dailyXp} / {dailyXpTarget} XP
               </span>
             </div>
 
-            {/* Progress Bar */}
-            <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+            {/* Progress Track */}
+            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  isGoalMet
-                    ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
-                    : 'bg-gradient-to-r from-amber-400 to-orange-500'
-                }`}
+                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
                 style={{ width: `${dailyXpProgress}%` }}
               />
             </div>
@@ -85,61 +75,57 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Column: Daily Goals, Phrase of Day, Quests, Amber League */}
+        {/* Right Column: Daily Goals, Quests, Multiplayer Duel, Phrase of Day */}
         <div className="hidden lg:flex lg:col-span-5 xl:col-span-5 flex-col gap-4 min-w-0 w-full sticky top-20 max-h-[calc(100vh-5.5rem)] overflow-y-auto pr-1">
-          {/* Daily Goal Card */}
-          <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500 truncate">
-                Daily Goal • Dienos tikslas
-              </span>
-              <span className={`text-xs font-bold flex items-center gap-1 shrink-0 ${isGoalMet ? 'text-emerald-600' : 'text-amber-500'}`}>
-                <Zap className="h-3.5 w-3.5 fill-current" />
-                {dailyXp} / 30 XP
+          {/* Daily Goal Card (Top of Desktop Right Rail) */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-xs shrink-0">🎯</span>
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100 shrink-0">Daily Goal</span>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full shrink-0">
+                  {isGoalMet ? 'Goal Met! 🎉' : `⏱️ ${activeMinutesToday}m today`}
+                </span>
+              </div>
+              <span className="text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
+                {dailyXp} / {dailyXpTarget} XP
               </span>
             </div>
 
-            <div className="h-3.5 w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
               <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isGoalMet ? 'bg-emerald-500' : 'bg-amber-400'
-                }`}
+                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
                 style={{ width: `${dailyXpProgress}%` }}
               />
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-[11px] font-medium text-slate-400">
-                Earn 30 XP daily to build long-term fluency memory.
-              </p>
-              <span className="text-[10px] font-semibold text-slate-500">
-                ⏱️ {activeMinutesToday}m today
-              </span>
-            </div>
+            <p className="text-[11px] font-medium text-slate-400 mt-2">
+              Earn 30 XP daily to build long-term fluency memory.
+            </p>
           </div>
 
-          {/* Friend Battle Card */}
-          <div className="rounded-3xl bg-amber-50/70 border-2 border-amber-300/80 p-5 shadow-xs flex flex-col gap-3 text-slate-800">
+          {/* Multiplayer Duel Card */}
+          <div className="rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 p-4 shadow-xs flex flex-col gap-3 text-slate-800 dark:text-slate-200">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-xl">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 border border-amber-300/60 text-xl">
                 ⚔️
               </span>
               <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block truncate">
+                <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 leading-tight truncate">
                   Multiplayer Duel
-                </span>
-                <h4 className="text-base font-black text-slate-900 leading-tight truncate">
-                  Dvikova su Draugais
                 </h4>
+                <p className="text-[11px] font-medium text-amber-800 dark:text-amber-400">
+                  Live 1v1 Lithuanian quiz
+                </p>
               </div>
             </div>
-            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              Kovok realiu laiku! 5 greiti raundai, live rezultatai ir XP prizai nugalėtojui.
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+              Battle in real-time! 5 quick rounds, live scores, and XP prizes for the winner.
             </p>
             <Link
               href="/battle"
               className="btn-tactile btn-tactile-amber w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-center shadow-xs"
             >
-              Pradėti Dvikovą ⚔️
+              Battle Now ⚔️
             </Link>
           </div>
 
