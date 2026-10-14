@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { haptics } from '@/lib/haptics';
+import { useActiveTimer } from '@/hooks/useActiveTimer';
 import { sendFriendJoinedNotification, sendDuelInviteNotification } from '@/lib/notifications';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,7 +51,7 @@ function BattleArenaContent() {
   const searchParams = useSearchParams();
   const roomParam = searchParams.get('room');
 
-  const { addXp, progress } = useGame();
+  const { addXp, recordDuelWin, progress } = useGame();
   const { user } = useAuth();
 
   // User Profile
@@ -106,6 +107,9 @@ function BattleArenaContent() {
   const [roundTransitioning, setRoundTransitioning] = useState<boolean>(false);
   const [rewardClaimed, setRewardClaimed] = useState<boolean>(false);
   const [activeRival, setActiveRival] = useState<AIRival | null>(null);
+
+  // Track active immersion time during live duel rounds
+  useActiveTimer(view === 'in_game' && room?.status === 'in_progress');
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -222,6 +226,21 @@ function BattleArenaContent() {
     if (botTimerRef.current) clearTimeout(botTimerRef.current);
     setView('results');
   };
+
+  // Award rewards & record duel win on entering results
+  useEffect(() => {
+    if (view === 'results' && !rewardClaimed && room) {
+      setRewardClaimed(true);
+      addXp(30);
+      const playersList = Object.values(room.players).sort((a, b) => b.score - a.score);
+      const winner = playersList[0];
+      const isTie = playersList.length >= 2 && playersList[0].score === playersList[1].score;
+      const isWinner = !isTie && (winner?.id === myPlayerId || (!winner?.isBot && !winner?.id.startsWith('bot-')));
+      if (isWinner) {
+        recordDuelWin();
+      }
+    }
+  }, [view, rewardClaimed, room, myPlayerId, addXp, recordDuelWin]);
 
   // Advance to next round or finish match
   const advanceToNextRound = async (targetRound: number) => {

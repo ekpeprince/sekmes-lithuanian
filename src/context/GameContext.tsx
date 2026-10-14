@@ -13,8 +13,12 @@ import {
   claimQuestReward,
   claimMysteryChest,
   recordSpeedDrillScore,
+  addPracticeSeconds,
+  recordDuelWin as recordDuelWinStorage,
+  formatTimeLearned,
   DEFAULT_PROGRESS,
 } from '@/lib/storage';
+import { getAllLessons } from '@/data/curriculum';
 import { sounds } from '@/lib/audio';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveProgressToCloud, loadProgressFromCloud } from '@/lib/progressSync';
@@ -22,6 +26,14 @@ import { checkDailyNotifications } from '@/lib/notifications';
 
 interface GameContextType {
   progress: UserProgress;
+  totalPracticeSeconds: number;
+  activeMinutesToday: number;
+  dailyXp: number;
+  duelsWonCount: number;
+  wordsMasteredCount: number;
+  formatTimeLearned: (seconds: number) => string;
+  addActivePracticeTime: (seconds: number) => void;
+  recordDuelWin: () => void;
   loseHeart: () => boolean;
   refillHearts: () => void;
   finishLesson: (lessonId: string, xpReward: number) => void;
@@ -195,17 +207,58 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProgress(updatedProg);
   };
 
+  const addActivePracticeTime = (seconds: number) => {
+    const updated = addPracticeSeconds(seconds);
+    setProgress(updated);
+    syncToCloudIfUser(updated);
+  };
+
+  const recordDuelWin = () => {
+    const updated = recordDuelWinStorage();
+    setProgress(updated);
+    syncToCloudIfUser(updated);
+  };
+
   const addXp = (amount: number) => {
-    const updated = { ...progress, xp: progress.xp + amount };
+    const today = new Date().toISOString().split('T')[0];
+    const currentDailyXp = progress.dailyXpDate === today ? (progress.dailyXp || 0) : 0;
+    const updated: UserProgress = {
+      ...progress,
+      xp: progress.xp + amount,
+      dailyXp: currentDailyXp + amount,
+      dailyXpDate: today,
+    };
     saveProgress(updated);
     setProgress(updated);
     syncToCloudIfUser(updated);
   };
 
+  const today = typeof window !== 'undefined' ? new Date().toISOString().split('T')[0] : '';
+  const dailyXp = progress.dailyXpDate === today ? (progress.dailyXp || 0) : (progress.dailyXp || 0);
+  const activeMinutesToday = progress.activeMinutesDate === today ? (progress.activeMinutesToday || 0) : 0;
+  const totalPracticeSeconds = progress.totalPracticeSeconds || 0;
+  const duelsWonCount = progress.duelsWonCount || 0;
+
+  const allLessons = getAllLessons();
+  const wordsMasteredCount = Math.max(
+    progress.wordsMasteredCount || 0,
+    allLessons
+      .filter((l) => progress.completedLessons.includes(l.id))
+      .reduce((acc, l) => acc + (l.exercises?.length || 6), 0)
+  );
+
   return (
     <GameContext.Provider
       value={{
         progress,
+        totalPracticeSeconds,
+        activeMinutesToday,
+        dailyXp,
+        duelsWonCount,
+        wordsMasteredCount,
+        formatTimeLearned,
+        addActivePracticeTime,
+        recordDuelWin,
         loseHeart,
         refillHearts,
         finishLesson,

@@ -9,7 +9,15 @@ import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { NotificationModal } from '@/components/NotificationModal';
 
 export default function ProfilePage() {
-  const { progress, refillHearts, resetProgress } = useGame();
+  const {
+    progress,
+    totalPracticeSeconds,
+    wordsMasteredCount,
+    duelsWonCount,
+    formatTimeLearned,
+    refillHearts,
+    resetProgress,
+  } = useGame();
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const allLessons = getAllLessons();
 
@@ -96,6 +104,51 @@ export default function ProfilePage() {
                   style={{ width: `${completionPercent}%` }}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Immersion Dashboard */}
+        <div className="rounded-3xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-5 shadow-xs mb-8">
+          {/* Header */}
+          <div className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+            <span>🇱🇹</span>
+            <span>Total Immersion</span>
+          </div>
+
+          {/* 3-Tile Grid */}
+          <div className="grid grid-cols-3 gap-2.5">
+            {/* 1. Time Learned */}
+            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-center">
+              <span className="text-xl mb-1">⏱️</span>
+              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                {formatTimeLearned(totalPracticeSeconds)}
+              </span>
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                Time Learned
+              </span>
+            </div>
+
+            {/* 2. Words Mastered */}
+            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-center">
+              <span className="text-xl mb-1">📚</span>
+              <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 leading-tight">
+                {wordsMasteredCount}
+              </span>
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                Words Mastered
+              </span>
+            </div>
+
+            {/* 3. Duels Won */}
+            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-center">
+              <span className="text-xl mb-1">⚔️</span>
+              <span className="text-base sm:text-lg font-black text-amber-500 dark:text-amber-400 leading-tight">
+                {duelsWonCount}
+              </span>
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                Duels Won
+              </span>
             </div>
           </div>
         </div>

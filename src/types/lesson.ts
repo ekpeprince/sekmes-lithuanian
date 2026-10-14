@@ -157,5 +157,13 @@ export interface UserProgress {
   speedDrillHighScore?: number;
   streakFreezes?: number;
   mysteryChestClaimedDate?: string;
+  totalPracticeSeconds?: number;
+  activeMinutesToday?: number;
+  activeSecondsToday?: number;
+  activeMinutesDate?: string;
+  dailyXp?: number;
+  dailyXpDate?: string;
+  duelsWonCount?: number;
+  wordsMasteredCount?: number;
 }
 

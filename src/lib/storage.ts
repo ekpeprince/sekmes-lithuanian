@@ -78,6 +78,14 @@ export const DEFAULT_PROGRESS: UserProgress = {
   speedDrillHighScore: 0,
   streakFreezes: 1,
   mysteryChestClaimedDate: undefined,
+  totalPracticeSeconds: 0,
+  activeMinutesToday: 0,
+  activeSecondsToday: 0,
+  activeMinutesDate: new Date().toISOString().split('T')[0],
+  dailyXp: 0,
+  dailyXpDate: new Date().toISOString().split('T')[0],
+  duelsWonCount: 0,
+  wordsMasteredCount: 0,
 };
 
 export function getStoredProgress(): UserProgress {
@@ -99,6 +107,11 @@ export function getStoredProgress(): UserProgress {
       ? DEFAULT_QUESTS.map(q => ({ ...q, current: 0, completed: false, claimed: false }))
       : (Array.isArray(parsed.quests) && parsed.quests.length > 0 ? parsed.quests : DEFAULT_QUESTS);
 
+    // Reset daily counters if a new calendar day has arrived
+    const activeMinutesToday = parsed.activeMinutesDate === today ? (parsed.activeMinutesToday || 0) : 0;
+    const activeSecondsToday = parsed.activeMinutesDate === today ? (parsed.activeSecondsToday || 0) : 0;
+    const dailyXp = parsed.dailyXpDate === today ? (parsed.dailyXp || 0) : 0;
+
     const merged: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
@@ -111,6 +124,14 @@ export function getStoredProgress(): UserProgress {
       speedDrillHighScore: parsed.speedDrillHighScore || 0,
       streakFreezes: typeof parsed.streakFreezes === 'number' ? parsed.streakFreezes : 1,
       mysteryChestClaimedDate: parsed.mysteryChestClaimedDate,
+      totalPracticeSeconds: parsed.totalPracticeSeconds || 0,
+      activeMinutesToday,
+      activeSecondsToday,
+      activeMinutesDate: today,
+      dailyXp,
+      dailyXpDate: today,
+      duelsWonCount: parsed.duelsWonCount || 0,
+      wordsMasteredCount: parsed.wordsMasteredCount || 0,
     };
 
     if (isNewDay) {
@@ -204,9 +225,14 @@ export function completeLesson(lessonId: string, xpEarned: number): UserProgress
     return q;
   });
 
+  const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
+  const nextDailyXp = currentDailyXp + xpEarned;
+
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
+    dailyXp: nextDailyXp,
+    dailyXpDate: today,
     gems: (current.gems || 0) + 15,
     streak: Math.max(1, newStreak),
     streakFreezes: remainingFreezes,
@@ -345,6 +371,47 @@ export function claimMysteryChest(): {
     progress: updated,
     reward: { xp: bonusXp, gems: bonusGems, streakFreeze: streakFreezeAwarded },
   };
+}
+
+export function addPracticeSeconds(seconds: number): UserProgress {
+  const current = getStoredProgress();
+  const today = new Date().toISOString().split('T')[0];
+  const totalSeconds = (current.totalPracticeSeconds || 0) + seconds;
+  const prevActiveSec = current.activeMinutesDate === today
+    ? (current.activeSecondsToday || (current.activeMinutesToday || 0) * 60)
+    : 0;
+  const newActiveSec = prevActiveSec + seconds;
+  const newActiveMin = Math.floor(newActiveSec / 60);
+
+  const updated: UserProgress = {
+    ...current,
+    totalPracticeSeconds: totalSeconds,
+    activeMinutesToday: newActiveMin,
+    activeSecondsToday: newActiveSec,
+    activeMinutesDate: today,
+  };
+  saveProgress(updated);
+  return updated;
+}
+
+export function recordDuelWin(): UserProgress {
+  const current = getStoredProgress();
+  const updated: UserProgress = {
+    ...current,
+    duelsWonCount: (current.duelsWonCount || 0) + 1,
+  };
+  saveProgress(updated);
+  return updated;
+}
+
+export function formatTimeLearned(seconds: number): string {
+  if (!seconds || seconds <= 0) return '0m';
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${Math.max(1, minutes)}m`;
 }
 
 export function resetAllProgress(): UserProgress {

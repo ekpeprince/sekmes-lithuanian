@@ -24,6 +24,7 @@ import { sounds } from '@/lib/audio';
 import { haptics } from '@/lib/haptics';
 import { AudioSpeaker } from '@/components/AudioSpeaker';
 import { SpeakingLab } from '@/components/SpeakingLab';
+import { useActiveTimer } from '@/hooks/useActiveTimer';
 
 type PracticeTab = 'hub' | 'speaking_lab' | 'speed_drill' | 'flashcards' | 'mistakes_bank' | 'lessons';
 
@@ -56,6 +57,9 @@ export default function PracticePage() {
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<PracticeTab>('hub');
+
+  // Track active immersion time while practicing drills, speaking lab or flashcards
+  useActiveTimer(activeTab !== 'hub');
 
   // Flashcards state
   const [cardIndex, setCardIndex] = useState(0);

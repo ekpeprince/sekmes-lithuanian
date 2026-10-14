@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
+import { useActiveTimer } from '@/hooks/useActiveTimer';
 import {
   getTutorMemory,
   saveTutorMemory,
@@ -219,6 +220,7 @@ const SCENARIOS = [
 
 export default function TutorPage() {
   const { addXp } = useGame();
+  useActiveTimer(true);
   const [scenario, setScenario] = useState<ScenarioType>('cafe');
   const [messages, setMessages] = useState<Message[]>(() => [
     {

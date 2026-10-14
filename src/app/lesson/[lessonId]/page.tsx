@@ -17,6 +17,7 @@ import { SpeakingPronounce } from '@/components/exercises/SpeakingPronounce';
 import { LessonFeedbackBar } from '@/components/LessonFeedbackBar';
 import { LessonCompleteModal } from '@/components/LessonCompleteModal';
 import { sounds } from '@/lib/audio';
+import { useActiveTimer } from '@/hooks/useActiveTimer';
 
 
 interface LessonPageProps {
@@ -29,6 +30,10 @@ export default function LessonPage({ params }: LessonPageProps) {
   const router = useRouter();
 
   const { progress, loseHeart, refillHearts, finishLesson, addMistake } = useGame();
+  const [isLessonFinished, setIsLessonFinished] = useState(false);
+
+  // Track active study seconds during lesson
+  useActiveTimer(!isLessonFinished);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -43,7 +48,6 @@ export default function LessonPage({ params }: LessonPageProps) {
 
   const [showExitModal, setShowExitModal] = useState(false);
   const [showOutOfHeartsModal, setShowOutOfHeartsModal] = useState(false);
-  const [isLessonFinished, setIsLessonFinished] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
   const [mistakesCount, setMistakesCount] = useState(0);

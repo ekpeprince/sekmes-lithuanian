@@ -10,45 +10,52 @@ import { Zap, BookOpen, Sparkles, ArrowRight } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 
 import { DailyQuestsCard } from '@/components/DailyQuestsCard';
-import { AmberLeagueCard } from '@/components/AmberLeagueCard';
 
 export default function DashboardPage() {
-  const { progress } = useGame();
+  const { progress, dailyXp, activeMinutesToday } = useGame();
 
-  const dailyXpTarget = 50;
-  const dailyXpProgress = Math.min(100, Math.round((progress.xp % dailyXpTarget) / dailyXpTarget * 100));
+  const dailyXpTarget = 30;
+  const isGoalMet = dailyXp >= dailyXpTarget;
+  const dailyXpProgress = Math.min(100, Math.round((dailyXp / dailyXpTarget) * 100));
 
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 pt-3 sm:pt-6 pb-44 md:pb-12">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Columns: Learning Tree */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
-          {/* Mobile Amber League Quick Banner */}
-          <div className="w-full lg:hidden mb-4 rounded-2xl bg-amber-50/80 border-2 border-amber-300/80 py-2 px-3.5 shadow-sm flex items-center justify-between gap-2.5 text-amber-950">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-amber-100 border border-amber-300/60 text-xl sm:text-2xl shrink-0 shadow-inner">
-                🏆
-              </div>
-              <div className="min-w-0 flex flex-col justify-center">
-                {/* Row 1: Gintaro Lyga & AMBER badge */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h4 className="text-sm font-black text-amber-950 leading-tight">Gintaro Lyga</h4>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full">
-                    AMBER
+          {/* Sleek Compact Daily Goal Tracker Card */}
+          <div className="w-full max-h-[58px] py-2 px-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs mb-3 flex flex-col justify-center">
+            {/* Header Row */}
+            <div className="flex items-center justify-between mb-1.5 leading-none">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-xs shrink-0">🎯</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 shrink-0">Daily Goal</span>
+                {isGoalMet ? (
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded-md shrink-0">
+                    Goal Met! 🎉
                   </span>
-                </div>
-                {/* Row 2: Status & rank info */}
-                <p className="text-xs text-amber-900/70 font-medium leading-tight mt-0.5">
-                  Top 3 advance to Silver League • Rank #4
-                </p>
+                ) : (
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">
+                    ⏱️ {activeMinutesToday}m today
+                  </span>
+                )}
               </div>
+              <span className={`text-xs font-black shrink-0 ${isGoalMet ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-500'}`}>
+                {dailyXp} / 30 XP
+              </span>
             </div>
-            <Link
-              href="/leaderboard"
-              className="btn-tactile btn-tactile-amber px-3 py-1.5 text-xs font-bold rounded-lg shrink-0 shadow-xs uppercase tracking-wider"
-            >
-              RODYTI
-            </Link>
+
+            {/* Progress Bar */}
+            <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isGoalMet
+                    ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
+                    : 'bg-gradient-to-r from-amber-400 to-orange-500'
+                }`}
+                style={{ width: `${dailyXpProgress}%` }}
+              />
+            </div>
           </div>
 
           {UNITS.map((unit) => (
@@ -86,21 +93,28 @@ export default function DashboardPage() {
               <span className="text-xs font-black uppercase tracking-wider text-slate-500 truncate">
                 Daily Goal • Dienos tikslas
               </span>
-              <span className="text-xs font-bold text-amber-500 flex items-center gap-1 shrink-0">
-                <Zap className="h-3.5 w-3.5 fill-amber-500" />
-                {progress.xp % dailyXpTarget} / {dailyXpTarget} XP
+              <span className={`text-xs font-bold flex items-center gap-1 shrink-0 ${isGoalMet ? 'text-emerald-600' : 'text-amber-500'}`}>
+                <Zap className="h-3.5 w-3.5 fill-current" />
+                {dailyXp} / 30 XP
               </span>
             </div>
 
             <div className="h-3.5 w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200">
               <div
-                className="h-full rounded-full bg-amber-400 transition-all duration-300"
-                style={{ width: `${dailyXpProgress || 5}%` }}
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isGoalMet ? 'bg-emerald-500' : 'bg-amber-400'
+                }`}
+                style={{ width: `${dailyXpProgress}%` }}
               />
             </div>
-            <p className="text-[11px] font-medium text-slate-400 mt-2">
-              Earn {dailyXpTarget} XP daily to build long-term fluency memory.
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-[11px] font-medium text-slate-400">
+                Earn 30 XP daily to build long-term fluency memory.
+              </p>
+              <span className="text-[10px] font-semibold text-slate-500">
+                ⏱️ {activeMinutesToday}m today
+              </span>
+            </div>
           </div>
 
           {/* Friend Battle Card */}
@@ -129,8 +143,6 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Amber League Standing Card */}
-          <AmberLeagueCard />
 
           {/* Daily Quests Card */}
           <DailyQuestsCard />
