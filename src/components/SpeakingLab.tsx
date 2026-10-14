@@ -119,11 +119,19 @@ function getSpeechRecognitionClass(): SpeechRecognitionCtor | null {
 
 const STORAGE_KEY_MASTERED = 'sekmes_speaking_mastered_ids';
 
-export const SpeakingLab: React.FC = () => {
+export interface SpeakingLabProps {
+  onBack?: () => void;
+  initialMode?: 'phrases' | 'syllables';
+}
+
+export const SpeakingLab: React.FC<SpeakingLabProps> = ({
+  onBack,
+  initialMode = 'phrases',
+}) => {
   const { addXp } = useGame();
 
   // Mode: Full phrase speech recognition studio VS Syllable stress trainer
-  const [labMode, setLabMode] = useState<'phrases' | 'syllables'>('phrases');
+  const [labMode, setLabMode] = useState<'phrases' | 'syllables'>(initialMode);
 
   // --- PHRASE STUDIO STATE ---
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -380,70 +388,91 @@ export const SpeakingLab: React.FC = () => {
   const syllableGroups = parseSyllables(currentItem.syllables);
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 animate-in fade-in">
-      {/* Top Section Mode Switcher Tabs */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-3xl border-2 border-slate-200 shadow-2xs">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+    <div className="w-full max-w-xl mx-auto h-[100dvh] max-h-[100dvh] flex flex-col justify-between overflow-hidden bg-slate-50 select-none">
+      {/* 1. Compact Header + Progress Bar */}
+      <header className="shrink-0 px-4 py-2.5 sm:py-3 border-b border-slate-200/80 bg-white/90 backdrop-blur-md flex items-center justify-between gap-3">
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition py-1 px-2 -ml-2 rounded-xl hover:bg-slate-100 cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Back to Practice</span>
+          </button>
+        ) : (
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800">
+            <Mic className="w-4 h-4 text-rose-500" />
+            <span>Practice Gym</span>
+          </div>
+        )}
+
+        {/* Mode Switcher */}
+        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl text-xs font-bold">
           <button
             type="button"
             onClick={() => {
               sounds.playClick();
               setLabMode('phrases');
             }}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
               labMode === 'phrases'
-                ? 'bg-rose-500 text-white shadow-md'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-white text-rose-600 shadow-2xs font-black'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Mic className="h-4 w-4" />
-            <span>Frazės & Tarimas • Voice Studio</span>
+            Phrases
           </button>
-
           <button
             type="button"
             onClick={() => {
               sounds.playClick();
               setLabMode('syllables');
             }}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
               labMode === 'syllables'
-                ? 'bg-amber-500 text-white shadow-md'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-white text-amber-600 shadow-2xs font-black'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Zap className="h-4 w-4 fill-current" />
-            <span>Skiemenų Kirtis • Syllable Stress</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 font-black">
-              Nauja!
-            </span>
+            Syllables
           </button>
         </div>
 
-        {/* Mastered Counter */}
-        <div className="flex items-center gap-2 self-end sm:self-auto bg-amber-50 px-3.5 py-1.5 rounded-full border border-amber-200">
-          <Trophy className="w-4 h-4 text-amber-500" />
-          <span className="text-xs font-extrabold text-amber-800">
+        {/* Compact Progress Bar [==== 1/22 ====] */}
+        <div className="flex items-center gap-2">
+          <div className="w-16 sm:w-20 h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+              style={{
+                width:
+                  labMode === 'phrases'
+                    ? `${((currentIndex + 1) / filteredDrills.length) * 100}%`
+                    : `${((stressIndex + 1) / filteredStressDrills.length) * 100}%`,
+              }}
+            />
+          </div>
+          <span className="text-[11px] font-mono font-bold text-slate-500">
             {labMode === 'phrases'
-              ? `${masteredIds.length} / ${SPEAKING_DRILLS.length} Mastered`
-              : `${stressMasteredIds.length} / ${SYLLABLE_STRESS_DRILLS.length} Mastered`}
+              ? `${currentIndex + 1}/${filteredDrills.length}`
+              : `${stressIndex + 1}/${filteredStressDrills.length}`}
           </span>
         </div>
-      </div>
+      </header>
 
       {/* ==================================================================== */}
       {/* MODE 1: PHRASE PRONUNCIATION & VOICE RECOGNITION STUDIO              */}
       {/* ==================================================================== */}
-      {labMode === 'phrases' && (
-        <div className="flex flex-col gap-6">
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      {labMode === 'phrases' ? (
+        <>
+          {/* Sub-bar: Category Filter Pills (Clean English) */}
+          <div className="shrink-0 px-4 py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none border-b border-slate-100 bg-white/50">
             {[
-              { id: 'all', label: 'Visi • All' },
-              { id: 'greetings', label: 'Pasisveikinimai • Greetings' },
-              { id: 'dining', label: 'Kavinė & Maistas • Café' },
-              { id: 'navigation', label: 'Kryptys • Navigation' },
-              { id: 'twisters', label: 'Liežuvio laužymai • Twisters' },
+              { id: 'all', label: 'All' },
+              { id: 'greetings', label: 'Greetings' },
+              { id: 'dining', label: 'Café & Food' },
+              { id: 'navigation', label: 'Navigation' },
+              { id: 'twisters', label: 'Tongue Twisters' },
             ].map((cat) => (
               <button
                 key={cat.id}
@@ -453,10 +482,10 @@ export const SpeakingLab: React.FC = () => {
                   setCurrentIndex(0);
                   stopListening();
                 }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-rose-500 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-rose-500 text-white shadow-2xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 {cat.label}
@@ -464,332 +493,231 @@ export const SpeakingLab: React.FC = () => {
             ))}
           </div>
 
-          {/* Main Pronunciation Studio Card */}
-          <div className="relative w-full bg-white border-2 border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center">
-            {/* Header Badges */}
-            <div className="w-full flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-black uppercase tracking-wider">
-                  {currentItem.categoryLabel}
-                </span>
-                <span className="text-xs font-bold text-slate-400">
-                  #{currentIndex + 1} of {filteredDrills.length}
-                </span>
+          {/* Main Middle Exercise Area (Fitted inside 100dvh without scroll) */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col items-center justify-around text-center gap-2">
+            {/* Celebration or Mastered badge */}
+            {showCelebration ? (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold animate-bounce shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Great pronunciation! +15 XP</span>
               </div>
+            ) : isMastered ? (
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Mastered</span>
+              </div>
+            ) : null}
 
-              {isMastered ? (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-black">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Mastered (+15 XP)</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-bold">
-                  <span>+15 XP on passing</span>
-                </div>
-              )}
+            {/* Target Lithuanian Phrase (Bold 28px) */}
+            <div className="space-y-1">
+              <h2 className="text-2xl sm:text-[28px] font-black text-slate-900 tracking-tight leading-tight">
+                {currentItem.phrase}
+              </h2>
+              {/* Muted Phonetics */}
+              <div className="text-xs sm:text-sm font-mono font-bold text-slate-400">
+                /{currentItem.phonetic}/
+              </div>
+              {/* Slate-500 Translation */}
+              <p className="text-sm font-medium text-slate-500 italic">
+                &ldquo;{currentItem.english}&rdquo;
+              </p>
             </div>
 
-            {/* Celebration Banner */}
-            {showCelebration && (
-              <div className="w-full mb-4 p-3 rounded-2xl bg-emerald-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 animate-bounce shadow-md">
-                <Sparkles className="w-5 h-5" />
-                <span>Puikus tarimas! +15 XP earned!</span>
-              </div>
-            )}
-
-            {/* Audio Listen Buttons */}
-            <div className="flex items-center gap-2 mb-4">
+            {/* Clean Tactile Audio Pills */}
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => handlePlayModelAudio(false)}
                 disabled={isPlayingAudio !== null}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all active:scale-95 cursor-pointer ${
                   isPlayingAudio === 'normal'
                     ? 'bg-sky-500 text-white ring-2 ring-sky-300 animate-pulse'
-                    : 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100'
+                    : 'bg-white text-sky-700 border border-slate-200 hover:bg-sky-50 shadow-2xs'
                 }`}
               >
-                <Volume2 className="w-4 h-4" />
-                <span>Listen Normal (1.0x)</span>
+                <Volume2 className="w-3.5 h-3.5 text-sky-600" />
+                <span>Normal (1.0x)</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handlePlayModelAudio(true)}
                 disabled={isPlayingAudio !== null}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full font-bold text-xs transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all active:scale-95 cursor-pointer ${
                   isPlayingAudio === 'slow'
                     ? 'bg-amber-500 text-white ring-2 ring-amber-300 animate-pulse'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                    : 'bg-white text-amber-800 border border-slate-200 hover:bg-amber-50 shadow-2xs'
                 }`}
               >
-                <span>🐢</span>
-                <span>Slow (0.75x)</span>
+                <span>🐢 Slow (0.75x)</span>
               </button>
             </div>
 
-            {/* Large Lithuanian Target Phrase */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-2">
-              {currentItem.phrase}
-            </h2>
-
-            {/* Phonetic Pronunciation Guide */}
-            <div className="inline-block px-3 py-1 rounded-lg bg-slate-100 text-slate-600 font-mono text-xs sm:text-sm font-bold tracking-wider mb-2">
-              /{currentItem.phonetic}/
-            </div>
-
-            {/* English Translation */}
-            <p className="text-base sm:text-lg font-bold text-slate-500 mb-3">
-              &ldquo;{currentItem.english}&rdquo;
-            </p>
-
-            {/* STRESSED SYLLABLES BREAKDOWN (Skiemenų Kirtis) */}
-            <div className="w-full max-w-lg mb-5 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-200 text-center shadow-2xs">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-900">
-                  <Zap className="w-4 h-4 text-amber-600 fill-amber-500" />
-                  <span>Stressed Syllables • Skiemenų Kirtis:</span>
-                </div>
+            {/* Streamlined Syllable Stress Card (Single subtle card) */}
+            <div className="w-full max-w-sm bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 sm:p-3.5 text-center shadow-2xs">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
+                  Syllable Stress:
+                </span>
                 {currentItem.accentedPhrase && (
-                  <span className="text-[11px] font-black text-amber-950 bg-white px-2 py-0.5 rounded-full border border-amber-300">
-                    Kirtis: {currentItem.accentedPhrase}
+                  <span className="text-[10px] font-bold text-amber-950 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                    {currentItem.accentedPhrase}
                   </span>
                 )}
               </div>
 
-              {/* Syllable Chips with Stressed Syllable Highlight */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
+              {/* Syllables as clean interactive chips: [ LÁ · bas ] [ RÝ · tas ] */}
+              <div className="flex flex-wrap items-center justify-center gap-2 my-1">
                 {syllableGroups.map((wordSyllables, wIdx) => (
                   <div
                     key={wIdx}
-                    className="flex items-center gap-1 bg-white border border-amber-300 px-2.5 py-1.5 rounded-xl shadow-2xs"
+                    className="flex items-center gap-1 bg-white border border-amber-300/80 px-2.5 py-1 rounded-xl shadow-2xs"
                   >
                     {wordSyllables.map((syl, sIdx) => (
-                      <button
-                        key={sIdx}
-                        type="button"
-                        onClick={() => sounds.speak(syl.text)}
-                        title={`Syllable: ${syl.text} ${
-                          syl.isStressed ? '(Stressed syllable - tap to pronounce)' : '(Unstressed)'
-                        }`}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                          syl.isStressed
-                            ? 'bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 ring-2 ring-amber-300 shadow-xs scale-105'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        <span>{syl.text}</span>
-                        {syl.isStressed && <span className="ml-1 text-[10px]">⚡</span>}
-                      </button>
+                      <React.Fragment key={sIdx}>
+                        {sIdx > 0 && (
+                          <span className="text-amber-400 font-bold text-xs select-none">·</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => sounds.speak(syl.text)}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                            syl.isStressed
+                              ? 'bg-amber-400 text-slate-950 ring-1 ring-amber-300'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                          title={syl.isStressed ? 'Stressed syllable - tap to pronounce' : 'Unstressed'}
+                        >
+                          {syl.text}
+                        </button>
+                      </React.Fragment>
                     ))}
                   </div>
                 ))}
               </div>
 
-              {/* Stress Placement Rule */}
-              {currentItem.stressRule && (
-                <div className="text-[11px] font-semibold text-amber-950 mt-2 text-left bg-white/80 p-2.5 rounded-xl border border-amber-200">
-                  <span className="font-extrabold text-amber-800">💡 Stress Rule: </span>
-                  {currentItem.stressRule}
-                </div>
-              )}
-            </div>
-
-            {/* Pronunciation Tip Box */}
-            <div className="w-full max-w-lg mb-6 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-left flex items-start gap-3">
-              <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-              <p className="text-xs font-semibold text-slate-700 leading-relaxed">
-                <span className="font-extrabold text-slate-900">Mouth & Tongue Tip: </span>
-                {currentItem.tip}
+              {/* Concise sub-caption */}
+              <p className="text-[11px] text-amber-900/80 font-medium mt-1 leading-snug">
+                {currentItem.stressRule || 'Initial stress with falling tone on both words'}
               </p>
             </div>
 
-            {/* Word-by-Word Matching Chips (Live Feedback) */}
-            <div className="w-full max-w-lg mb-6 flex flex-wrap items-center justify-center gap-2">
-              {targetWords.map((word, idx) => {
-                const isMatched = matchedWords[idx];
-                return (
-                  <span
-                    key={idx}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-black border transition-all ${
-                      isMatched
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
-                        : isRecording
-                        ? 'bg-slate-100 text-slate-500 border-slate-200'
-                        : transcript
-                        ? 'bg-rose-50 text-rose-600 border-rose-200'
-                        : 'bg-slate-50 text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    {isMatched ? '✓ ' : ''}
-                    {word}
-                  </span>
-                );
-              })}
-            </div>
-
-            {/* Live Audio Equalizer Waveform while recording */}
-            {isRecording && (
-              <div className="flex items-center gap-1.5 justify-center mb-4 h-6">
-                <span className="w-1.5 h-6 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-4 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-7 bg-rose-600 rounded-full animate-bounce" />
-                <span className="w-1.5 h-3 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.2s]" />
-                <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.35s]" />
-              </div>
-            )}
-
-            {/* Big Glowing Microphone Button */}
-            <div className="relative mb-3">
-              {isRecording && (
-                <span className="absolute -inset-3 rounded-full bg-rose-400 opacity-40 animate-ping" />
-              )}
-              <button
-                type="button"
-                onClick={isRecording ? stopListening : startListening}
-                className={`relative flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full font-black shadow-xl transition-all active:scale-95 cursor-pointer ${
-                  isRecording
-                    ? 'bg-rose-500 text-white ring-4 ring-rose-200 shadow-rose-200'
-                    : score !== null && score >= 70
-                    ? 'bg-emerald-500 text-white border-b-4 border-emerald-700 shadow-emerald-200'
-                    : 'bg-sky-500 hover:bg-sky-400 text-white border-b-4 border-sky-700 shadow-sky-200'
-                }`}
-              >
-                {isRecording ? (
-                  <MicOff className="w-9 h-9 animate-bounce" />
-                ) : score !== null && score >= 70 ? (
-                  <CheckCircle2 className="w-10 h-10" />
-                ) : (
-                  <Mic className="w-9 h-9" />
-                )}
-              </button>
-            </div>
-
-            {/* Timer countdown when recording */}
-            {isRecording && (
-              <div className="flex flex-col items-center gap-1 mb-3">
-                <span className="text-xs font-black text-rose-600">
-                  ⏱️ Klausausi... {timeLeft}s remaining
+            {/* Mouth & Tongue Tip (Compact 1-line callout) */}
+            {currentItem.tip && (
+              <div className="text-xs text-slate-600 flex items-center justify-center gap-1.5 max-w-sm px-2 text-center">
+                <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="truncate" title={currentItem.tip}>
+                  {currentItem.tip}
                 </span>
-                <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-rose-500 transition-all duration-1000 ease-linear rounded-full"
-                    style={{ width: `${(timeLeft / 10) * 100}%` }}
-                  />
-                </div>
               </div>
             )}
 
-            <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-4">
-              {isRecording
-                ? 'Speak in Lithuanian now...'
-                : score !== null && score >= 70
-                ? 'Great job! Tap mic to repeat'
-                : 'Tap to speak into microphone'}
-            </p>
-
-            {/* Real-Time Transcript Display */}
-            {transcript && (
-              <div className="w-full max-w-lg mb-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left animate-in fade-in">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                    What we heard you say:
-                  </span>
-                  {score !== null && (
+            {/* Word-by-Word Matching Chips */}
+            {targetWords.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-sm">
+                {targetWords.map((word, idx) => {
+                  const isMatched = matchedWords[idx];
+                  return (
                     <span
-                      className={`text-xs font-black px-2 py-0.5 rounded-full ${
-                        score >= 70
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
+                      key={idx}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-all ${
+                        isMatched
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-2xs'
+                          : isRecording
+                          ? 'bg-slate-100 text-slate-500 border-slate-200'
+                          : transcript
+                          ? 'bg-rose-50 text-rose-600 border-rose-200'
+                          : 'bg-slate-50 text-slate-600 border-slate-200'
                       }`}
                     >
-                      {score}% Accuracy
+                      {isMatched ? '✓ ' : ''}
+                      {word}
                     </span>
-                  )}
-                </div>
-                <p className="text-sm font-bold text-slate-800">&ldquo;{transcript}&rdquo;</p>
+                  );
+                })}
+              </div>
+            )}
 
-                {score !== null && (
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs font-bold mb-1">
-                      <span className={score >= 70 ? 'text-emerald-700' : 'text-amber-700'}>
-                        {score >= 70
-                          ? '🎉 Puikiai atlikta! (Passed)'
-                          : 'Geras bandymas • Try again for 70%+'}
-                      </span>
-                      <span className="text-slate-500">{score}% match</span>
-                    </div>
-
-                    <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          score >= 70 ? 'bg-emerald-500' : 'bg-amber-500'
-                        }`}
-                        style={{ width: `${score}%` }}
-                      />
-                    </div>
-                  </div>
+            {/* Elevated 3D Mic Button & Feedback */}
+            <div className="flex flex-col items-center gap-1.5 my-1">
+              <div className="relative">
+                {isRecording && (
+                  <span className="absolute -inset-2.5 rounded-full bg-rose-400 opacity-40 animate-ping" />
                 )}
+                <button
+                  type="button"
+                  onClick={isRecording ? stopListening : startListening}
+                  className={`relative btn-tactile flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-full font-black shadow-lg transition-transform active:scale-95 cursor-pointer ${
+                    isRecording
+                      ? 'bg-rose-500 text-white ring-4 ring-rose-200 border-b-4 border-rose-700'
+                      : score !== null && score >= 70
+                      ? 'bg-emerald-500 text-white border-b-4 border-emerald-700'
+                      : 'bg-sky-500 hover:bg-sky-400 text-white border-b-4 border-sky-700'
+                  }`}
+                >
+                  {isRecording ? (
+                    <MicOff className="w-7 h-7 sm:w-8 sm:h-8 animate-bounce" />
+                  ) : score !== null && score >= 70 ? (
+                    <CheckCircle2 className="w-8 h-8 sm:w-9 sm:h-9" />
+                  ) : (
+                    <Mic className="w-7 h-7 sm:w-8 sm:h-8" />
+                  )}
+                </button>
               </div>
-            )}
 
-            {/* Retry Button */}
-            {transcript && !isRecording && (
-              <button
-                type="button"
-                onClick={handleRetry}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 shadow-xs mb-6 cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Try Again • Kartoti</span>
-              </button>
-            )}
-
-            {/* Speech Recognition Not Supported Notice */}
-            {!speechSupported && (
-              <div className="w-full max-w-md p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold mb-4">
-                ⚠️ Live speech recognition requires Chrome, Edge, or Safari on desktop or Android.
-                You can still listen to native audio models!
-              </div>
-            )}
-
-            {/* Navigation Arrows */}
-            <div className="w-full flex items-center justify-between pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={handlePrev}
-                className="flex items-center gap-1 px-4 py-2 rounded-2xl border-2 border-slate-200 text-xs font-extrabold text-slate-600 hover:bg-slate-50 cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Previous</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNext}
-                className="btn-3d btn-green-3d flex items-center gap-1 px-5 py-2.5 text-xs cursor-pointer"
-              >
-                <span>Next Phrase</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              {/* Status Caption */}
+              <p className="text-xs font-semibold text-slate-500">
+                {isRecording
+                  ? `Listening... (${timeLeft}s left)`
+                  : score !== null && score >= 70
+                  ? `Great pronunciation! (${score}% accuracy)`
+                  : transcript
+                  ? `${score}% accuracy • Tap mic to retry`
+                  : 'Tap to check pronunciation'}
+              </p>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* ==================================================================== */}
-      {/* MODE 2: INTERACTIVE SYLLABLE STRESS TRAINER (KIRTIS CHALLENGE)       */}
-      {/* ==================================================================== */}
-      {labMode === 'syllables' && (
-        <div className="flex flex-col gap-6">
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {/* Transcript if spoken */}
+            {transcript && (
+              <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium max-w-xs">
+                &ldquo;{transcript}&rdquo;
+              </div>
+            )}
+          </div>
+
+          {/* Sticky Bottom Action Bar */}
+          <footer className="shrink-0 p-4 bg-white/90 backdrop-blur border-t border-slate-100 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="px-4 py-3 rounded-2xl border-2 border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition cursor-pointer"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              className="btn-tactile bg-emerald-600 border-b-4 border-emerald-700 active:border-b-0 text-white font-bold py-3 w-full rounded-2xl flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-1"
+            >
+              <span>Next Phrase</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </footer>
+        </>
+      ) : (
+        /* ==================================================================== */
+        /* MODE 2: INTERACTIVE SYLLABLE STRESS TRAINER                          */
+        /* ==================================================================== */
+        <>
+          {/* Sub-bar: Category Filter Pills */}
+          <div className="shrink-0 px-4 py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none border-b border-slate-100 bg-white/50">
             {[
-              { id: 'all', label: 'Visi • All Words' },
-              { id: 'basics', label: 'Pagrindai • Basics' },
-              { id: 'food', label: 'Maistas • Food' },
-              { id: 'places', label: 'Miestai & Vietos • Places' },
-              { id: 'people', label: 'Žmonės • People' },
+              { id: 'all', label: 'All Words' },
+              { id: 'basics', label: 'Basics' },
+              { id: 'food', label: 'Food' },
+              { id: 'places', label: 'Places' },
+              { id: 'people', label: 'People' },
             ].map((cat) => (
               <button
                 key={cat.id}
@@ -800,10 +728,10 @@ export const SpeakingLab: React.FC = () => {
                   setSelectedSyllableIdx(null);
                   setStressAnswerStatus('idle');
                 }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
                   stressCategory === cat.id
-                    ? 'bg-amber-500 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-amber-500 text-white shadow-2xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 {cat.label}
@@ -811,85 +739,78 @@ export const SpeakingLab: React.FC = () => {
             ))}
           </div>
 
-          {/* Syllable Stress Challenge Card */}
-          <div className="relative w-full bg-white border-2 border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center">
-            {/* Top Bar: Category & Streak */}
-            <div className="w-full flex items-center justify-between mb-4">
-              <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-black uppercase tracking-wider">
-                {currentStressItem.categoryLabel} • #{stressIndex + 1} of{' '}
-                {filteredStressDrills.length}
-              </span>
+          {/* Main Middle Syllable Challenge Area */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col items-center justify-around text-center gap-3">
+            {/* Top streak indicator */}
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black">
+              <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+              <span>Streak: {stressStreak}🔥</span>
+            </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-black">
-                <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
-                <span>Streak: {stressStreak}🔥</span>
-              </div>
+            {/* Target Word & Translation */}
+            <div className="space-y-1">
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                {currentStressItem.word}
+              </h2>
+              <p className="text-sm font-medium text-slate-500 italic">
+                &ldquo;{currentStressItem.english}&rdquo;
+              </p>
             </div>
 
             {/* Audio Listen Buttons */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => handlePlayStressAudio(false)}
                 disabled={isPlayingStressAudio !== null}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all active:scale-95 cursor-pointer ${
                   isPlayingStressAudio === 'normal'
                     ? 'bg-sky-500 text-white ring-2 ring-sky-300 animate-pulse'
-                    : 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100'
+                    : 'bg-white text-sky-700 border border-slate-200 hover:bg-sky-50 shadow-2xs'
                 }`}
               >
-                <Volume2 className="w-4 h-4" />
-                <span>Listen Word (1.0x)</span>
+                <Volume2 className="w-3.5 h-3.5 text-sky-600" />
+                <span>Normal (1.0x)</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handlePlayStressAudio(true)}
                 disabled={isPlayingStressAudio !== null}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full font-bold text-xs transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all active:scale-95 cursor-pointer ${
                   isPlayingStressAudio === 'slow'
                     ? 'bg-amber-500 text-white ring-2 ring-amber-300 animate-pulse'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                    : 'bg-white text-amber-800 border border-slate-200 hover:bg-amber-50 shadow-2xs'
                 }`}
               >
                 <span>🐢 Slow (0.75x)</span>
               </button>
             </div>
 
-            {/* Target Word */}
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight mb-1">
-              {currentStressItem.word}
-            </h2>
-
-            {/* English Meaning */}
-            <p className="text-base sm:text-lg font-bold text-slate-500 mb-6">
-              &ldquo;{currentStressItem.english}&rdquo;
-            </p>
-
-            {/* Challenge Question Banner */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-300 text-amber-900 text-xs font-black uppercase tracking-wider mb-5">
+            {/* Question Banner */}
+            <div className="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-600 fill-amber-500" />
-              <span>Kuris skiemuo yra kirčiuotas? • Which syllable is stressed?</span>
+              <span>Which syllable is stressed?</span>
             </div>
 
-            {/* Interactive Clickable Syllables */}
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-6 max-w-lg">
+            {/* Interactive Syllable Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-sm">
               {currentStressItem.syllables.map((syl, sIdx) => {
                 const isSelected = selectedSyllableIdx === sIdx;
                 const isTargetStressed = sIdx === currentStressItem.stressedIndex;
 
-                let buttonStyles =
-                  'bg-white border-2 border-slate-300 text-slate-800 hover:border-amber-400 hover:scale-105 shadow-xs';
+                let btnClass =
+                  'bg-white border-2 border-slate-300 text-slate-800 hover:border-amber-400 hover:scale-105 shadow-2xs';
 
                 if (stressAnswerStatus === 'correct') {
                   if (isTargetStressed) {
-                    buttonStyles =
-                      'bg-emerald-500 border-2 border-emerald-600 text-white shadow-md ring-4 ring-emerald-200 scale-110 animate-bounce';
+                    btnClass =
+                      'bg-emerald-500 border-2 border-emerald-600 text-white shadow-md ring-4 ring-emerald-200 scale-105 animate-bounce';
                   } else {
-                    buttonStyles = 'bg-slate-100 border-2 border-slate-200 text-slate-400 opacity-60';
+                    btnClass = 'bg-slate-100 border-2 border-slate-200 text-slate-400 opacity-60';
                   }
                 } else if (stressAnswerStatus === 'incorrect' && isSelected) {
-                  buttonStyles =
+                  btnClass =
                     'bg-rose-50 border-2 border-rose-400 text-rose-700 ring-2 ring-rose-200 shake';
                 }
 
@@ -899,10 +820,10 @@ export const SpeakingLab: React.FC = () => {
                     type="button"
                     onClick={() => handleSelectStressSyllable(sIdx)}
                     disabled={stressAnswerStatus === 'correct'}
-                    className={`px-5 py-3.5 rounded-2xl font-black text-lg sm:text-xl transition-all cursor-pointer flex flex-col items-center gap-0.5 ${buttonStyles}`}
+                    className={`px-4 py-2.5 rounded-2xl font-black text-base sm:text-lg transition-all cursor-pointer flex flex-col items-center gap-0.5 ${btnClass}`}
                   >
                     <span>{syl}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">
+                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-60">
                       #{sIdx + 1}
                     </span>
                   </button>
@@ -910,66 +831,57 @@ export const SpeakingLab: React.FC = () => {
               })}
             </div>
 
-            {/* Feedback & Rule Explanation Box */}
+            {/* Feedback / Stress Rule Box */}
             {stressAnswerStatus === 'correct' && (
-              <div className="w-full max-w-lg mb-6 p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-left animate-in zoom-in-95">
-                <div className="flex items-center gap-2 text-emerald-800 font-black text-sm mb-1.5">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>Teisingai! +10 XP • Correct Stressed Syllable!</span>
+              <div className="w-full max-w-sm p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-left animate-in zoom-in-95">
+                <div className="flex items-center gap-1.5 text-emerald-800 font-black text-xs mb-1">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Correct! +10 XP</span>
                 </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold text-slate-600">Accented Lithuanian form:</span>
-                  <span className="text-sm font-black text-emerald-900 bg-white px-2.5 py-0.5 rounded-md border border-emerald-200 font-mono">
-                    {currentStressItem.accentedWord}
-                  </span>
-                  <span className="text-xs font-mono text-slate-500">/{currentStressItem.phonetic}/</span>
-                </div>
-                <p className="text-xs font-semibold text-emerald-950 leading-relaxed bg-white/70 p-2.5 rounded-xl border border-emerald-200">
-                  <span className="font-extrabold text-emerald-800">💡 Stress Rule: </span>
+                <p className="text-[11px] text-emerald-950 leading-snug">
+                  <span className="font-bold">Stress Rule: </span>
                   {currentStressItem.stressRule}
                 </p>
               </div>
             )}
 
             {stressAnswerStatus === 'incorrect' && (
-              <div className="w-full max-w-lg mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center justify-between">
-                <span>❌ Ne šis skiemuo. Paklausykite garso dar kartą ir pabandykite!</span>
+              <div className="w-full max-w-sm p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between">
+                <span>❌ Not this syllable. Listen and try again!</span>
                 <button
                   type="button"
                   onClick={() => handlePlayStressAudio(true)}
-                  className="px-2.5 py-1 rounded-lg bg-white border border-rose-300 text-rose-700 font-black hover:bg-rose-100"
+                  className="px-2 py-0.5 rounded-lg bg-white border border-rose-300 text-rose-700 text-xs font-bold cursor-pointer"
                 >
                   Listen 🐢
                 </button>
               </div>
             )}
-
-            {/* Next Word / Navigation */}
-            <div className="w-full flex items-center justify-between pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedSyllableIdx(null);
-                  setStressAnswerStatus('idle');
-                  setStressIndex((prev) => (prev - 1 + filteredStressDrills.length) % filteredStressDrills.length);
-                }}
-                className="flex items-center gap-1 px-4 py-2 rounded-2xl border-2 border-slate-200 text-xs font-extrabold text-slate-600 hover:bg-slate-50 cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Previous</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNextStressItem}
-                className="btn-3d btn-green-3d flex items-center gap-1 px-6 py-2.5 text-xs font-black cursor-pointer shadow-md"
-              >
-                <span>{stressAnswerStatus === 'correct' ? 'Next Word • Kitas →' : 'Skip • Kitas'}</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
           </div>
-        </div>
+
+          {/* Sticky Bottom Action Bar */}
+          <footer className="shrink-0 p-4 bg-white/90 backdrop-blur border-t border-slate-100 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedSyllableIdx(null);
+                setStressAnswerStatus('idle');
+                setStressIndex((prev) => (prev - 1 + filteredStressDrills.length) % filteredStressDrills.length);
+              }}
+              className="px-4 py-3 rounded-2xl border-2 border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition cursor-pointer"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={handleNextStressItem}
+              className="btn-tactile bg-emerald-600 border-b-4 border-emerald-700 active:border-b-0 text-white font-bold py-3 w-full rounded-2xl flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-1"
+            >
+              <span>{stressAnswerStatus === 'correct' ? 'Next Word →' : 'Skip →'}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </footer>
+        </>
       )}
     </div>
   );

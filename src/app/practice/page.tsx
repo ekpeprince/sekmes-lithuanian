@@ -15,6 +15,8 @@ import {
   Flame,
   Mic,
   GraduationCap,
+  BookOpen,
+  ChevronLeft,
 } from 'lucide-react';
 import { UNITS } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
@@ -23,7 +25,7 @@ import { haptics } from '@/lib/haptics';
 import { AudioSpeaker } from '@/components/AudioSpeaker';
 import { SpeakingLab } from '@/components/SpeakingLab';
 
-type PracticeTab = 'speaking_lab' | 'speed_drill' | 'flashcards' | 'mistakes_bank' | 'lessons';
+type PracticeTab = 'hub' | 'speaking_lab' | 'speed_drill' | 'flashcards' | 'mistakes_bank' | 'lessons';
 
 // High-frequency curated flashcard pairs across A1 Lithuanian
 const VOCABULARY_DECK = [
@@ -53,7 +55,7 @@ export default function PracticePage() {
     saveSpeedDrillScoreVal,
   } = useGame();
 
-  const [activeTab, setActiveTab] = useState<PracticeTab>('speaking_lab');
+  const [activeTab, setActiveTab] = useState<PracticeTab>('hub');
 
   // Flashcards state
   const [cardIndex, setCardIndex] = useState(0);
@@ -285,18 +287,43 @@ export default function PracticePage() {
 
   const mistakes = progress.mistakesBank || [];
 
+  if (activeTab === 'speaking_lab') {
+    return (
+      <div className="fixed inset-0 z-40 bg-slate-50 flex flex-col overflow-hidden">
+        <SpeakingLab onBack={() => setActiveTab('hub')} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-8 pb-24">
+    <div className="min-h-screen bg-slate-50 py-6 sm:py-8 px-4 sm:px-8 pb-24">
       <div className="mx-auto max-w-4xl">
-        {/* Header */}
-        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Back to Hub Button when in sub-tab */}
+        {activeTab !== 'hub' && (
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setActiveTab('hub');
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition py-2 px-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs cursor-pointer active:scale-95"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Back to Practice Hub</span>
+            </button>
+          </div>
+        )}
+
+        {/* Practice Gym Header (Default interface chrome in English) */}
+        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
                 <Dumbbell className="h-5 w-5" />
               </span>
               <span className="text-xs font-black uppercase tracking-wider text-sky-600">
-                Practice Gym • Treniruoklis
+                Practice Gym
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
@@ -316,98 +343,207 @@ export default function PracticePage() {
             <button
               type="button"
               onClick={() => refillHearts()}
-              className="btn-3d px-3.5 py-2 rounded-xl bg-rose-500 text-white font-black text-xs uppercase tracking-wider active:scale-95 shadow-xs"
+              className="btn-tactile px-3.5 py-2 rounded-xl bg-rose-500 border-b-4 border-rose-700 active:border-b-0 text-white font-black text-xs uppercase tracking-wider shadow-xs cursor-pointer"
             >
               Refill Hearts
             </button>
           </div>
         </div>
 
-        {/* Practice Mode Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 bg-slate-200/70 p-1.5 rounded-2xl">
-          <button
-            type="button"
-            onClick={() => { sounds.playClick(); setActiveTab('speaking_lab'); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
-              activeTab === 'speaking_lab'
-                ? 'bg-white text-rose-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Mic className="h-4 w-4 text-rose-500" />
-            <span>Pronunciation & Stress Lab</span>
-          </button>
+        {/* ==================================================================== */}
+        {/* PRACTICE GYM HUB: STRUCTURED 2x3 GRID                                */}
+        {/* ==================================================================== */}
+        {activeTab === 'hub' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Card 1: Pronunciation Lab (Microphone Icon) */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setActiveTab('speaking_lab');
+              }}
+              className="btn-tactile bg-white border-2 border-slate-200/90 hover:border-rose-300 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between text-left transition-all group cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 group-hover:scale-105 transition-transform">
+                    <Mic className="w-6 h-6" />
+                  </span>
+                  <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-0.5 rounded-full">
+                    Voice Studio
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-rose-600 transition-colors">
+                  Pronunciation Lab
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                  Real-time speech recognition & syllable stress trainer with instant pronunciation feedback.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-rose-600">
+                <span>Start Practice</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => { sounds.playClick(); setActiveTab('speed_drill'); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
-              activeTab === 'speed_drill'
-                ? 'bg-white text-sky-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Zap className="h-4 w-4" />
-            <span>60s Speed Drill</span>
-          </button>
+            {/* Card 2: 60s Speed Drill (Lightning Icon) */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setActiveTab('speed_drill');
+              }}
+              className="btn-tactile bg-white border-2 border-slate-200/90 hover:border-amber-300 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between text-left transition-all group cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 group-hover:scale-105 transition-transform">
+                    <Zap className="w-6 h-6 fill-amber-400" />
+                  </span>
+                  <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full">
+                    {progress.speedDrillHighScore ? `${progress.speedDrillHighScore} pts High` : '60 Seconds'}
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-amber-600 transition-colors">
+                  60s Speed Drill
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                  Rapid-fire vocabulary blitz against the clock to build instant Lithuanian recall.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-600">
+                <span>Start Challenge</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => { sounds.playClick(); setActiveTab('flashcards'); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
-              activeTab === 'flashcards'
-                ? 'bg-white text-sky-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Layers className="h-4 w-4" />
-            <span>Flashcards ({VOCABULARY_DECK.length})</span>
-          </button>
+            {/* Card 3: Flashcards (Cards Icon) */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setActiveTab('flashcards');
+              }}
+              className="btn-tactile bg-white border-2 border-slate-200/90 hover:border-indigo-300 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between text-left transition-all group cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 group-hover:scale-105 transition-transform">
+                    <Layers className="w-6 h-6" />
+                  </span>
+                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-full">
+                    {knownCards.length}/{VOCABULARY_DECK.length} Mastered
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                  Flashcards
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                  Essential A1 vocabulary deck with native audio pronunciations and usage notes.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
+                <span>Review Cards</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => { sounds.playClick(); setActiveTab('mistakes_bank'); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
-              activeTab === 'mistakes_bank'
-                ? 'bg-white text-rose-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Target className="h-4 w-4" />
-            <span>Mistakes Bank</span>
-            {mistakes.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
-                {mistakes.length}
-              </span>
-            )}
-          </button>
+            {/* Card 4: Grammar Bank (Book Icon) */}
+            <Link
+              href="/grammar"
+              onClick={() => sounds.playClick()}
+              className="btn-tactile bg-white border-2 border-slate-200/90 hover:border-emerald-300 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between text-left transition-all group cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 group-hover:scale-105 transition-transform">
+                    <BookOpen className="w-6 h-6" />
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                    7 Cases
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
+                  Grammar Bank
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                  Comprehensive interactive guide for noun cases, question markers, and declensions.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
+                <span>Explore Grammar</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </Link>
 
-          <button
-            type="button"
-            onClick={() => { sounds.playClick(); setActiveTab('lessons'); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
-              activeTab === 'lessons'
-                ? 'bg-white text-emerald-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            <span>Completed Lessons</span>
-          </button>
+            {/* Card 5: Mistake Review (Target Icon) */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setActiveTab('mistakes_bank');
+              }}
+              className="btn-tactile bg-white border-2 border-slate-200/90 hover:border-rose-300 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between text-left transition-all group cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 group-hover:scale-105 transition-transform">
+                    <Target className="w-6 h-6" />
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                      mistakes.length > 0
+                        ? 'bg-rose-500 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {mistakes.length > 0 ? `${mistakes.length} to fix` : '0 Missed'}
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-rose-600 transition-colors">
+                  Mistake Review
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                  Target and resolve exercises you answered incorrectly during lessons with zero penalty.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-rose-600">
+                <span>Clear Mistakes</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
 
-          <Link
-            href="/grammar"
-            onClick={() => sounds.playClick()}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs ml-auto"
-          >
-            <GraduationCap className="h-4 w-4" />
-            <span>Grammar Bank & Cases 📖</span>
-          </Link>
-        </div>
-
-        {/* TAB 0: PRONUNCIATION / SPEAKING LAB */}
-        {activeTab === 'speaking_lab' && (
-          <SpeakingLab />
+            {/* Card 6: Completed Lessons */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setActiveTab('lessons');
+              }}
+              className="btn-tactile bg-white border-2 border-slate-200/90 hover:border-sky-300 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between text-left transition-all group cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 group-hover:scale-105 transition-transform">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </span>
+                  <span className="text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-200/80 px-2.5 py-0.5 rounded-full">
+                    {progress.completedLessons.length} Done
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-sky-600 transition-colors">
+                  Completed Lessons
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                  Revisit and replay any completed lesson on the learning path to reinforce mastery.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-sky-600">
+                <span>Replay Lessons</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </button>
+          </div>
         )}
 
         {/* TAB 1: 60-SECOND SPEED DRILL */}
@@ -435,9 +571,9 @@ export default function PracticePage() {
                 <button
                   type="button"
                   onClick={startSpeedDrill}
-                  className="btn-3d px-8 py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-lg tracking-wide uppercase shadow-lg border-b-4 border-amber-600 active:scale-95"
+                  className="btn-tactile px-8 py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-lg tracking-wide uppercase shadow-lg border-b-4 border-amber-600 active:border-b-0 cursor-pointer"
                 >
-                  Start 60s Drill (Pradėti)
+                  Start 60s Drill
                 </button>
               </div>
             )}
@@ -493,7 +629,7 @@ export default function PracticePage() {
                       key={`speed-opt-${opt.lt}-${i}`}
                       type="button"
                       onClick={() => handleDrillAnswer(opt.lt)}
-                      className="btn-3d p-4 rounded-2xl bg-slate-50 hover:bg-sky-50 border-2 border-slate-200 hover:border-sky-400 text-slate-800 font-black text-center transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5"
+                      className="btn-tactile p-4 rounded-2xl bg-slate-50 hover:bg-sky-50 border-2 border-slate-200 hover:border-sky-400 text-slate-800 font-black text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
                     >
                       <span className="text-base font-black text-slate-900">{opt.lt}</span>
                       {opt.en && (
@@ -512,7 +648,7 @@ export default function PracticePage() {
                 <div className="w-20 h-20 rounded-3xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center mb-4">
                   <Trophy className="w-10 h-10" />
                 </div>
-                <h3 className="text-3xl font-black text-slate-900 mb-1">Time&apos;s Up! Puikus darbas!</h3>
+                <h3 className="text-3xl font-black text-slate-900 mb-1">Time&apos;s Up! Great work!</h3>
                 <p className="text-slate-500 text-sm font-medium mb-6">
                   You completed the 60-second speed blitz.
                 </p>
@@ -531,9 +667,9 @@ export default function PracticePage() {
                 <button
                   type="button"
                   onClick={startSpeedDrill}
-                  className="btn-3d px-8 py-3.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-sm uppercase tracking-wider"
+                  className="btn-tactile px-8 py-3.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-sm uppercase tracking-wider border-b-4 border-sky-700 active:border-b-0 cursor-pointer"
                 >
-                  Play Again (Iš naujo)
+                  Play Again
                 </button>
               </div>
             )}
@@ -576,7 +712,7 @@ export default function PracticePage() {
               </div>
 
               <div className="text-xs font-bold text-slate-400 group-hover:text-sky-500 transition-colors">
-                Tap card to flip (Spustelėkite apversti)
+                Tap card to flip
               </div>
             </div>
 
@@ -585,25 +721,25 @@ export default function PracticePage() {
               <button
                 type="button"
                 onClick={handlePrevCard}
-                className="btn-3d px-5 py-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-700 font-black text-sm active:scale-95"
+                className="btn-tactile px-5 py-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-700 font-black text-sm active:scale-95 cursor-pointer"
               >
-                Atgal (Prev)
+                Previous
               </button>
 
               <button
                 type="button"
                 onClick={markKnown}
-                className="btn-3d px-6 py-3 rounded-2xl bg-emerald-500 text-white font-black text-sm uppercase tracking-wider active:scale-95 shadow-sm"
+                className="btn-tactile px-6 py-3 rounded-2xl bg-emerald-500 border-b-4 border-emerald-700 active:border-b-0 text-white font-black text-sm uppercase tracking-wider shadow-sm cursor-pointer"
               >
-                Žinau! (Mastered)
+                Mastered
               </button>
 
               <button
                 type="button"
                 onClick={handleNextCard}
-                className="btn-3d px-5 py-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-700 font-black text-sm active:scale-95"
+                className="btn-tactile px-5 py-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-700 font-black text-sm active:scale-95 cursor-pointer"
               >
-                Kitas (Next)
+                Next
               </button>
             </div>
           </div>
@@ -618,7 +754,7 @@ export default function PracticePage() {
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 mb-1">
-                  Klaidų bankas tuščias!
+                  Mistakes Bank Empty
                 </h3>
                 <p className="text-slate-500 text-sm font-medium max-w-sm mx-auto">
                   You have cleared all recorded mistakes. Keep practicing lessons and your missed items will be collected here for review!
@@ -648,11 +784,11 @@ export default function PracticePage() {
                       <div className="flex flex-wrap items-center gap-3 text-xs">
                         {m.userAnswer && (
                           <span className="text-rose-600 font-bold">
-                            Tavo atsakymas: <span className="line-through">{m.userAnswer}</span>
+                            Your answer: <span className="line-through">{m.userAnswer}</span>
                           </span>
                         )}
                         <span className="text-emerald-700 font-black">
-                          Teisingas atsakymas: {m.correctAnswer}
+                          Correct answer: {m.correctAnswer}
                         </span>
                       </div>
 
@@ -670,9 +806,9 @@ export default function PracticePage() {
                       <button
                         type="button"
                         onClick={() => resolveMistakeById(m.id)}
-                        className="btn-3d px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs uppercase tracking-wider active:scale-95 shadow-xs"
+                        className="btn-tactile px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 border-b-4 border-emerald-700 active:border-b-0 text-white font-black text-xs uppercase tracking-wider shadow-xs cursor-pointer"
                       >
-                        Pataisyta (+5 XP)
+                        Fixed (+5 XP)
                       </button>
                     </div>
                   </div>
@@ -726,7 +862,7 @@ export default function PracticePage() {
                     </span>
                     <Link
                       href={`/lesson/${lesson.id}`}
-                      className="btn-3d flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-black text-xs uppercase tracking-wider"
+                      className="btn-tactile flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 border-b-4 border-sky-700 active:border-b-0 text-white font-black text-xs uppercase tracking-wider"
                     >
                       <Play className="h-3.5 w-3.5 fill-white" />
                       <span>Review</span>

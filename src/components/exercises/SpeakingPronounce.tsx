@@ -256,10 +256,10 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col items-center text-center">
       {/* Category Tag */}
-      <div className="w-full text-center sm:text-left mb-2.5 sm:mb-5">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[11px] font-black uppercase tracking-wider mb-1.5">
+      <div className="w-full text-center sm:text-left mb-2 sm:mb-4">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[11px] font-black uppercase tracking-wider mb-1">
           <Sparkles className="w-3 h-3" />
-          Pronunciation Studio • Tarimo treniruotė
+          Pronunciation Studio
         </div>
         <h2 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight">
           {exercise.prompt}
@@ -283,21 +283,21 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             type="button"
             onClick={() => handlePlayModelAudio(false)}
             disabled={isPlayingModelAudio !== null}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer ${
               isPlayingModelAudio === 'normal'
                 ? 'bg-sky-500 text-white ring-2 ring-sky-300 animate-pulse'
                 : 'bg-sky-50 text-sky-600 border border-sky-200 hover:bg-sky-100'
             }`}
           >
             <Volume2 className="w-3.5 h-3.5" />
-            <span>Listen (1.0x)</span>
+            <span>Normal (1.0x)</span>
           </button>
 
           <button
             type="button"
             onClick={() => handlePlayModelAudio(true)}
             disabled={isPlayingModelAudio !== null}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer ${
               isPlayingModelAudio === 'slow'
                 ? 'bg-amber-500 text-white ring-2 ring-amber-300 animate-pulse'
                 : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
@@ -312,46 +312,10 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           {exercise.targetPhrase}
         </div>
 
-        {/* Syllable Stress Guide & Phonetics */}
-        {(exercise.syllables || exercise.phoneticHint) && (
-          <div className="flex flex-col items-center justify-center gap-1.5 my-2">
-            {exercise.syllables ? (
-              <div className="flex flex-wrap items-center justify-center gap-1.5 bg-amber-50/90 border border-amber-300 px-3 py-1.5 rounded-xl shadow-2xs">
-                <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider mr-1">
-                  ⚡ Kirtis (Stress):
-                </span>
-                {exercise.syllables.split(' ').map((wordStr, wIdx) => (
-                  <div key={wIdx} className="flex items-center gap-0.5 bg-white border border-amber-200 px-2 py-0.5 rounded-lg">
-                    {wordStr.split('-').map((syl, sIdx) => {
-                      const isStressed = syl === syl.toUpperCase() && /[A-ZĄČĘĖĮŠŲŪŽ]/.test(syl);
-                      return (
-                        <span
-                          key={sIdx}
-                          className={`px-1.5 py-0.5 rounded text-[11px] font-black ${
-                            isStressed
-                              ? 'bg-amber-400 text-slate-950 ring-1 ring-amber-300'
-                              : 'text-slate-600'
-                          }`}
-                        >
-                          {syl}
-                          {isStressed && '⚡'}
-                        </span>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            ) : exercise.phoneticHint ? (
-              <div className="text-xs font-bold text-slate-500 font-mono tracking-wider bg-slate-100 px-3 py-1 rounded-lg">
-                /{exercise.phoneticHint}/
-              </div>
-            ) : null}
-
-            {exercise.stressTip && (
-              <div className="text-[11px] font-semibold text-amber-900 bg-amber-50/70 border border-amber-200 px-3 py-1 rounded-xl max-w-md text-center">
-                💡 {exercise.stressTip}
-              </div>
-            )}
+        {/* Phonetic Hint */}
+        {exercise.phoneticHint && (
+          <div className="text-xs font-mono font-bold text-slate-400 tracking-wider mb-2">
+            /{exercise.phoneticHint}/
           </div>
         )}
 
@@ -359,6 +323,49 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
         <div className="text-xs sm:text-sm font-medium text-slate-500 mb-3">
           &ldquo;{exercise.translation}&rdquo;
         </div>
+
+        {/* Syllable Stress Guide (Streamlined single card) */}
+        {exercise.syllables && (
+          <div className="w-full max-w-sm bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 sm:p-3.5 text-center shadow-2xs mb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                <span>⚡</span>
+                Syllable Stress:
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 my-1">
+              {exercise.syllables.split(' ').map((wordStr, wIdx) => {
+                const parts = wordStr.split('-');
+                return (
+                  <div key={wIdx} className="flex items-center gap-1 bg-white border border-amber-300/80 px-2.5 py-1 rounded-xl shadow-2xs">
+                    {parts.map((syl, sIdx) => {
+                      const isStressed = syl === syl.toUpperCase() && /[A-ZĄČĘĖĮŠŲŪŽ]/.test(syl);
+                      return (
+                        <React.Fragment key={sIdx}>
+                          {sIdx > 0 && <span className="text-amber-400 font-bold text-xs select-none">·</span>}
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-xs font-black ${
+                              isStressed
+                                ? 'bg-amber-400 text-slate-950 ring-1 ring-amber-300'
+                                : 'text-slate-600'
+                            }`}
+                          >
+                            {syl}
+                          </span>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-[11px] text-amber-900/80 font-medium mt-1 leading-snug">
+              {exercise.stressTip || 'Initial stress with falling tone on both words'}
+            </p>
+          </div>
+        )}
 
         {/* Word-by-Word Matching Chips */}
         <div className="flex flex-wrap items-center justify-center gap-1.5">
@@ -408,20 +415,20 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               type="button"
               onClick={isRecording ? stopListening : startListening}
               disabled={isChecked}
-              className={`relative btn-3d flex items-center justify-center w-16 h-16 sm:w-22 sm:h-22 rounded-full font-black shadow-lg transition-transform active:scale-95 ${
+              className={`relative btn-tactile flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full font-black shadow-lg transition-transform active:scale-95 cursor-pointer ${
                 isRecording
-                  ? 'bg-rose-500 text-white ring-4 ring-rose-200'
+                  ? 'bg-rose-500 text-white ring-4 ring-rose-200 border-b-4 border-rose-700'
                   : spokenText
                   ? 'bg-emerald-500 text-white border-b-4 border-emerald-700'
                   : 'bg-sky-500 hover:bg-sky-400 text-white border-b-4 border-sky-700'
               }`}
             >
               {isRecording ? (
-                <MicOff className="w-7 h-7 sm:w-9 sm:h-9 animate-bounce" />
+                <MicOff className="w-7 h-7 sm:w-8 sm:h-8 animate-bounce" />
               ) : spokenText ? (
-                <CheckCircle2 className="w-7 h-7 sm:w-9 sm:h-9" />
+                <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8" />
               ) : (
-                <Mic className="w-7 h-7 sm:w-9 sm:h-9" />
+                <Mic className="w-7 h-7 sm:w-8 sm:h-8" />
               )}
             </button>
           </div>
@@ -431,7 +438,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             <div className="flex flex-col items-center gap-1.5 animate-fadeIn">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
                 <span>⏱️</span>
-                <span>Liko: {timeLeft}s • {timeLeft}s left</span>
+                <span>{timeLeft}s left</span>
               </div>
               <div className="w-36 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <div
@@ -443,33 +450,33 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           )}
 
           {/* Status Label */}
-          <div className="text-sm font-black text-slate-600 text-center">
+          <div className="text-sm font-bold text-slate-600 text-center">
             {isRecording ? (
               <div className="flex flex-col items-center gap-0.5">
                 <span className="text-rose-600 font-extrabold animate-pulse">
-                  Klausausi... Sakykite ramiai savo tempu!
+                  Listening... Speak at your own pace
                 </span>
                 <span className="text-xs font-medium text-slate-400">
-                  Listening... Tap mic when finished
+                  Tap mic when finished
                 </span>
               </div>
             ) : spokenText ? (
-              <span className="text-emerald-600">Frazė atpažinta! • Speech recognized!</span>
+              <span className="text-emerald-600 font-bold">Phrase recognized!</span>
             ) : (
-              <span>Spauskite mikrofoną ir kalbėkite • Tap mic and speak</span>
+              <span>Tap mic and speak clearly</span>
             )}
           </div>
 
           {/* Transcript Display */}
           {(transcript || spokenText) && (
-            <div className="mt-1 px-5 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-800 font-bold text-base max-w-md w-full text-center">
-              <span className="text-xs text-slate-400 block uppercase tracking-wider mb-1">
-                Jūsų ištarta frazė • Your spoken phrase:
+            <div className="mt-1 px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-800 font-bold text-sm max-w-md w-full text-center">
+              <span className="text-[11px] text-slate-400 block uppercase tracking-wider mb-0.5">
+                Your spoken phrase:
               </span>
               “{transcript || spokenText}”
               {score !== null && (
-                <div className="mt-2 text-xs font-black text-sky-600">
-                  Tarimo tikslumas • Accuracy: {score}%
+                <div className="mt-1.5 text-xs font-black text-sky-600">
+                  Accuracy: {score}%
                 </div>
               )}
             </div>
@@ -483,13 +490,13 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-300 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors cursor-pointer shadow-xs"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Bandykite dar kartą • Try Again</span>
+              <span>Try Again</span>
             </button>
           )}
 
           {!speechSupported && (
             <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
-              Balso atpažinimas šioje naršyklėje nepalaikomas • Speech recognition not supported here. Listen to native audio or tap &quot;Can&apos;t speak now&quot;.
+              Speech recognition is not supported in this browser. Listen to native audio or tap &quot;Can&apos;t speak right now&quot;.
             </div>
           )}
 
@@ -498,16 +505,16 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             <button
               type="button"
               onClick={handleCantSpeak}
-              className="mt-3 text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="mt-2 text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <VolumeX className="w-3.5 h-3.5" />
-              Negaliu dabar kalbėti • Can&apos;t speak now
+              Can&apos;t speak right now
             </button>
           )}
         </div>
       ) : (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-bold flex items-center gap-2">
-          <span>Tylos režimas • Silent mode: read aloud in your head and tap &quot;CHECK&quot;.</span>
+          <span>Silent mode: read aloud in your head and tap &quot;CHECK&quot;.</span>
         </div>
       )}
     </div>
