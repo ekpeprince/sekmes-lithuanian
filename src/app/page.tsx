@@ -24,13 +24,13 @@ export default function DashboardPage() {
         {/* Left Columns: Learning Tree */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col items-center min-w-0 w-full">
           {/* Sleek Compact Daily Goal Tracker Card (Mobile & Tablet only) */}
-          <div className="md:hidden w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xs mb-3">
+          <div className="md:hidden w-full bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs mb-3.5 dark:bg-slate-900 dark:border-slate-800">
             {/* Header Row */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-xs shrink-0">🎯</span>
+              <div className="flex items-center min-w-0">
+                <span className="text-xs shrink-0 mr-1.5">🎯</span>
                 <span className="text-xs font-black text-slate-800 dark:text-slate-100 shrink-0">Daily Goal</span>
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full ml-1.5 shrink-0">
                   {isGoalMet ? 'Goal Met! 🎉' : `⏱️ ${activeMinutesToday}m today`}
                 </span>
               </div>
@@ -42,7 +42,7 @@ export default function DashboardPage() {
             {/* Progress Track */}
             <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
               <div
-                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-full h-full transition-all duration-500"
                 style={{ width: `${dailyXpProgress}%` }}
               />
             </div>
@@ -78,12 +78,12 @@ export default function DashboardPage() {
         {/* Right Column: Daily Goals, Quests, Multiplayer Duel, Phrase of Day */}
         <div className="hidden lg:flex lg:col-span-5 xl:col-span-5 flex-col gap-4 min-w-0 w-full sticky top-20 max-h-[calc(100vh-5.5rem)] overflow-y-auto pr-1">
           {/* Daily Goal Card (Top of Desktop Right Rail) */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xs">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs mb-3.5 dark:bg-slate-900 dark:border-slate-800">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-xs shrink-0">🎯</span>
+              <div className="flex items-center min-w-0">
+                <span className="text-xs shrink-0 mr-1.5">🎯</span>
                 <span className="text-xs font-black text-slate-800 dark:text-slate-100 shrink-0">Daily Goal</span>
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full ml-1.5 shrink-0">
                   {isGoalMet ? 'Goal Met! 🎉' : `⏱️ ${activeMinutesToday}m today`}
                 </span>
               </div>
@@ -94,7 +94,7 @@ export default function DashboardPage() {
 
             <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
               <div
-                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-full h-full transition-all duration-500"
                 style={{ width: `${dailyXpProgress}%` }}
               />
             </div>
