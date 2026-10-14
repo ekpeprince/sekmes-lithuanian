@@ -24,6 +24,8 @@ import {
   Check,
   Flame,
   Info,
+  ChevronDown,
+  Lightbulb,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
@@ -252,6 +254,29 @@ export default function TutorPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const scenarioDropdownRef = useRef<HTMLDivElement>(null);
+
+  // UI modal and dropdown states
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [scenarioDropdownOpen, setScenarioDropdownOpen] = useState(false);
+  const [expandedTips, setExpandedTips] = useState<Record<string, boolean>>({});
+
+  const toggleTip = (msgId: string) => {
+    setExpandedTips((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        scenarioDropdownRef.current &&
+        !scenarioDropdownRef.current.contains(event.target as Node)
+      ) {
+        setScenarioDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const currentScenario = SCENARIOS.find((s) => s.id === scenario) || SCENARIOS[0];
 
@@ -563,311 +588,310 @@ export default function TutorPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] bg-slate-50 pb-20 md:pb-6">
-      {/* Top Banner */}
-      <header className="bg-white border-b-2 border-slate-200 px-4 py-4 md:px-8">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-2xl bg-gradient-to-br ${currentScenario.color} text-white shadow-md`}>
-              <currentScenario.icon className="h-6 w-6" />
+    <div className="flex flex-col h-[calc(100dvh-57px)] md:h-[calc(100vh-65px)] pb-16 md:pb-0 max-w-4xl w-full mx-auto overflow-hidden bg-slate-50 relative select-none">
+      {/* 1. Compact Top Bar with Scenario Switcher & Settings */}
+      <header className="shrink-0 px-3 sm:px-4 py-2.5 bg-white border-b border-slate-200/80 flex items-center justify-between gap-2 shadow-2xs z-30">
+        {/* Scenario Switcher Dropdown Trigger */}
+        <div className="relative" ref={scenarioDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setScenarioDropdownOpen((prev) => !prev)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200 font-extrabold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer shadow-2xs"
+            aria-expanded={scenarioDropdownOpen}
+            aria-haspopup="true"
+          >
+            <div className={`w-6 h-6 rounded-xl bg-gradient-to-br ${currentScenario.color} text-white flex items-center justify-center shadow-xs text-xs shrink-0`}>
+              <currentScenario.icon className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-black text-slate-800">
-                  Pokalbis su Aiste • AI Tutor
-                </h1>
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border border-emerald-300">
-                  Aistė • Vilnius
-                </span>
+            <span className="truncate max-w-[130px] sm:max-w-[220px]">
+              {scenario === 'custom' ? customTopic.split('(')[0].trim() : currentScenario.title}
+            </span>
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${scenarioDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Dropdown Popover */}
+          {scenarioDropdownOpen && (
+            <div className="absolute top-full left-0 mt-1.5 w-72 sm:w-80 rounded-2xl bg-white border-2 border-slate-200 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Choose Scenario
               </div>
-              <p className="text-xs md:text-sm text-slate-500 font-medium">
-                {scenario === 'custom'
-                  ? `Custom Roleplay: ${customTopic} • Role: ${customRole}`
-                  : 'Real-time spoken Lithuanian practice with persistent memory and voice responses.'}
-              </p>
+              <div className="space-y-1">
+                {SCENARIOS.map((sc) => {
+                  const Icon = sc.icon;
+                  const isSelected = sc.id === scenario;
+                  return (
+                    <button
+                      key={sc.id}
+                      type="button"
+                      onClick={() => {
+                        handleSelectScenario(sc.id);
+                        setScenarioDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition cursor-pointer ${
+                        isSelected
+                          ? 'bg-sky-50 text-sky-900 font-bold border border-sky-200'
+                          : 'hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${sc.color} text-white flex items-center justify-center shrink-0 shadow-xs`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold truncate">{sc.title}</div>
+                          <div className="text-[10px] text-slate-400 truncate">{sc.subtitle}</div>
+                        </div>
+                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-sky-600 shrink-0 ml-2" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-
-          {/* Quick Actions Bar */}
-          <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
-            {/* Memory Modal Pill */}
-            <button
-              onClick={() => setIsMemoryModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-xl transition shadow-2xs"
-              title="Aistė's Memory: What she remembers about you"
-            >
-              <Brain className="h-3.5 w-3.5 text-violet-600" />
-              <span>
-                Atmintis ({memory.facts.length + (memory.learnerName ? 1 : 0)})
-              </span>
-            </button>
-
-            {/* Auto-Speak Toggle */}
-            <button
-              onClick={() => setAutoSpeak(!autoSpeak)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition shadow-2xs ${
-                autoSpeak
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                  : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
-              }`}
-              title={autoSpeak ? 'Auto-Speak Responses is ON' : 'Auto-Speak Responses is OFF'}
-            >
-              {autoSpeak ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-              <span>{autoSpeak ? 'Balsas ĮJ' : 'Balsas IŠJ'}</span>
-            </button>
-
-            {/* Audio Speed Toggle */}
-            <button
-              onClick={() => setIsSlowSpeed(!isSlowSpeed)}
-              className={`px-2.5 py-2 text-xs font-bold rounded-xl border transition shadow-2xs ${
-                isSlowSpeed
-                  ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-              }`}
-              title={isSlowSpeed ? 'Slow pronunciation (0.75x)' : 'Normal speed (1.0x)'}
-            >
-              {isSlowSpeed ? '🐢 0.75x' : '🐰 1.0x'}
-            </button>
-
-            {scenario === 'custom' && (
-              <button
-                onClick={() => setIsCustomModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition shadow-2xs"
-                title="Edit custom topic and role"
-              >
-                <Settings className="h-3.5 w-3.5" />
-                <span>Keisti temą</span>
-              </button>
-            )}
-
-            <button
-              onClick={handleRestart}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition shadow-2xs"
-              title="Restart conversation"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Iš naujo</span>
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* Memory Notification Toast Banner */}
-        {learnedFactToast && (
-          <div className="max-w-4xl mx-auto mt-3 animate-in fade-in slide-in-from-top duration-300">
-            <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-2xl shadow-md text-xs font-bold">
-              <div className="flex items-center gap-2">
-                <Brain className="h-4 w-4 shrink-0 text-violet-200 animate-pulse" />
-                <span>Aistė įsiminė apie tave: „{learnedFactToast}“</span>
-              </div>
-              <button
-                onClick={() => setLearnedFactToast(null)}
-                className="text-violet-200 hover:text-white p-1"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Right side: Quick Memory & Settings Buttons */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Quick Memory Pill */}
+          <button
+            type="button"
+            onClick={() => setIsMemoryModalOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-xl transition shadow-2xs cursor-pointer"
+            title="Aistė's Memory: What she remembers about you"
+          >
+            <Brain className="w-3.5 h-3.5 text-violet-600" />
+            <span className="hidden sm:inline">Memory</span>
+            <span className="text-[11px] bg-violet-200/80 text-violet-800 px-1.5 py-0.2 rounded-full font-black">
+              {memory.facts.length + (memory.learnerName ? 1 : 0)}
+            </span>
+          </button>
 
-        {/* Scenario Selection Cards */}
-        <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-2.5 mt-4">
-          {SCENARIOS.map((sc) => {
-            const Icon = sc.icon;
-            const isSelected = sc.id === scenario;
-            return (
-              <button
-                key={sc.id}
-                onClick={() => handleSelectScenario(sc.id)}
-                className={`flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all text-left ${isSelected
-                    ? 'border-sky-500 bg-sky-50/80 shadow-xs'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
-              >
-                <div
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${sc.color} text-white shadow-xs`}
-                >
-                  <Icon className="h-4.5 w-4.5" />
-                </div>
-                <div className="min-w-0">
-                  <div className={`text-xs font-black truncate ${isSelected ? 'text-sky-900' : 'text-slate-800'}`}>
-                    {sc.title}
-                  </div>
-                  <div className="text-[10px] font-semibold text-slate-400 truncate">{sc.subtitle}</div>
-                </div>
-              </button>
-            );
-          })}
+          {/* Settings Modal Button */}
+          <button
+            type="button"
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition shadow-2xs cursor-pointer"
+            title="Tutor settings & audio controls"
+          >
+            <Settings className="w-3.5 h-3.5 text-slate-500" />
+            <span className="hidden sm:inline">Settings</span>
+          </button>
         </div>
       </header>
 
-      {/* Main Chat Flow */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
-        {/* Custom topic active banner */}
-        {scenario === 'custom' && (
-          <div className="mb-4 bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">✨</span>
-              <div>
-                <span className="text-xs font-black uppercase text-rose-800 block">Aktyvus scenarijus • Active Scenario:</span>
-                <span className="text-sm font-bold text-slate-800">{customTopic}</span>
-                <span className="text-xs text-slate-500 ml-2 font-medium">• Rolė • Role: {customRole}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsCustomModalOpen(true)}
-              className="text-xs font-bold text-rose-700 hover:text-rose-900 bg-white border border-rose-200 px-3 py-1.5 rounded-xl shadow-2xs shrink-0"
-            >
-              Keisti temą • Change
-            </button>
+      {/* Memory Notification Toast Banner */}
+      {learnedFactToast && (
+        <div className="shrink-0 px-4 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold flex items-center justify-between gap-2 shadow-xs z-20">
+          <div className="flex items-center gap-2 min-w-0">
+            <Brain className="w-4 h-4 text-violet-200 shrink-0 animate-pulse" />
+            <span className="truncate">Aistė remembered: &ldquo;{learnedFactToast}&rdquo;</span>
           </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setLearnedFactToast(null)}
+            className="text-violet-200 hover:text-white p-0.5 cursor-pointer shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
-        <div className="flex-1 space-y-4 mb-4 overflow-y-auto">
-          {messages.map((msg) => {
-            const isAssistant = msg.role === 'assistant';
-            const isPlayingThis = audioPlayingId === msg.id;
+      {/* Custom scenario active context alert */}
+      {scenario === 'custom' && (
+        <div className="shrink-0 px-3.5 py-1.5 bg-rose-50 border-b border-rose-200 text-xs text-rose-800 flex items-center justify-between gap-2">
+          <div className="truncate">
+            <span className="font-bold">Roleplay: </span>
+            <span>{customTopic}</span>
+            <span className="text-slate-500 ml-1.5">({customRole})</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsCustomModalOpen(true)}
+            className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-white border border-rose-200 px-2 py-0.5 rounded-lg shrink-0 cursor-pointer shadow-2xs"
+          >
+            Edit
+          </button>
+        </div>
+      )}
 
-            return (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${isAssistant ? 'items-start' : 'items-end'}`}
-              >
-                <div
-                  className={`max-w-[88%] md:max-w-[75%] rounded-3xl p-4 shadow-xs transition-all ${isAssistant
-                      ? 'bg-white border-2 border-slate-200 rounded-tl-sm text-slate-800'
-                      : 'bg-emerald-600 text-white rounded-tr-sm'
-                    }`}
-                >
-                  {/* Lithuanian Text */}
-                  <div className="flex items-start justify-between gap-3">
-                    <p className={`text-base md:text-lg font-bold leading-relaxed ${isAssistant ? 'text-slate-900' : 'text-white'}`}>
-                      {msg.textLt}
-                    </p>
+      {/* 2. Main Chat Messages Flow */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-3 space-y-3.5 scroll-smooth">
+        {messages.map((msg) => {
+          const isAssistant = msg.role === 'assistant';
+          const isPlayingThis = audioPlayingId === msg.id;
 
-                    {isAssistant && (
-                      <div className="flex items-center gap-1 shrink-0">
+          return (
+            <div
+              key={msg.id}
+              className={`flex flex-col ${isAssistant ? 'items-start' : 'items-end'}`}
+            >
+              {/* Header with Avatar and Timestamp */}
+              {isAssistant ? (
+                <div className="flex items-center gap-1.5 mb-1 pl-1">
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[10px] font-black shadow-2xs">
+                    A
+                  </div>
+                  <span className="text-xs font-bold text-slate-700">Aistė</span>
+                  <span className="text-[10px] text-slate-400 font-medium">• {msg.timestamp}</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-end gap-1.5 mb-1 pr-1">
+                  <span className="text-xs font-bold text-slate-600">You</span>
+                  <span className="text-[10px] text-slate-400 font-medium">• {msg.timestamp}</span>
+                </div>
+              )}
+
+              {/* Speech Bubble */}
+              {isAssistant ? (
+                <div className="max-w-[92%] sm:max-w-[80%] flex flex-col items-start">
+                  <div className="w-full bg-white border border-slate-200/90 rounded-2xl rounded-tl-xs p-3.5 sm:p-4 shadow-2xs text-slate-800">
+                    {/* Primary Lithuanian Text + Inline Action Icons */}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-base font-semibold text-slate-900 leading-relaxed">
+                        {msg.textLt}
+                      </p>
+
+                      <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-0.5">
                         <button
+                          type="button"
                           onClick={() => handlePlayAudio(msg.id, msg.textLt, false)}
                           disabled={isPlayingThis}
-                          className={`p-2 rounded-xl transition ${isPlayingThis
-                              ? 'bg-emerald-100 text-emerald-700 animate-pulse'
-                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          className={`p-1.5 rounded-xl transition cursor-pointer ${
+                            isPlayingThis
+                              ? 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-300 animate-pulse'
+                              : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-100'
+                          }`}
+                          title="Play pronunciation"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                        {msg.tip && (
+                          <button
+                            type="button"
+                            onClick={() => toggleTip(msg.id)}
+                            className={`p-1.5 rounded-xl transition cursor-pointer ${
+                              expandedTips[msg.id]
+                                ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-200'
+                                : 'text-slate-400 hover:text-amber-600 hover:bg-slate-100'
                             }`}
-                          title="Listen at normal speed (1.0x)"
-                        >
-                          <Volume2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handlePlayAudio(msg.id, msg.textLt, true)}
-                          disabled={isPlayingThis}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 text-[11px] font-bold"
-                          title="Listen slowly (0.75x)"
-                        >
-                          🐢
-                        </button>
+                            title="Toggle grammar hint"
+                          >
+                            <Lightbulb className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Smooth Grammar Hint Callout */}
+                    {msg.tip && expandedTips[msg.id] && (
+                      <div className="mt-2.5 pt-2 border-t border-amber-100/90 flex items-start gap-1.5 text-xs text-amber-900 bg-amber-50/80 border border-amber-200/70 rounded-xl p-2.5 animate-in fade-in">
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                        <span className="font-medium leading-snug">{msg.tip}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* English Subtitle (Always visible) */}
-                  {isAssistant && msg.textEn && (
-                    <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 block mb-0.5">
-                        English Subtitle:
-                      </span>
-                      <p className="text-xs md:text-sm font-medium text-slate-600 italic bg-slate-50/90 p-2.5 rounded-xl border border-slate-100">
-                        {msg.textEn}
-                      </p>
-                    </div>
+                  {/* Subtle Subtitle directly below bubble */}
+                  {msg.textEn && (
+                    <p className="text-xs text-slate-500 font-medium italic mt-1 pl-1 leading-relaxed">
+                      &ldquo;{msg.textEn}&rdquo;
+                    </p>
                   )}
-
-                  {/* Grammar Tip */}
-                  {isAssistant && msg.tip && (
-                    <div className="mt-2.5 flex items-start gap-1.5 bg-amber-50/80 border border-amber-200 text-amber-900 text-xs font-medium p-2.5 rounded-xl">
-                      <HelpCircle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
-                      <span>{msg.tip}</span>
-                    </div>
-                  )}
-
-                  <div className={`mt-1.5 text-[10px] font-bold ${isAssistant ? 'text-slate-400' : 'text-emerald-200'} text-right`}>
-                    {msg.timestamp}
+                </div>
+              ) : (
+                <div className="max-w-[88%] sm:max-w-[75%] bg-emerald-600 text-white rounded-2xl rounded-tr-xs p-3.5 px-4 shadow-2xs text-left">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <p className="text-base font-semibold leading-relaxed">
+                      {msg.textLt}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handlePlayAudio(msg.id, msg.textLt, false)}
+                      className="p-1 text-emerald-200 hover:text-white transition shrink-0 cursor-pointer"
+                      title="Pronounce phrase"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-
-          {/* Loading indicator */}
-          {loading && (
-            <div className="flex items-center gap-2 text-slate-500 bg-white border border-slate-200 rounded-2xl p-3 w-fit">
-              <div className="flex gap-1">
-                <span className="h-2 w-2 rounded-full bg-violet-500 animate-bounce"></span>
-                <span className="h-2 w-2 rounded-full bg-violet-500 animate-bounce delay-150"></span>
-                <span className="h-2 w-2 rounded-full bg-violet-500 animate-bounce delay-300"></span>
-              </div>
-              <span className="text-xs font-bold">Aistė galvoja atsakymą... • Aistė is thinking...</span>
+              )}
             </div>
-          )}
+          );
+        })}
 
-          <div ref={messagesEndRef} />
+        {/* Loading indicator */}
+        {loading && (
+          <div className="flex items-center gap-2 text-slate-500 bg-white border border-slate-200 rounded-2xl p-3 w-fit shadow-2xs">
+            <div className="flex gap-1">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce"></span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce delay-150"></span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce delay-300"></span>
+            </div>
+            <span className="text-xs font-bold text-slate-600">Aistė is typing...</span>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* 3. Suggested Horizontal Chip Tray */}
+      {suggestions.length > 0 && !loading && (
+        <div className="shrink-0 px-3 sm:px-4 py-1.5 bg-slate-50/95 border-t border-slate-200/60">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 select-none">
+              Suggested:
+            </span>
+            {suggestions.map((s, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSendMessage(s.lt)}
+                title={s.en ? `"${s.en}" (Tap to reply)` : 'Tap to reply'}
+                className="px-3 py-1.5 rounded-full border border-slate-200/90 bg-white text-xs font-medium text-slate-700 whitespace-nowrap active:scale-95 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/50 shadow-2xs transition-all shrink-0 cursor-pointer"
+              >
+                {s.lt}
+              </button>
+            ))}
+          </div>
         </div>
+      )}
 
-        {/* Suggested Replies Chips */}
-        {suggestions.length > 0 && !loading && (
-          <div className="mb-3">
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
-              Patarimai atsakymui • Tap to reply:
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {suggestions.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSendMessage(s.lt)}
-                  className="group flex flex-col text-left px-3.5 py-2 rounded-2xl bg-white border-2 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all shadow-xs"
-                >
-                  <span className="text-xs font-extrabold text-slate-800 group-hover:text-emerald-800">
-                    {s.lt}
-                  </span>
-                  <span className="text-[10px] font-medium text-slate-400 group-hover:text-emerald-600">
-                    {s.en}
-                  </span>
-                </button>
-              ))}
-            </div>
+      {/* Listening Status Indicator */}
+      {isRecording && (
+        <div className="shrink-0 px-4 py-1.5 bg-rose-500 text-white text-xs font-bold flex items-center justify-between animate-pulse">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+            <span>Listening... Speak in Lithuanian</span>
           </div>
-        )}
-
-        {/* Listening Status Indicator */}
-        {isRecording && (
-          <div className="mb-2 flex items-center justify-between bg-red-500 text-white px-4 py-2 rounded-2xl text-xs font-bold animate-pulse shadow-md">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-white animate-ping" />
-              <span>Klausausi... Kalbėkite lietuviškai dabar (Listening...)</span>
-            </div>
-            <button
-              onClick={toggleSpeechRecognition}
-              className="text-white hover:underline uppercase text-[10px] tracking-wider"
-            >
-              Baigti (Stop)
-            </button>
-          </div>
-        )}
-
-        {/* Input Controls Bar */}
-        <div className="bg-white rounded-3xl border-2 border-slate-200 p-2 shadow-sm flex items-center gap-2">
-          {/* Voice Input Button */}
           <button
+            type="button"
             onClick={toggleSpeechRecognition}
-            className={`p-3 rounded-2xl transition-all flex items-center justify-center ${isRecording
-                ? 'bg-red-500 text-white animate-pulse shadow-md ring-4 ring-red-200'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
+            className="text-white hover:underline text-[10px] uppercase tracking-wider font-black cursor-pointer"
+          >
+            Stop
+          </button>
+        </div>
+      )}
+
+      {/* 4. Floating 3D Interaction Input Bar */}
+      <div className="shrink-0 p-3 sm:p-4 bg-white/95 backdrop-blur-md border-t border-slate-200/80">
+        <div className="flex items-center gap-2 bg-slate-50/90 border-2 border-slate-200/90 rounded-2xl p-1.5 shadow-2xs focus-within:border-emerald-500 focus-within:bg-white transition-all">
+          {/* Elevated 3D Mic button */}
+          <button
+            type="button"
+            onClick={toggleSpeechRecognition}
+            className={`p-2.5 sm:p-3 rounded-full transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+              isRecording
+                ? 'bg-rose-500 hover:bg-rose-600 text-white ring-4 ring-rose-200 animate-pulse shadow-md'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md active:translate-y-0.5'
+            }`}
             title={isRecording ? 'Listening in Lithuanian... Click to stop' : 'Speak in Lithuanian (Microphone)'}
           >
-            {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>
 
-          {/* Text Input */}
+          {/* Clean Input Field */}
           <input
             type="text"
             value={inputText}
@@ -878,33 +902,155 @@ export default function TutorPage() {
                 handleSendMessage();
               }
             }}
-            placeholder={
-              isRecording
-                ? 'Klausausi... Kalbėkite lietuviškai...'
-                : 'Atsakykite lietuviškai... (Type or use mic)'
-            }
-            className="flex-1 px-3 py-2 text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none"
+            placeholder={isRecording ? 'Listening... Speak in Lithuanian' : 'Reply in Lithuanian...'}
+            className="flex-1 bg-transparent px-2.5 py-2 text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none min-w-0"
           />
 
-          {/* Send Button */}
+          {/* Send button with +5 XP micro-badge */}
           <button
+            type="button"
             onClick={() => handleSendMessage()}
             disabled={!inputText.trim() || loading}
-            className={`p-3 rounded-2xl font-bold transition-all flex items-center justify-center ${inputText.trim() && !loading
-                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md active:translate-y-0.5'
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              }`}
+            className={`relative btn-tactile p-2.5 sm:p-3 rounded-full font-bold transition-all flex items-center justify-center shrink-0 cursor-pointer ${
+              inputText.trim() && !loading
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md active:translate-y-0.5'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+            }`}
+            title="Send reply (+5 XP)"
           >
-            <Send className="h-5 w-5" />
+            <Send className="w-4.5 h-4.5" />
+            <span className="absolute -top-1 -right-1 bg-amber-400 text-amber-950 font-black text-[9px] px-1.5 py-0.2 rounded-full border border-white shadow-xs select-none">
+              +5 XP
+            </span>
           </button>
         </div>
+      </div>
 
-        {/* Practice Reward Footer */}
-        <div className="mt-2 text-center flex items-center justify-center gap-2 text-xs font-bold text-amber-700">
-          <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-          <span>Earn +5 XP for each completed conversation turn!</span>
+      {/* Settings Modal Sheet */}
+      {isSettingsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border-2 border-slate-100 flex flex-col gap-4 animate-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-slate-100 text-slate-700">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">Tutor Settings</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Voice, speed & conversation options</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Audio Speed */}
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                Pronunciation Speed:
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSlowSpeed(false)}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    !isSlowSpeed
+                      ? 'bg-sky-50 text-sky-700 border-sky-300 shadow-2xs font-black'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>🐰 Normal (1.0x)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSlowSpeed(true)}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isSlowSpeed
+                      ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-2xs font-black'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>🐢 Slow (0.75x)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Auto-Speak Toggle */}
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                Automatic Voice Responses:
+              </label>
+              <button
+                type="button"
+                onClick={() => setAutoSpeak(!autoSpeak)}
+                className={`w-full py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  autoSpeak
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  {autoSpeak ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
+                  {autoSpeak ? 'Auto-speak enabled' : 'Auto-speak muted'}
+                </span>
+                <span className="text-[11px] font-black">{autoSpeak ? 'ON' : 'OFF'}</span>
+              </button>
+            </div>
+
+            {/* Tutor Memory Quick Access */}
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                Persistent Learner Memory:
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSettingsModalOpen(false);
+                  setIsMemoryModalOpen(true);
+                }}
+                className="w-full py-2 px-3 rounded-xl border border-violet-200 bg-violet-50 text-violet-800 text-xs font-bold hover:bg-violet-100 transition flex items-center justify-between cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Brain className="w-4 h-4 text-violet-600" />
+                  <span>Manage Remembered Facts</span>
+                </span>
+                <span className="text-[11px] font-black bg-violet-200 px-2 py-0.5 rounded-full">
+                  {memory.facts.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Restart Conversation */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  handleRestart();
+                  setIsSettingsModalOpen(false);
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-800 transition cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Restart Chat</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
+      )}
 
       {/* Tutor Memory Drawer / Modal */}
       {isMemoryModalOpen && (
@@ -927,7 +1073,7 @@ export default function TutorPage() {
               <button
                 type="button"
                 onClick={() => setIsMemoryModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -950,7 +1096,7 @@ export default function TutorPage() {
                 <button
                   type="button"
                   onClick={handleSaveLearnerName}
-                  className="px-3 py-1.5 text-xs font-bold bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition"
+                  className="px-3 py-1.5 text-xs font-bold bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition cursor-pointer"
                 >
                   Išsaugoti
                 </button>
@@ -998,8 +1144,9 @@ export default function TutorPage() {
                     >
                       <span>• {fact}</span>
                       <button
+                        type="button"
                         onClick={() => handleRemoveFact(idx)}
-                        className="text-slate-400 hover:text-rose-500 p-1"
+                        className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
                         title="Ištrinti faktą"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -1034,7 +1181,7 @@ export default function TutorPage() {
               <button
                 type="button"
                 onClick={handleResetMemory}
-                className="text-xs font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1"
+                className="text-xs font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>Išvalyti visą atmintį</span>
@@ -1043,7 +1190,7 @@ export default function TutorPage() {
               <button
                 type="button"
                 onClick={() => setIsMemoryModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition"
+                className="px-4 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
               >
                 Uždaryti
               </button>
@@ -1073,7 +1220,7 @@ export default function TutorPage() {
               <button
                 type="button"
                 onClick={() => setIsCustomModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1093,10 +1240,11 @@ export default function TutorPage() {
                       setCustomTopic(preset.topic);
                       setCustomRole(preset.role);
                     }}
-                    className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 text-left transition-all ${customTopic === preset.topic
+                    className={`flex items-start gap-2.5 p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                      customTopic === preset.topic
                         ? 'border-rose-500 bg-rose-50/70 shadow-2xs'
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
+                    }`}
                   >
                     <span className="text-xl shrink-0 mt-0.5">{preset.icon}</span>
                     <div className="min-w-0">
@@ -1146,7 +1294,7 @@ export default function TutorPage() {
               <button
                 type="button"
                 onClick={() => setIsCustomModalOpen(false)}
-                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 rounded-xl"
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 rounded-xl cursor-pointer"
               >
                 Atšaukti (Cancel)
               </button>
@@ -1155,7 +1303,7 @@ export default function TutorPage() {
                 type="button"
                 onClick={() => handleApplyCustomScenario(customTopic, customRole)}
                 disabled={!customTopic.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-rose-600 hover:bg-rose-700 text-white rounded-2xl shadow-md transition active:translate-y-0.5 disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 text-xs font-black uppercase tracking-wider bg-rose-600 hover:bg-rose-700 text-white rounded-2xl shadow-md transition active:translate-y-0.5 disabled:opacity-50 cursor-pointer"
               >
                 <Sparkles className="h-4 w-4" />
                 <span>Pradėti pokalbį • Start Chat</span>
