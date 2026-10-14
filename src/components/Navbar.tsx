@@ -55,7 +55,7 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Streak Pill */}
             <div 
-              className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0"
+              className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200/80 transition-colors dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 text-slate-800 dark:text-slate-100 font-bold text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0"
               title="Daily Learning Streak"
             >
               <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-orange-500 text-orange-500 shrink-0" />
@@ -64,7 +64,7 @@ export const Navbar: React.FC = () => {
 
             {/* XP / Energy Pill */}
             <div 
-              className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0"
+              className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200/80 transition-colors dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 text-slate-800 dark:text-slate-100 font-bold text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0"
               title="Total Experience Points"
             >
               <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-500 text-amber-500 shrink-0" />
@@ -75,7 +75,7 @@ export const Navbar: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowHeartModal(true)}
-              className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0 transition-colors cursor-pointer group"
+              className="flex items-center gap-1 bg-slate-100 hover:bg-rose-50 hover:border-rose-200/80 transition-colors dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 text-slate-800 dark:text-slate-100 font-bold text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-1 min-w-0 cursor-pointer group"
               title="Hearts remaining (Click to refill)"
             >
               <Heart className={`h-3.5 w-3.5 sm:h-4 sm:w-4 fill-rose-500 text-rose-500 shrink-0 ${progress.hearts <= 1 ? 'animate-pulse text-red-600' : 'group-hover:scale-110 transition-transform'}`} />

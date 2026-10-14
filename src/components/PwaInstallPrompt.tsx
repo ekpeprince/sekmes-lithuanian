@@ -134,8 +134,8 @@ export const PwaInstallPrompt: React.FC = () => {
       <aside aria-label="Install LabasApp" className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-[410px] z-50 animate-pop">
         <div className="rounded-2xl bg-slate-900/95 backdrop-blur-md p-4 text-white shadow-2xl border border-slate-700/60 flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-11 w-11 shrink-0 rounded-xl bg-gradient-to-tr from-emerald-500 to-green-400 p-0.5 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/20 font-black text-white">
-              LT
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 p-1 shadow-md shadow-emerald-500/25 border border-emerald-400/30">
+              <span className="text-2xl select-none leading-none">🇱🇹</span>
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-sm font-bold tracking-tight text-white">
