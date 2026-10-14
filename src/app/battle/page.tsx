@@ -100,14 +100,17 @@ function BattleArenaContent() {
   // In-Game state
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnsweredCurrentRound, setHasAnsweredCurrentRound] = useState(false);
+  const [roundStatus, setRoundStatus] = useState<'answering' | 'round_complete'>('answering');
   const [timeLeft, setTimeLeft] = useState<number>(15);
   const [roundStartTime, setRoundStartTime] = useState<number>(Date.now());
   const [roundTransitioning, setRoundTransitioning] = useState<boolean>(false);
   const [rewardClaimed, setRewardClaimed] = useState<boolean>(false);
+  const [activeRival, setActiveRival] = useState<AIRival | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
   const advanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const watchdogTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [guestId] = useState<string>(() => {
     if (typeof window === 'undefined') return 'guest-user';
@@ -154,6 +157,7 @@ function BattleArenaContent() {
       sounds.playClick();
       if (joined.status === 'in_progress') {
         setView('in_game');
+        setRoundStatus('answering');
       }
     } catch (err) {
       console.error('Error joining room:', err);
@@ -194,6 +198,7 @@ function BattleArenaContent() {
         setTimeLeft(15);
         setSelectedOption(null);
         setHasAnsweredCurrentRound(false);
+        setRoundStatus('answering');
         setRoundTransitioning(false);
       } else if (updatedRoom.status === 'finished') {
         setView('results');
@@ -205,31 +210,56 @@ function BattleArenaContent() {
     };
   }, [room?.id, view]);
 
-  // Trigger round advance with review delay
-  const triggerRoundAdvance = (targetRound: number) => {
-    if (roundTransitioning) return;
-    setRoundTransitioning(true);
+  // Finish battle session cleanly
+  const finishBattle = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-
+    if (watchdogTimerRef.current) clearTimeout(watchdogTimerRef.current);
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
-    advanceTimeoutRef.current = setTimeout(async () => {
-      if (!room) return;
-      const nextRound = targetRound + 1;
-      const myPlayer = room.players[myPlayerId];
-      // Only host or solo vs AI dispatches advance to avoid race conditions
-      if (myPlayer?.isHost || room.id.startsWith('BOT-')) {
-        const updated = await advanceRound(room.id, nextRound);
-        if (updated) {
-          setRoom(updated);
-          if (nextRound >= updated.questions.length) {
-            setView('results');
-          }
-        }
-      }
-    }, 2800);
+    if (botTimerRef.current) clearTimeout(botTimerRef.current);
+    setView('results');
   };
 
-  // 15-second round countdown timer
+  // Advance to next round or finish match
+  const advanceToNextRound = async (targetRound: number) => {
+    if (!room) return;
+    const totalRounds = room.questions.length;
+    if (targetRound >= totalRounds) {
+      finishBattle();
+      return;
+    }
+
+    const updated = await advanceRound(room.id, targetRound);
+    if (updated) {
+      setRoom(updated);
+    }
+    setTimeLeft(15);
+    setSelectedOption(null);
+    setHasAnsweredCurrentRound(false);
+    setRoundStatus('answering');
+    setRoundTransitioning(false);
+  };
+
+  // Complete current round and advance after 2000ms delay
+  const completeRoundAndAdvance = (currentRoundIndex: number) => {
+    if (roundTransitioning) return;
+    setRoundTransitioning(true);
+    setRoundStatus('round_complete');
+
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (watchdogTimerRef.current) clearTimeout(watchdogTimerRef.current);
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+
+    advanceTimeoutRef.current = setTimeout(() => {
+      const totalRounds = room?.questions.length || 5;
+      if (currentRoundIndex < totalRounds - 1) {
+        advanceToNextRound(currentRoundIndex + 1);
+      } else {
+        finishBattle();
+      }
+    }, 2000);
+  };
+
+  // 15-second round countdown timer & 12-second safety watchdog timer
   useEffect(() => {
     if (view !== 'in_game' || !room || room.status !== 'in_progress') return;
 
@@ -237,11 +267,14 @@ function BattleArenaContent() {
     setRoundStartTime(Date.now());
     setSelectedOption(null);
     setHasAnsweredCurrentRound(false);
+    setRoundStatus('answering');
     setRoundTransitioning(false);
 
     if (timerRef.current) clearInterval(timerRef.current);
+    if (watchdogTimerRef.current) clearTimeout(watchdogTimerRef.current);
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
 
+    // 15s Countdown Timer
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -256,28 +289,58 @@ function BattleArenaContent() {
       });
     }, 1000);
 
+    // 12-second safety watchdog timer: force-resolves if round hangs
+    watchdogTimerRef.current = setTimeout(async () => {
+      if (view === 'in_game' && room && !roundTransitioning) {
+        const currentQ = room.questions[room.currentRound];
+        if (!currentQ) return;
+
+        const playersList = Object.values(room.players);
+        const myActive = playersList.find((p) => !p.isBot) || room.players[myPlayerId] || playersList[0];
+        const bot = playersList.find((p) => p.isBot);
+
+        if (!myActive?.answers[room.currentRound]) {
+          setHasAnsweredCurrentRound(true);
+          setSelectedOption((prev) => prev || '');
+          await submitAnswer(room.id, myActive?.id || myPlayerId, room.currentRound, '', currentQ.correctAnswer, 12000);
+        }
+
+        if (bot && !bot.answers[room.currentRound]) {
+          await submitAnswer(room.id, bot.id, room.currentRound, currentQ.correctAnswer, currentQ.correctAnswer, 3000);
+        }
+
+        completeRoundAndAdvance(room.currentRound);
+      }
+    }, 12000);
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (watchdogTimerRef.current) clearTimeout(watchdogTimerRef.current);
       if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
     };
   }, [room?.currentRound, view]);
 
-  // Check if both players have answered to trigger round transition
+  // Automated round transition when both players have submitted answers
   useEffect(() => {
     if (view !== 'in_game' || !room || room.status !== 'in_progress' || roundTransitioning) return;
 
     const playersList = Object.values(room.players);
     if (playersList.length >= 2) {
-      const bothAnswered = playersList.every((p) => p.answers[room.currentRound] !== undefined);
-      if (bothAnswered) {
-        triggerRoundAdvance(room.currentRound);
+      const myPlayer = room.players[myPlayerId] || playersList.find((p) => !p.isBot) || playersList[0];
+      const opponentPlayer = playersList.find((p) => p.isBot) || playersList.find((p) => p.id !== myPlayer?.id);
+
+      const userAns = myPlayer?.answers[room.currentRound] || (hasAnsweredCurrentRound ? { selected: selectedOption } : undefined);
+      const oppAns = opponentPlayer?.answers[room.currentRound];
+
+      if (userAns && oppAns) {
+        completeRoundAndAdvance(room.currentRound);
       }
     }
-  }, [room, view, roundTransitioning]);
+  }, [room, view, roundTransitioning, hasAnsweredCurrentRound, selectedOption, myPlayerId]);
 
   // AI Rival automated response simulation
   useEffect(() => {
-    if (view !== 'in_game' || !room || room.status !== 'in_progress') return;
+    if (view !== 'in_game' || !room || room.status !== 'in_progress' || roundTransitioning) return;
 
     const botPlayer = Object.values(room.players).find((p) => p.isBot);
     if (!botPlayer) return;
@@ -288,13 +351,13 @@ function BattleArenaContent() {
     const currentQ = room.questions[room.currentRound];
     if (!currentQ) return;
 
-    // Natural simulated thinking delay
-    const delay = Math.floor(1800 + Math.random() * 2000);
+    // Responsive thinking delay for bot (1.0s to 2.2s)
+    const delay = Math.floor(1000 + Math.random() * 1200);
 
     if (botTimerRef.current) clearTimeout(botTimerRef.current);
 
     botTimerRef.current = setTimeout(async () => {
-      const willBeCorrect = Math.random() < 0.85;
+      const willBeCorrect = Math.random() < (activeRival?.accuracy ?? 0.85);
       const firstOptLt = typeof currentQ.options[0] === 'string' ? currentQ.options[0] : currentQ.options[0].lt;
       const incorrectOpt = currentQ.options.find((o) => {
         const text = typeof o === 'string' ? o : o.lt;
@@ -311,13 +374,15 @@ function BattleArenaContent() {
         currentQ.correctAnswer,
         delay
       );
-      if (updated) setRoom(updated);
+      if (updated) {
+        setRoom(updated);
+      }
     }, delay);
 
     return () => {
       if (botTimerRef.current) clearTimeout(botTimerRef.current);
     };
-  }, [room?.currentRound, view]);
+  }, [room?.currentRound, view, activeRival, roundTransitioning]);
 
   // Handle when timer hits 0
   const handleTimeExpired = async () => {
@@ -329,9 +394,12 @@ function BattleArenaContent() {
     setSelectedOption('');
     sounds.playError();
 
-    const updated = await submitAnswer(room.id, myPlayerId, room.currentRound, '', currentQ.correctAnswer, 15000);
+    const playersList = Object.values(room.players);
+    const myPlayer = room.players[myPlayerId] || playersList.find((p) => !p.isBot) || playersList[0];
+
+    const updated = await submitAnswer(room.id, myPlayer?.id || myPlayerId, room.currentRound, '', currentQ.correctAnswer, 15000);
     if (updated) setRoom(updated);
-    triggerRoundAdvance(room.currentRound);
+    completeRoundAndAdvance(room.currentRound);
   };
 
   // Submit player's answer
@@ -347,18 +415,18 @@ function BattleArenaContent() {
     setSelectedOption(option);
     setHasAnsweredCurrentRound(true);
 
-    // Stop countdown timer once answered
-    if (timerRef.current) clearInterval(timerRef.current);
-
     if (isCorrect) {
       sounds.playSuccess();
     } else {
       sounds.playError();
     }
 
+    const playersList = Object.values(room.players);
+    const myPlayer = room.players[myPlayerId] || playersList.find((p) => !p.isBot) || playersList[0];
+
     const updated = await submitAnswer(
       room.id,
-      myPlayerId,
+      myPlayer?.id || myPlayerId,
       room.currentRound,
       option,
       currentQ.correctAnswer,
@@ -366,10 +434,9 @@ function BattleArenaContent() {
     );
     if (updated) {
       setRoom(updated);
-      const playersList = Object.values(updated.players);
-      const bothAnswered = playersList.length >= 2 && playersList.every((p) => p.answers[updated.currentRound] !== undefined);
-      if (bothAnswered) {
-        triggerRoundAdvance(updated.currentRound);
+      const opponentPlayer = Object.values(updated.players).find((p) => p.id !== (myPlayer?.id || myPlayerId));
+      if (opponentPlayer?.answers[updated.currentRound]) {
+        completeRoundAndAdvance(updated.currentRound);
       }
     }
   };
@@ -397,12 +464,14 @@ function BattleArenaContent() {
   // Start instant match vs AI Rival
   const handleStartAIBattle = (rival: AIRival) => {
     sounds.playClick();
+    setActiveRival(rival);
     const newRoom = createAIBattleRoom(
       { id: myPlayerId, name: userName, avatar: userAvatar },
       rival
     );
     setRoom(newRoom);
     setView('in_game');
+    setRoundStatus('answering');
   };
 
   // Join friend's room with code
@@ -416,6 +485,7 @@ function BattleArenaContent() {
     sounds.playClick();
     await startBattle(room.id);
     setView('in_game');
+    setRoundStatus('answering');
   };
 
   // Share room invite
@@ -463,9 +533,9 @@ function BattleArenaContent() {
   // Restart / Rematch
   const handleRematch = () => {
     if (!room) return;
-    const otherPlayer = Object.values(room.players).find((p) => p.id !== myPlayerId);
-    if (otherPlayer?.isBot) {
-      const botRival = AI_RIVALS.find((r) => r.id === otherPlayer.id) || AI_RIVALS[0];
+    const botPlayer = Object.values(room.players).find((p) => p.isBot);
+    if (botPlayer || activeRival) {
+      const botRival = AI_RIVALS.find((r) => r.id === (botPlayer?.id || activeRival?.id)) || activeRival || AI_RIVALS[0];
       handleStartAIBattle(botRival);
     } else {
       handleCreateRoom();
@@ -932,11 +1002,36 @@ function BattleArenaContent() {
   if (view === 'in_game' && room) {
     const currentQ = room.questions[room.currentRound];
     const playersList = Object.values(room.players);
-    const myPlayer = room.players[myPlayerId] || playersList[0];
-    const opponentPlayer = playersList.find((p) => p.id !== myPlayerId) || playersList[1];
+
+    // Player 1 (You): Strictly binds to currentUser
+    const myPlayer =
+      room.players[myPlayerId] ||
+      playersList.find((p) => !p.isBot) ||
+      playersList[0];
+
+    // Player 2 (Opponent): Strictly binds to rivalData / opponent
+    const botPlayer = playersList.find((p) => p.isBot);
+    const opponentPlayer: BattlePlayer =
+      botPlayer ||
+      playersList.find((p) => p.id !== myPlayer?.id) || {
+        id: activeRival?.id || 'opponent',
+        name: activeRival?.name || 'Varžovas',
+        avatar: activeRival?.avatar || '🦁',
+        city: activeRival?.city || '',
+        score: 0,
+        streak: 0,
+        answers: {},
+        isReady: true,
+        isHost: false,
+        isBot: true,
+      };
+
+    const opponentName = opponentPlayer.name || (activeRival ? activeRival.name : 'Varžovas');
+    const opponentAvatar = opponentPlayer.avatar || activeRival?.avatar || '🦁';
+    const opponentCity = opponentPlayer.city || activeRival?.city || '';
 
     const myAnswer = myPlayer?.answers[room.currentRound];
-    const opponentAnswer = opponentPlayer?.answers[room.currentRound];
+    const opponentAnswer = opponentPlayer.answers[room.currentRound];
 
     const timerPercent = Math.max(0, Math.min(100, (timeLeft / 15) * 100));
 
@@ -979,21 +1074,28 @@ function BattleArenaContent() {
           <div className="flex items-center gap-3 text-right">
             <div>
               <div className="flex items-center justify-end gap-1.5">
-                {opponentPlayer?.streak > 1 && (
+                {opponentPlayer.streak > 1 && (
                   <span className="flex items-center text-[10px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.2 rounded-md">
                     <Flame className="h-3 w-3 fill-amber-500" />
                     {opponentPlayer.streak}x
                   </span>
                 )}
                 <span className="text-xs md:text-sm font-black text-slate-800 truncate max-w-[100px] md:max-w-[130px]">
-                  {opponentPlayer?.name || 'Varžovas'}
+                  {opponentName}
                 </span>
               </div>
-              <span className="text-lg md:text-xl font-black text-violet-600">
-                {opponentPlayer?.score || 0} pts
-              </span>
+              <div className="flex items-center justify-end gap-1">
+                {opponentCity && (
+                  <span className="text-[10px] text-slate-400 font-medium truncate max-w-[80px]">
+                    {opponentCity} •
+                  </span>
+                )}
+                <span className="text-lg md:text-xl font-black text-violet-600">
+                  {opponentPlayer.score || 0} pts
+                </span>
+              </div>
             </div>
-            <span className="text-3xl md:text-4xl">{opponentPlayer?.avatar || '🦁'}</span>
+            <span className="text-3xl md:text-4xl">{opponentAvatar}</span>
           </div>
         </div>
 
@@ -1122,7 +1224,7 @@ function BattleArenaContent() {
                 <p className="font-medium">{currentQ.explanation}</p>
                 {opponentAnswer ? (
                   <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] font-bold text-slate-500 flex items-center justify-between">
-                    <span>{opponentPlayer?.name}:</span>
+                    <span>{opponentName}:</span>
                     <span className={opponentAnswer.correct ? 'text-emerald-600' : 'text-rose-600'}>
                       {opponentAnswer.correct ? 'Correct!' : 'Incorrect!'} (+{opponentAnswer.points} pts)
                     </span>
@@ -1139,9 +1241,10 @@ function BattleArenaContent() {
         )}
 
         {/* Transition indicator */}
-        {roundTransitioning && (
-          <div className="text-center text-xs font-black text-amber-600 animate-pulse">
-            Next round coming up!
+        {(roundTransitioning || roundStatus === 'round_complete') && (
+          <div className="text-center text-xs font-black text-amber-700 animate-pulse bg-amber-50 border border-amber-200 py-2.5 px-4 rounded-2xl shadow-2xs flex items-center justify-center gap-2">
+            <span>✨</span>
+            <span>Round Complete! Advancing to next round...</span>
           </div>
         )}
       </div>
@@ -1156,7 +1259,7 @@ function BattleArenaContent() {
     playersList.sort((a, b) => b.score - a.score);
 
     const winner = playersList[0];
-    const isUserWinner = winner?.id === myPlayerId;
+    const isUserWinner = winner?.id === myPlayerId || (!winner?.isBot && !winner?.id.startsWith('bot-'));
     const isTie = playersList.length >= 2 && playersList[0].score === playersList[1].score;
 
     return (
@@ -1195,7 +1298,7 @@ function BattleArenaContent() {
 
           <div className="space-y-3">
             {playersList.map((player, rank) => {
-              const isMe = player.id === myPlayerId;
+              const isMe = player.id === myPlayerId || (!player.isBot && !player.id.startsWith('bot-'));
               return (
                 <div
                   key={player.id}

@@ -15,6 +15,7 @@ export interface BattlePlayer {
   id: string;
   name: string;
   avatar: string;
+  city?: string;
   score: number;
   streak: number;
   answers: Record<number, BattleAnswer>;
@@ -204,6 +205,7 @@ export async function createBattleRoom(hostUser: {
         answers: {},
         isReady: true,
         isHost: true,
+        isBot: false,
       },
     },
   };
@@ -244,18 +246,20 @@ export function createAIBattleRoom(
     players: {
       [hostUser.id]: {
         id: hostUser.id,
-        name: hostUser.name || 'Tu (You)',
+        name: hostUser.name || 'Lietuvis',
         avatar: hostUser.avatar || '🦊',
         score: 0,
         streak: 0,
         answers: {},
         isReady: true,
         isHost: true,
+        isBot: false,
       },
       [rival.id]: {
         id: rival.id,
-        name: `${rival.name} (${rival.city})`,
+        name: rival.name,
         avatar: rival.avatar,
+        city: rival.city,
         score: 0,
         streak: 0,
         answers: {},
@@ -376,7 +380,23 @@ export async function submitAnswer(
   const room = getLocalRoom(cleanId);
   if (!room) return null;
 
-  const player = room.players[playerId];
+  let playerKey = playerId;
+  let player = room.players[playerKey];
+  if (!player) {
+    if (playerId.startsWith('bot-')) {
+      const bot = Object.values(room.players).find((p) => p.isBot);
+      if (bot) {
+        playerKey = bot.id;
+        player = bot;
+      }
+    } else {
+      const human = Object.values(room.players).find((p) => !p.isBot);
+      if (human) {
+        playerKey = human.id;
+        player = human;
+      }
+    }
+  }
   if (!player) return room;
 
   // Prevent duplicate answer overwrite
@@ -409,7 +429,7 @@ export async function submitAnswer(
     ...room,
     players: {
       ...room.players,
-      [playerId]: updatedPlayer,
+      [playerKey]: updatedPlayer,
     },
   };
 
@@ -419,7 +439,7 @@ export async function submitAnswer(
   apiBattleCall({
     action: 'answer',
     roomId: cleanId,
-    playerId,
+    playerId: playerKey,
     roundIndex,
     selected,
     correctAnswer,
@@ -429,7 +449,7 @@ export async function submitAnswer(
   if (isFirebaseConfigured && db && !room.id.startsWith('BOT-')) {
     withTimeout(
       updateDoc(doc(db, 'battles', cleanId), {
-        [`players.${playerId}`]: sanitizeForFirestore(updatedPlayer),
+        [`players.${playerKey}`]: sanitizeForFirestore(updatedPlayer),
       }),
       2500
     ).catch(() => {});
