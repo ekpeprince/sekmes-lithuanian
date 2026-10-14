@@ -114,12 +114,16 @@ function BattleArenaContent() {
 
   const [guestId] = useState<string>(() => {
     if (typeof window === 'undefined') return 'guest-user';
-    let stored = localStorage.getItem('sekmes_guest_battle_id');
-    if (!stored) {
-      stored = `guest-${Math.random().toString(36).substring(2, 9)}`;
-      localStorage.setItem('sekmes_guest_battle_id', stored);
+    try {
+      let stored = sessionStorage.getItem('sekmes_guest_battle_id');
+      if (!stored) {
+        stored = `guest-${Math.random().toString(36).substring(2, 9)}`;
+        sessionStorage.setItem('sekmes_guest_battle_id', stored);
+      }
+      return stored;
+    } catch {
+      return `guest-${Math.random().toString(36).substring(2, 9)}`;
     }
-    return stored;
   });
 
   const myPlayerId = user?.uid || guestId;
@@ -1020,6 +1024,7 @@ function BattleArenaContent() {
         city: activeRival?.city || '',
         score: 0,
         streak: 0,
+        maxStreak: 0,
         answers: {},
         isReady: true,
         isHost: false,
@@ -1255,12 +1260,57 @@ function BattleArenaContent() {
   // RENDER: RESULTS SCREEN
   // --------------------------------------------------------------------------
   if (view === 'results' && room) {
-    const playersList = Object.values(room.players);
+    const rawPlayersList = Object.values(room.players);
+    const myPlayer =
+      room.players[myPlayerId] ||
+      rawPlayersList.find((p) => p.id === myPlayerId) ||
+      rawPlayersList.find((p) => !p.isBot && !p.id.startsWith('bot-')) ||
+      rawPlayersList[0];
+
+    const botPlayer = rawPlayersList.find((p) => p.isBot || p.id.startsWith('bot-'));
+    const opponentPlayer = botPlayer || rawPlayersList.find((p) => p.id !== myPlayer?.id);
+
+    const playersList = rawPlayersList.map((player) => {
+      const isMe = player.id === myPlayer?.id || player.id === myPlayerId;
+      if (isMe) {
+        return {
+          ...player,
+          name: player.name || userName || 'Lietuvis',
+          avatar: player.avatar || userAvatar || '🦊',
+        };
+      }
+
+      // Opponent / Bot resolution: if marked isBot or is the opponent, resolve display name and avatar through activeRival / opponentPlayer fallbacks
+      const isBot = player.isBot || player.id.startsWith('bot-');
+      const fallbackName = isBot
+        ? (activeRival?.name || 'Mantas')
+        : (activeRival?.name || opponentPlayer?.name || 'Varžovas');
+      const fallbackAvatar = isBot
+        ? (activeRival?.avatar || '🐺')
+        : (activeRival?.avatar || opponentPlayer?.avatar || '🦁');
+
+      const resolvedName =
+        player.name && player.name !== 'Lietuvis'
+          ? player.name
+          : fallbackName;
+
+      const resolvedAvatar =
+        player.avatar && player.avatar !== '🦊'
+          ? player.avatar
+          : fallbackAvatar;
+
+      return {
+        ...player,
+        name: resolvedName,
+        avatar: resolvedAvatar,
+      };
+    });
+
     playersList.sort((a, b) => b.score - a.score);
 
     const winner = playersList[0];
-    const isUserWinner = winner?.id === myPlayerId || (!winner?.isBot && !winner?.id.startsWith('bot-'));
     const isTie = playersList.length >= 2 && playersList[0].score === playersList[1].score;
+    const isUserWinner = !isTie && (winner?.id === myPlayer?.id || winner?.id === myPlayerId);
 
     return (
       <div className="flex-1 max-w-xl w-full mx-auto p-4 md:p-8 flex flex-col items-center gap-6 animate-in zoom-in-95">
@@ -1298,7 +1348,7 @@ function BattleArenaContent() {
 
           <div className="space-y-3">
             {playersList.map((player, rank) => {
-              const isMe = player.id === myPlayerId || (!player.isBot && !player.id.startsWith('bot-'));
+              const isMe = player.id === myPlayer?.id || player.id === myPlayerId;
               return (
                 <div
                   key={player.id}
@@ -1321,7 +1371,7 @@ function BattleArenaContent() {
                         )}
                       </div>
                       <span className="text-[11px] text-slate-500 font-medium">
-                        Max streak: {player.streak}x 🔥
+                        Max streak: {player.maxStreak || player.streak || 0}x 🔥
                       </span>
                     </div>
                   </div>

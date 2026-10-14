@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
           avatar: String(guestUser.avatar || '🦁').slice(0, 5),
           score: 0,
           streak: 0,
+          maxStreak: 0,
           answers: {},
           isReady: true,
           isHost: false,
@@ -165,6 +166,7 @@ export async function POST(request: NextRequest) {
 
       const safeTimeMs = Math.min(Math.max(Number(timeMs) || 15000, 500), 15000);
       const currentStreak = isCorrect ? player.streak + 1 : 0;
+      const maxStreak = Math.max(player.maxStreak || 0, currentStreak);
       const points = calculateAnswerPoints(isCorrect, safeTimeMs, player.streak);
 
       const answer: BattleAnswer = {
@@ -176,6 +178,7 @@ export async function POST(request: NextRequest) {
 
       player.score += points;
       player.streak = currentStreak;
+      player.maxStreak = maxStreak;
       player.answers[roundIndex] = answer;
 
       serverRooms.set(cleanRoomId, room);

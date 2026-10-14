@@ -18,6 +18,7 @@ export interface BattlePlayer {
   city?: string;
   score: number;
   streak: number;
+  maxStreak: number;
   answers: Record<number, BattleAnswer>;
   isReady: boolean;
   isHost: boolean;
@@ -202,6 +203,7 @@ export async function createBattleRoom(hostUser: {
         avatar: hostUser.avatar || '🦊',
         score: 0,
         streak: 0,
+        maxStreak: 0,
         answers: {},
         isReady: true,
         isHost: true,
@@ -250,6 +252,7 @@ export function createAIBattleRoom(
         avatar: hostUser.avatar || '🦊',
         score: 0,
         streak: 0,
+        maxStreak: 0,
         answers: {},
         isReady: true,
         isHost: true,
@@ -262,6 +265,7 @@ export function createAIBattleRoom(
         city: rival.city,
         score: 0,
         streak: 0,
+        maxStreak: 0,
         answers: {},
         isReady: true,
         isHost: false,
@@ -319,6 +323,7 @@ export async function joinBattleRoom(
       avatar: guestUser.avatar || '🦁',
       score: 0,
       streak: 0,
+      maxStreak: 0,
       answers: {},
       isReady: true,
       isHost: false,
@@ -406,6 +411,7 @@ export async function submitAnswer(
 
   const isCorrect = selected === correctAnswer;
   const currentStreak = isCorrect ? player.streak + 1 : 0;
+  const maxStreak = Math.max(player.maxStreak || 0, currentStreak);
   const points = calculateAnswerPoints(isCorrect, timeMs, player.streak);
 
   const answer: BattleAnswer = {
@@ -419,6 +425,7 @@ export async function submitAnswer(
     ...player,
     score: player.score + points,
     streak: currentStreak,
+    maxStreak: maxStreak,
     answers: {
       ...player.answers,
       [roundIndex]: answer,
