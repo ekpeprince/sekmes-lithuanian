@@ -846,6 +846,10 @@ export default function TutorPage() {
     }
   };
 
+  const savedHistoryCount = sessionsList.filter(
+    (s) => s.id !== activeSessionId && s.messages.some((m) => m.sender === 'user')
+  ).length;
+
   const filteredSessions = sessionsList.filter((s) => {
     if (!historySearchQuery.trim()) return true;
     const q = historySearchQuery.toLowerCase();
@@ -949,9 +953,9 @@ export default function TutorPage() {
             aria-label="Chat History"
           >
             <History className="w-4 h-4 text-slate-600" />
-            {sessionsList.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
-                {sessionsList.length > 9 ? '9+' : sessionsList.length}
+            {savedHistoryCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {savedHistoryCount}
               </span>
             )}
           </button>
