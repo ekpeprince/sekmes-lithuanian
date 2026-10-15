@@ -113,7 +113,7 @@ export default function ProfilePage() {
             {/* Course Completion Progress Bar */}
             <div className="mt-4">
               <div className="flex justify-between text-xs font-black text-slate-600 mb-1">
-                <span>Curriculum Mastered</span>
+                <span>Curriculum Progress:</span>
                 <span>{completedCount} / {totalCount} Lessons ({completionPercent}%)</span>
               </div>
               <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200">
@@ -127,9 +127,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Total Immersion Dashboard */}
-        <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-xs dark:bg-slate-900 dark:border-slate-800 mb-8">
+        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs mb-4">
           {/* Header */}
-          <div className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+          <div className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
             <span>🇱🇹</span>
             <span>Total Immersion</span>
           </div>
@@ -137,9 +137,9 @@ export default function ProfilePage() {
           {/* 3-Tile Grid */}
           <div className="grid grid-cols-3 gap-2.5">
             {/* 1. Time Learned */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center dark:bg-slate-800 dark:border-slate-700 text-center">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
               <span className="text-xl mb-1">⏱️</span>
-              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+              <span className="text-lg font-black text-slate-900 leading-tight">
                 {formatTimeLearned(totalPracticeSeconds)}
               </span>
               <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
@@ -148,9 +148,9 @@ export default function ProfilePage() {
             </div>
 
             {/* 2. Words Mastered */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center dark:bg-slate-800 dark:border-slate-700 text-center">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
               <span className="text-xl mb-1">📚</span>
-              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+              <span className="text-lg font-black text-slate-900 leading-tight">
                 {wordsMasteredCount}
               </span>
               <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
@@ -159,9 +159,9 @@ export default function ProfilePage() {
             </div>
 
             {/* 3. Duels Won */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center dark:bg-slate-800 dark:border-slate-700 text-center">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
               <span className="text-xl mb-1">⚔️</span>
-              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+              <span className="text-lg font-black text-slate-900 leading-tight">
                 {duelsWonCount}
               </span>
               <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
@@ -171,37 +171,35 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Consolidated League & Speed Drill Highlights Card */}
-        <div className="rounded-3xl bg-white border-2 border-slate-200 p-4 sm:p-5 shadow-xs mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {/* Left Tile: Amber/Bronze League Status */}
-            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-2xl">
-                💎
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block">
-                  Current League Division
-                </span>
-                <p className="text-sm sm:text-base font-black text-slate-900 truncate">
-                  Rank #{progress.leagueRank || 4} • {progress.leagueTier || 'Bronze'} Tier
-                </p>
-              </div>
+        {/* League & Speed Drill Highlights: 2-Column Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* Left: Bronze League Card */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-3 p-3 sm:p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 h-full">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-xl sm:text-2xl">
+              💎
             </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block truncate">
+                Current League
+              </span>
+              <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                Rank #{progress.leagueRank || 4} • {progress.leagueTier || 'Bronze'} Tier
+              </p>
+            </div>
+          </div>
 
-            {/* Right Tile: Speed Drill Record */}
-            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 border border-indigo-300/60 text-2xl">
-                ⏱️
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">
-                  60s Speed Drill
-                </span>
-                <p className="text-sm sm:text-base font-black text-slate-900 truncate">
-                  Best: {progress.speedDrillHighScore || 0} pts
-                </p>
-              </div>
+          {/* Right: Speed Drill Card */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-3 p-3 sm:p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 h-full">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 border border-indigo-300/60 text-xl sm:text-2xl">
+              ⏱️
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block truncate">
+                60s Speed Drill
+              </span>
+              <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                Best: {progress.speedDrillHighScore || 0} pts
+              </p>
             </div>
           </div>
         </div>
