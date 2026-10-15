@@ -20,6 +20,7 @@ interface TutorRequest {
   scenario?: string;
   customTopic?: string;
   customRole?: string;
+  learnerMemory?: string;
 }
 
 // Sliding-window IP rate limiter to protect against bot abuse and API quota drain
@@ -90,11 +91,15 @@ export async function POST(req: NextRequest) {
         ? `Setting: Custom roleplay. Topic: "${body.customTopic}". Role: "${body.customRole || 'Partner'}".`
         : 'Setting: Open, friendly conversation in Lithuanian.';
 
+    const learnerContext = body.learnerMemory
+      ? `\nLearner Memory & Background Profile:\n${body.learnerMemory}`
+      : '';
+
     const systemInstruction = `You are Aistė, a warm, native Lithuanian language tutor and conversational partner.
 ${scenarioInstruction}
-
+${learnerContext}
 1. Always understand the user's intent, whether they type in Lithuanian, English, or broken grammar.
-2. Respond directly to what the user said (e.g., if they ask 'Can you teach me how to speak Lithuania?', respond directly with encouragement and your first simple phrase: 'Taip, su malonumu! (Yes, with pleasure!)').
+2. Respond directly to what the user said with warmth and encouragement.
 3. Reply in natural, clear Lithuanian suited to an A1-A2 beginner.
 4. Always provide an accurate English translation of your reply.
 5. Provide 2 short, contextually relevant Lithuanian reply suggestions the user could tap next.
@@ -129,16 +134,41 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       incomingMessage = 'Start the conversation warmly as Aistė in structured JSON.';
     }
 
-    // Convert incoming history into Gemini's contents format, capped to the last 8 messages for optimal token efficiency
-    const formattedHistory = (history || []).slice(-8).map((item: ChatHistoryItem) => ({
-      role: item.role === 'model' ? 'model' : 'user',
-      parts: [{ text: item.text }],
-    }));
+    // Format raw history items:
+    const rawHistory = (history || [])
+      .map((item) => ({
+        role: item.role === 'model' ? ('model' as const) : ('user' as const),
+        parts: [{ text: item.text.trim() }],
+      }))
+      .filter((item) => item.parts[0].text.length > 0);
 
-    const contents = [
-      ...formattedHistory,
-      { role: 'user', parts: [{ text: incomingMessage }] },
-    ];
+    // Discard any leading 'model' turns so conversation starts with 'user':
+    while (rawHistory.length > 0 && rawHistory[0].role === 'model') {
+      rawHistory.shift();
+    }
+
+    // Collapse consecutive duplicate roles (merge adjacent text if needed) so the array strictly alternates:
+    const deduplicatedHistory: Array<{ role: 'user' | 'model'; parts: [{ text: string }] }> = [];
+    for (const turn of rawHistory) {
+      const last = deduplicatedHistory[deduplicatedHistory.length - 1];
+      if (last && last.role === turn.role) {
+        last.parts[0].text += `\n${turn.parts[0].text}`;
+      } else {
+        deduplicatedHistory.push({ role: turn.role, parts: [{ text: turn.parts[0].text }] });
+      }
+    }
+
+    // Cap to the last 8 turns:
+    const slicedHistory = deduplicatedHistory.slice(-8);
+
+    // If slicedHistory ends with a 'user' turn, merge incomingMessage into it; otherwise, append it as a new 'user' turn:
+    const contents = [...slicedHistory];
+    const lastTurn = contents[contents.length - 1];
+    if (lastTurn && lastTurn.role === 'user') {
+      lastTurn.parts[0].text += `\n${incomingMessage}`;
+    } else {
+      contents.push({ role: 'user', parts: [{ text: incomingMessage }] });
+    }
 
     const CANDIDATES = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'];
     const MODEL_NAME = 'gemini-3.6-flash';

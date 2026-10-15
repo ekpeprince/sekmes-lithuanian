@@ -715,16 +715,17 @@ export default function TutorPage() {
       activeSession = fresh;
     }
 
-    let sessionTitle = activeSession.title || 'Naujas pokalbis';
-    if (sessionTitle === 'Naujas pokalbis' || !sessionTitle.trim()) {
-      sessionTitle = text.length > 32 ? `${text.slice(0, 32)}...` : text;
-    }
+    const latestStoredSession = currentSessionId ? getSession(currentSessionId) : null;
+    const isDefaultTitle = !latestStoredSession?.title || latestStoredSession.title === 'Naujas pokalbis';
+    const sessionTitle = isDefaultTitle
+      ? (text.length > 32 ? `${text.slice(0, 32)}...` : text)
+      : latestStoredSession.title;
 
     // Save immediate user message to active session
     saveSession({
       id: currentSessionId,
       title: sessionTitle,
-      createdAt: activeSession.createdAt || Date.now(),
+      createdAt: latestStoredSession?.createdAt || activeSession.createdAt || Date.now(),
       updatedAt: Date.now(),
       messages: convertToTutorMessages(newHistory),
     });
@@ -777,10 +778,11 @@ export default function TutorPage() {
       setSuggestions(normalizedSuggestions);
 
       // Save complete session with assistant reply and suggestions
+      const sessionForSave = currentSessionId ? getSession(currentSessionId) : null;
       saveSession({
         id: currentSessionId,
-        title: sessionTitle,
-        createdAt: activeSession.createdAt || Date.now(),
+        title: sessionForSave?.title || sessionTitle,
+        createdAt: sessionForSave?.createdAt || latestStoredSession?.createdAt || activeSession.createdAt || Date.now(),
         updatedAt: Date.now(),
         messages: convertToTutorMessages(finalMessages, normalizedSuggestions),
       });
