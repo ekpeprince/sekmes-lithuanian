@@ -63,10 +63,10 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 py-4 sm:py-6 px-3 sm:px-6 pb-24">
-      <div className="mx-auto max-w-4xl flex flex-col gap-3">
+    <div className="min-h-screen bg-slate-50 p-3 sm:p-4 pb-20 md:pb-8">
+      <div className="mx-auto max-w-4xl flex flex-col gap-2 sm:gap-2.5">
         {/* Compact Horizontal Hero Card */}
-        <div className="flex items-center gap-3 sm:gap-4 p-4 rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs mb-0">
+        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs">
           {/* Left: Avatar Icon */}
           <div className="relative shrink-0">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shrink-0 flex items-center justify-center text-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 shadow-md shadow-emerald-500/20">
@@ -105,13 +105,13 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Subtitle */}
-            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mt-0.5">
+            {/* Subtitle with vertical spacing */}
+            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mt-0.5 mb-1">
               Lithuanian Learner • Level {level}
             </p>
 
             {/* Progress Row */}
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1 mb-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mb-1">
               <span>Curriculum Progress: </span>
               <span>{completedCount} / {totalCount} Lessons ({completionPercent}%)</span>
             </div>
@@ -127,44 +127,44 @@ export default function ProfilePage() {
         </div>
 
         {/* Total Immersion Dashboard */}
-        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs mb-0">
+        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-3 sm:p-3.5 shadow-xs">
           {/* Header */}
-          <div className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+          <div className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
             <span>🇱🇹</span>
             <span>Total Immersion</span>
           </div>
 
           {/* 3-Tile Grid */}
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-3 gap-2">
             {/* 1. Time Learned */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
-              <span className="text-xl mb-1">⏱️</span>
-              <span className="text-lg font-black text-slate-900 leading-tight">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center">
+              <span className="text-lg sm:text-xl mb-0.5">⏱️</span>
+              <span className="text-base sm:text-lg font-black text-slate-900 leading-tight">
                 {formatTimeLearned(totalPracticeSeconds)}
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">
                 Time Learned
               </span>
             </div>
 
             {/* 2. Words Mastered */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
-              <span className="text-xl mb-1">📚</span>
-              <span className="text-lg font-black text-slate-900 leading-tight">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center">
+              <span className="text-lg sm:text-xl mb-0.5">📚</span>
+              <span className="text-base sm:text-lg font-black text-slate-900 leading-tight">
                 {wordsMasteredCount}
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">
                 Words Mastered
               </span>
             </div>
 
             {/* 3. Duels Won */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
-              <span className="text-xl mb-1">⚔️</span>
-              <span className="text-lg font-black text-slate-900 leading-tight">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center">
+              <span className="text-lg sm:text-xl mb-0.5">⚔️</span>
+              <span className="text-base sm:text-lg font-black text-slate-900 leading-tight">
                 {duelsWonCount}
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">
                 Duels Won
               </span>
             </div>
@@ -172,10 +172,10 @@ export default function ProfilePage() {
         </div>
 
         {/* League & Speed Drill Highlights: 2-Column Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-0">
+        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
           {/* Left: Bronze League Card */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-3 p-3 sm:p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 h-full">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-xl sm:text-2xl">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 h-full">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-lg sm:text-xl">
               💎
             </div>
             <div className="min-w-0">
@@ -189,8 +189,8 @@ export default function ProfilePage() {
           </div>
 
           {/* Right: Speed Drill Card */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-3 p-3 sm:p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 h-full">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 border border-indigo-300/60 text-xl sm:text-2xl">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 h-full">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 border border-indigo-300/60 text-lg sm:text-xl">
               ⏱️
             </div>
             <div className="min-w-0">
@@ -206,31 +206,31 @@ export default function ProfilePage() {
 
         {/* 2-Column Achievements Grid */}
         <div>
-          <h2 className="text-sm sm:text-base font-black text-slate-900 mb-2 flex items-center gap-1.5">
-            <Award className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
+          <h2 className="text-xs sm:text-sm font-black text-slate-900 mb-1.5 flex items-center gap-1.5">
+            <Award className="h-4 w-4 text-amber-500" />
             <span>Achievements</span>
           </h2>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
             {achievements.map((item) => (
               <div
                 key={item.id}
-                className={`p-2.5 sm:p-3 rounded-2xl border-2 flex flex-col justify-between transition-all ${
+                className={`min-h-[94px] p-2.5 sm:p-3 rounded-2xl border-2 flex flex-col justify-between transition-all ${
                   item.isUnlocked
                     ? 'bg-amber-50/60 border-amber-300'
                     : 'bg-slate-50 border-slate-200 opacity-75'
                 }`}
               >
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-xl bg-white border border-amber-200/80 text-base sm:text-lg shadow-2xs">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-white border border-amber-200/80 text-sm sm:text-base shadow-2xs">
                       {item.icon}
                     </span>
                     <h4 className="text-xs font-black text-slate-900 truncate">
                       {item.title}
                     </h4>
                   </div>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-tight line-clamp-2 mb-1.5">
+                  <p className="text-[10px] text-slate-500 font-medium leading-tight line-clamp-2 mb-1">
                     {item.desc}
                   </p>
                 </div>
@@ -249,38 +249,28 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Offline Audio Pack */}
+        {/* Compact Single-Row Offline Audio Utility Tile */}
         <OfflineAudioPackCard />
 
-        {/* Notifications & Reminders Action Row */}
+        {/* Compact Single-Row Notifications & Reminders Tile */}
         <button
           type="button"
           onClick={() => {
             sounds.playClick();
             setShowNotificationModal(true);
           }}
-          className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-3xl bg-white border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xs transition-all text-left cursor-pointer group"
+          className="bg-white border-2 border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center justify-between shadow-2xs hover:border-indigo-300 hover:shadow-xs transition-all text-left cursor-pointer group w-full"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 group-hover:scale-105 transition-transform">
-              <BellRing className="h-5 w-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm shrink-0 group-hover:scale-105 transition-transform">
+              <BellRing className="h-4 w-4" />
             </div>
-            <div>
-              <h3 className="font-black text-slate-800 text-xs sm:text-sm">
-                Notifications & Reminders
-              </h3>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Streak protection, Word of the Day & heart refill alerts
-              </p>
-            </div>
+            <h3 className="text-xs font-black text-slate-800">
+              Notifications & Reminders
+            </h3>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-block text-[11px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-              Configure
-            </span>
-            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
-          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
         </button>
 
         {/* Notification Modal Pop-up */}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Download, CheckCircle2, Trash2, Volume2, Sparkles, Loader2 } from 'lucide-react';
+import { Volume2, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { getOfflineAudioStats, downloadOfflineAudioPack, clearOfflineAudioPack, OfflineAudioStats } from '@/lib/offlineAudio';
 import { sounds } from '@/lib/audio';
 
@@ -16,7 +16,7 @@ export const OfflineAudioPackCard: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<{ loaded: number; total: number; currentPhrase: string } | null>(null);
 
-  // 1. Monitor online / offline network state
+  // Monitor online / offline network state
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsOnline(navigator.onLine);
@@ -34,7 +34,7 @@ export const OfflineAudioPackCard: React.FC = () => {
     }
   }, []);
 
-  // 2. Fetch offline audio storage stats on mount
+  // Fetch offline audio storage stats on mount
   useEffect(() => {
     refreshStats();
   }, []);
@@ -77,107 +77,62 @@ export const OfflineAudioPackCard: React.FC = () => {
     : 0;
 
   return (
-    <div className="rounded-3xl bg-white border-2 border-slate-200 p-4 sm:p-5 shadow-xs transition-all mb-3">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-500 text-white shadow-md shadow-sky-500/20">
-            <Volume2 className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-black text-slate-900">
-                Offline Audio Pack
-              </h3>
-              {isOnline ? (
-                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  <Wifi className="h-3 w-3" /> Online
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  <WifiOff className="h-3 w-3" /> Offline Mode
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Download lesson native voice audio clips so you can practice on flights, trains, or without Wi-Fi.
-            </p>
-          </div>
+    <div className="bg-white border-2 border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center justify-between shadow-2xs">
+      {/* Left side */}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-sm shrink-0">
+          <Volume2 className="h-4 w-4" />
         </div>
+        <div className="min-w-0">
+          <h3 className="text-xs font-black text-slate-800 truncate">
+            Offline Audio
+          </h3>
+          <p className="text-[10px] text-slate-500 font-medium truncate">
+            {stats.totalPhrases || 221} clips • {percent}% cached
+          </p>
+        </div>
+      </div>
 
-        {/* Clear Cache Action */}
+      {/* Right side */}
+      <div className="flex items-center gap-2 shrink-0">
         {stats.cachedCount > 0 && !isDownloading && (
           <button
             type="button"
             onClick={handleClearCache}
-            className="self-start sm:self-center text-xs font-bold text-slate-400 hover:text-rose-500 flex items-center gap-1.5 transition-colors p-1.5 rounded-xl hover:bg-slate-50"
-            title="Clear stored audio"
+            className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors p-1 cursor-pointer"
+            title="Clear audio cache"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            <span>Clear Audio</span>
           </button>
         )}
-      </div>
-
-      {/* Progress & Storage Card */}
-      <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 mb-4">
-        <div className="flex items-center justify-between text-xs font-black mb-2">
-          <div className="flex items-center gap-1.5 text-slate-700">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span>Audio Readiness: {stats.cachedCount} / {stats.totalPhrases} clips cached</span>
-          </div>
-          <span className="text-sky-600">{percent}%</span>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden relative shadow-inner">
-          <div
-            className={`h-full rounded-full transition-all duration-300 ${
-              percent >= 100 ? 'bg-emerald-500' : 'bg-sky-500'
-            }`}
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-
-        {/* Live download feedback */}
-        {downloadProgress && (
-          <p className="text-[11px] text-slate-500 font-medium mt-2 truncate flex items-center gap-1.5 animate-pulse">
-            <Loader2 className="h-3 w-3 animate-spin text-sky-600 shrink-0" />
-            <span>Downloading: &quot;{downloadProgress.currentPhrase}&quot; ({downloadProgress.loaded}/{downloadProgress.total})</span>
-          </p>
-        )}
-      </div>
-
-      {/* Action Button */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        {percent >= 100 ? (
-          <div className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-black text-xs uppercase tracking-wider">
-            <CheckCircle2 className="h-4 w-4" />
-            <span>All Lesson Audio Stored Locally (Airplane Ready)</span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={isDownloading || !isOnline}
-            className={`btn-3d w-full py-3.5 px-5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-              !isOnline
-                ? 'bg-slate-300 text-slate-500 cursor-not-allowed border-b-0'
-                : 'bg-sky-500 hover:bg-sky-400 text-white shadow-md'
-            }`}
-          >
-            {isDownloading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Downloading Voice Audio...</span>
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                <span>Download Offline Audio Pack ({stats.totalPhrases - stats.cachedCount} clips left)</span>
-              </>
-            )}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={isDownloading || !isOnline || stats.isFullyCached}
+          className={`px-3 py-1.5 rounded-xl border-b-2 active:border-b-0 text-white text-[10px] font-black uppercase tracking-wider active:scale-95 transition cursor-pointer flex items-center gap-1 ${
+            stats.isFullyCached
+              ? 'bg-emerald-500 border-emerald-700 hover:bg-emerald-600'
+              : isDownloading
+              ? 'bg-sky-400 border-sky-600 cursor-wait'
+              : !isOnline
+              ? 'bg-slate-300 border-slate-400 cursor-not-allowed'
+              : 'bg-sky-500 hover:bg-sky-400 border-sky-700'
+          }`}
+        >
+          {isDownloading ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>{downloadProgress ? `${Math.round((downloadProgress.loaded / downloadProgress.total) * 100)}%` : 'Saving...'}</span>
+            </>
+          ) : stats.isFullyCached ? (
+            <>
+              <CheckCircle2 className="h-3 w-3" />
+              <span>Cached</span>
+            </>
+          ) : (
+            <span>Download</span>
+          )}
+        </button>
       </div>
     </div>
   );
