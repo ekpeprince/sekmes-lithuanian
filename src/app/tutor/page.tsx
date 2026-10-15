@@ -145,7 +145,7 @@ const PRESET_CUSTOM_TOPICS = [
 const SCENARIOS = [
   {
     id: 'free-chat' as ScenarioType,
-    title: '✨ Free Conversation',
+    title: 'Free Conversation',
     name: 'Free Conversation',
     lithuanianName: 'Laisvas Pokalbis',
     subtitle: 'Laisvas Pokalbis • Open Talk',
@@ -628,7 +628,9 @@ export default function TutorPage() {
           >
             <currentScenario.icon className="w-3.5 h-3.5 text-slate-700 shrink-0" />
             <span className="truncate max-w-[130px] sm:max-w-[200px]">
-              {scenario === 'custom' ? customTopic.split('(')[0].trim() : currentScenario.title}
+              {scenario === 'custom'
+                ? customTopic.split('(')[0].trim()
+                : currentScenario.title.replace(/^✨\s*/, '')}
             </span>
             <span className="text-slate-400 text-[10px] leading-none shrink-0 ml-0.5">▾</span>
           </button>
@@ -662,7 +664,7 @@ export default function TutorPage() {
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-xs font-bold truncate">{sc.title}</div>
+                          <div className="text-xs font-bold truncate">{sc.title.replace(/^✨\s*/, '')}</div>
                           <div className="text-[10px] text-slate-400 truncate">{sc.subtitle}</div>
                         </div>
                       </div>
@@ -881,14 +883,14 @@ export default function TutorPage() {
 
         return displayedSuggestions.length > 0 && !loading ? (
           <div className="relative shrink-0 bg-slate-50/95 border-t border-slate-100">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-3 py-1.5 scroll-smooth">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-3 pr-8 py-1.5 scroll-smooth">
               {displayedSuggestions.map((s, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => handleSendMessage(s.lt)}
                   title={s.en ? `"${s.en}" (Tap to reply)` : 'Tap to reply'}
-                  className="shrink-0 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+                  className="whitespace-nowrap shrink-0 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-2xs transition active:scale-95 cursor-pointer"
                 >
                   {s.lt}
                 </button>
