@@ -16,6 +16,7 @@ interface UnitCardProps {
 export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons, activeLessonId }) => {
   // Find active lesson in this unit (first uncompleted lesson, or fallback to first lesson)
   const activeLesson = unit.lessons.find((l) => !completedLessons.includes(l.id)) || unit.lessons[0];
+  const isUnit1 = unit.number === 1 || unit.id === 'unit-1';
 
   // Compute zigzag offsets for nodes that stay within mobile screen bounds
   const getOffset = (index: number) => {
@@ -51,7 +52,8 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons, acti
           </div>
 
           <div className="self-start sm:self-center shrink-0 flex items-center gap-2 flex-wrap">
-            {activeLesson && (
+            {/* For Unit 1, rely on floating START beacon on the active node. Retain Start button for Unit 2+ */}
+            {!isUnit1 && activeLesson && (
               <Link
                 href={`/lesson/${activeLesson.id}`}
                 onClick={() => sounds.playClick()}
@@ -65,7 +67,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons, acti
             <Link
               href="/grammar"
               onClick={() => sounds.playClick()}
-              className="bg-white/20 text-white hover:bg-white/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 backdrop-blur-xs border border-white/20 active:scale-95 transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs uppercase tracking-wider transition backdrop-blur-xs active:scale-95 cursor-pointer shadow-2xs"
             >
               <BookOpen className="h-3.5 w-3.5 text-white" />
               <span>Guidebook</span>
