@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     // Check GEMINI_API_KEY environment variable
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
-      console.error('[Tutor API] GEMINI_API_KEY is not configured in environment variables.');
+      console.error('[TUTOR_API_ERROR]: GEMINI_API_KEY is not configured in environment variables.');
       return NextResponse.json(
         {
           error: 'GEMINI_API_KEY is missing. Please configure GEMINI_API_KEY in your .env.local file or Vercel project settings.',
@@ -108,58 +108,88 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       ? `Conversation history:\n${transcript}\n\nRespond directly as Aistė to the user's latest statement in structured JSON.`
       : `Start the conversation warmly as Aistė in structured JSON.`;
 
-    const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    const candidateModels = ['gemini-2.5-flash', 'gemini-1.5-flash'];
     let lastError: unknown = null;
 
-    for (const modelName of candidateModels) {
-      try {
-        const response = await ai.models.generateContent({
-          model: modelName,
-          contents: prompt,
-          config: {
-            systemInstruction,
-            responseMimeType: 'application/json',
-            temperature: 0.7,
-          },
-        });
+    try {
+      let responseText: string | null = null;
 
-        const rawText = response.text?.trim() || '{}';
-        let cleanedJson = rawText;
+      for (const modelName of candidateModels) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              temperature: 0.7,
+            },
+          });
+
+          if (response.text) {
+            responseText = response.text;
+            break;
+          }
+        } catch (err) {
+          console.warn(`[Tutor API] Model ${modelName} attempt failed:`, err);
+          lastError = err;
+        }
+      }
+
+      if (!responseText) {
+        throw lastError || new Error('No response received from candidate Gemini models.');
+      }
+
+      // Defensive JSON response parsing to handle optional markdown code fences
+      let parsed: { reply?: string; translation?: string; suggestions?: string[] } = {};
+      try {
+        let cleanedJson = responseText.trim();
         if (cleanedJson.startsWith('```')) {
           cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
         }
-        const parsed = JSON.parse(cleanedJson);
-
-        return NextResponse.json({
-          reply: parsed.reply || '',
-          translation: parsed.translation || '',
-          suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
-          // Backward compatibility mappings
-          replyLithuanian: parsed.reply || '',
-          replyEnglish: parsed.translation || '',
-          suggestedReplies: (Array.isArray(parsed.suggestions) ? parsed.suggestions : []).map((s: string) => ({
-            lt: s,
-            en: '',
-          })),
-        });
-      } catch (err) {
-        console.warn(`[Tutor API] Model ${modelName} attempt failed:`, err);
-        lastError = err;
+        parsed = JSON.parse(cleanedJson);
+      } catch (parseErr) {
+        console.warn('[Tutor API] Direct JSON parse failed, attempting regex recovery:', parseErr);
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsed = JSON.parse(jsonMatch[0]);
+          } catch (nestedErr) {
+            console.error('[Tutor API] Fallback JSON parse failed:', nestedErr);
+          }
+        }
       }
-    }
 
-    console.error('[Tutor API] All candidate models failed:', lastError);
-    return NextResponse.json(
-      {
-        error: 'Failed to generate response from Gemini AI.',
-        reply: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
-        translation: 'Sorry, a connection error occurred. Let us try once more!',
-        suggestions: ['Bandykime dar kartą'],
-      },
-      { status: 502 }
-    );
+      const reply = parsed.reply || responseText.replace(/```[a-z]*\n?/gi, '').trim();
+      const translation = parsed.translation || '';
+      const suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions : [];
+
+      return NextResponse.json({
+        reply,
+        translation,
+        suggestions,
+        // Backward compatibility mappings
+        replyLithuanian: reply,
+        replyEnglish: translation,
+        suggestedReplies: suggestions.map((s: string) => ({
+          lt: s,
+          en: '',
+        })),
+      });
+    } catch (error) {
+      console.error("[TUTOR_API_ERROR]:", error);
+      return NextResponse.json(
+        {
+          error: error instanceof Error ? error.message : 'Failed to generate response from Gemini AI.',
+          reply: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
+          translation: 'Sorry, a connection error occurred. Let us try once more!',
+          suggestions: ['Bandykime dar kartą'],
+        },
+        { status: 502 }
+      );
+    }
   } catch (error) {
-    console.error('[Tutor API] Unexpected error in route:', error);
+    console.error("[TUTOR_API_ERROR]:", error);
     return NextResponse.json(
       {
         error: 'Internal server error',
