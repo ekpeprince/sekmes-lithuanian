@@ -9,7 +9,13 @@ async function handleTtsRequest(rawText: string) {
   }
 
   try {
-    const encoded = encodeURIComponent(text.slice(0, 200));
+    // Sanitize punctuation marks that distort Lithuanian lexical stress
+    const cleanSpeechText = text.replace(/[!?,.:;"]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!cleanSpeechText) {
+      return new Response('Missing text parameter', { status: 400 });
+    }
+
+    const encoded = encodeURIComponent(cleanSpeechText.slice(0, 200));
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=lt&client=tw-ob`;
 
     const audioRes = await fetch(ttsUrl, {
@@ -30,7 +36,7 @@ async function handleTtsRequest(rawText: string) {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
-        'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
   } catch (error) {

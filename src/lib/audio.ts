@@ -197,7 +197,7 @@ class SoundManager {
     }
 
     try {
-      const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}`);
+      const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}&v=2`);
       this.currentAudio = audio;
 
       audio.onended = () => {
