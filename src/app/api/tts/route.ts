@@ -9,13 +9,20 @@ async function handleTtsRequest(rawText: string) {
   }
 
   try {
-    // Sanitize punctuation marks that distort Lithuanian lexical stress
-    const cleanSpeechText = text.replace(/[!?,.:;"]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!cleanSpeechText) {
+    // 1. Convert exclamation marks '!' into a period to avoid pitch distortion while forcing a natural pause
+    let naturalSpeech = text.replace(/!+/g, '.');
+    // 2. Normalize ellipses or repeated punctuation
+    naturalSpeech = naturalSpeech.replace(/\.{2,}/g, '.');
+    // 3. Ensure spaces follow commas, periods, and question marks for natural prosodic cadence
+    naturalSpeech = naturalSpeech.replace(/([,?.])(?=[^\s])/g, '$1 ');
+    // 4. Clean up excess whitespace
+    naturalSpeech = naturalSpeech.replace(/\s+/g, ' ').trim();
+
+    if (!naturalSpeech) {
       return new Response('Missing text parameter', { status: 400 });
     }
 
-    const encoded = encodeURIComponent(cleanSpeechText.slice(0, 200));
+    const encoded = encodeURIComponent(naturalSpeech.slice(0, 300));
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=lt&client=tw-ob`;
 
     const audioRes = await fetch(ttsUrl, {
