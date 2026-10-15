@@ -18,7 +18,17 @@ interface TutorRequest {
   learnerMemory?: string;
 }
 
+import { FREE_CHAT_SCENARIO } from '@/data/scenarios';
+
 const SCENARIO_CONTEXTS = {
+  'free-chat': {
+    title: `${FREE_CHAT_SCENARIO.name} (${FREE_CHAT_SCENARIO.lithuanianName})`,
+    role: FREE_CHAT_SCENARIO.promptSystem,
+    initialGreeting: FREE_CHAT_SCENARIO.greeting,
+    initialGreetingEn: FREE_CHAT_SCENARIO.greetingEn,
+    initialTip: FREE_CHAT_SCENARIO.tip || 'Practice natural Lithuanian conversation.',
+    starterSuggestions: FREE_CHAT_SCENARIO.initialSuggestions,
+  },
   cafe: {
     title: 'Vilniaus Senamiesčio Kavinė',
     role: 'You are a warm, friendly barista at an artisanal café in Vilnius Old Town. Help the student order coffee, tea, šakotis, or traditional pastries in simple, encouraging Lithuanian.',
@@ -119,10 +129,10 @@ export async function POST(req: NextRequest) {
     const body: TutorRequest = await req.json();
 
     // 2. Strict Input Sanitization & Payload Caps
-    const rawScenario = body.scenario || 'cafe';
-    const scenario = ['cafe', 'market', 'directions', 'free', 'custom'].includes(rawScenario)
+    const rawScenario = body.scenario || 'free-chat';
+    const scenario = ['free-chat', 'cafe', 'market', 'directions', 'free', 'custom'].includes(rawScenario)
       ? rawScenario
-      : 'cafe';
+      : 'free-chat';
 
     const userText = (body.userText || '').slice(0, 300).trim();
     const customTopic = (body.customTopic || '').slice(0, 100).trim();
@@ -359,22 +369,38 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
         ];
       }
     } else {
-      // Free talk
-      if (normalizedInput.includes('labas') || normalizedInput.includes('sveik')) {
-        replyLithuanian = 'Labas! Džiaugiuosi tave matydama. Papasakok, iš kur esi ir kodėl mokaisi lietuvių kalbos?';
-        replyEnglish = 'Hello! I am glad to see you. Tell me, where are you from and why are you learning Lithuanian?';
-        grammarTip = '„Iš kur esi?“ (Where are you from?) uses the Genitive question word „iš kur“.';
+      // Free talk / Free chat
+      if (normalizedInput.includes('lietuv') || normalizedInput.includes('papasakok')) {
+        replyLithuanian = 'Lietuva yra nuostabi šalis prie Baltijos jūros! Turime žalius miškus, gražius ežerus ir seną, dainingą kalbą. Ar esi buvęs Lietuvoje?';
+        replyEnglish = 'Lithuania is a wonderful country by the Baltic Sea! We have green forests, beautiful lakes, and an ancient, melodic language. Have you been to Lithuania?';
+        grammarTip = '„Prie Baltijos jūros“ uses preposition „prie“ (by/near) with Genitive case.';
         suggestedReplies = [
-          { lt: 'Aš esu studentas ir man patinka Lietuva!', en: 'I am a student and I like Lithuania!' },
-          { lt: 'Mano draugai gyvena Vilniuje.', en: 'My friends live in Vilnius.' },
+          { lt: 'Taip, buvau Vilniuje ir man labai patiko!', en: 'Yes, I was in Vilnius and liked it a lot!' },
+          { lt: 'Dar nebuvau, bet labai noriu atvykti!', en: 'Not yet, but I really want to visit!' },
+        ];
+      } else if (normalizedInput.includes('žod') || normalizedInput.includes('išmokyk') || normalizedInput.includes('nauj')) {
+        replyLithuanian = 'Štai puikus lietuviškas žodis: „Akimirka“! Tai reiškia trumpą momentą, akies mirktelėjimą (a blink of an eye / a moment). Gražus žodis, tiesa?';
+        replyEnglish = 'Here is a great Lithuanian word: „Akimirka“! It means a short moment, literally "the blinking of an eye". A beautiful word, right?';
+        grammarTip = '„Akimirka“ comes from „akis“ (eye) + „mirktelėti“ (to blink).';
+        suggestedReplies = [
+          { lt: 'Labai gražus žodis!', en: 'Very beautiful word!' },
+          { lt: 'Kaip ištarti šį žodį?', en: 'How to pronounce this word?' },
+        ];
+      } else if (normalizedInput.includes('kaip sekasi') || normalizedInput.includes('labas') || normalizedInput.includes('sveik')) {
+        replyLithuanian = 'Labas! Man sekasi puikiai, ačiū! Šiandien Vilniuje nuostabi diena. O kaip sekasi tau?';
+        replyEnglish = 'Hello! I am doing great, thank you! It is a wonderful day in Vilnius today. And how are you doing?';
+        grammarTip = '„Kaip sekasi?“ is the standard friendly inquiry: "How is it going?".';
+        suggestedReplies = [
+          { lt: 'Man sekasi labai gerai, ačiū!', en: 'I am doing very well, thank you!' },
+          { lt: 'Mokausi naujų lietuviškų žodžių.', en: 'I am learning new Lithuanian words.' },
         ];
       } else {
-        replyLithuanian = 'Puikiai kalbi! Kiekvieną dieną praktikuojantis, kalbėti taps vis lengviau ir natūraliau.';
-        replyEnglish = 'You speak wonderfully! Practicing every day, speaking will become easier and more natural.';
+        replyLithuanian = 'Puikiai kalbi! Kiekvieną dieną praktikuojantis, kalbėti taps vis lengviau ir natūraliau. Apie ką dar norėtum pasikalbėti?';
+        replyEnglish = 'You speak wonderfully! Practicing every day, speaking will become easier and more natural. What else would you like to talk about?';
         grammarTip = 'Lithuanian adverb „puikiai“ (wonderfully/excellently) ends in -iai.';
         suggestedReplies = [
-          { lt: 'Ačiū už padrąsinimą!', en: 'Thank you for the encouragement!' },
-          { lt: 'Koks tavo mėgstamiausias lietuviškas žodis?', en: 'What is your favorite Lithuanian word?' },
+          { lt: 'Papasakok apie Lietuvą 🇱🇹', en: 'Tell me about Lithuania' },
+          { lt: 'Išmokyk mane naują žodį', en: 'Teach me a new word' },
         ];
       }
     }

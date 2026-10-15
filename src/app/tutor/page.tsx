@@ -41,7 +41,9 @@ import {
   TutorMemory,
 } from '@/lib/tutorMemory';
 
-type ScenarioType = 'cafe' | 'market' | 'directions' | 'free' | 'custom';
+import { FREE_CHAT_SCENARIO } from '@/data/scenarios';
+
+type ScenarioType = 'free-chat' | 'cafe' | 'market' | 'directions' | 'free' | 'custom';
 
 interface Message {
   id: string;
@@ -142,6 +144,24 @@ const PRESET_CUSTOM_TOPICS = [
 
 const SCENARIOS = [
   {
+    id: 'free-chat' as ScenarioType,
+    title: '✨ Free Conversation',
+    name: 'Free Conversation',
+    lithuanianName: 'Laisvas Pokalbis',
+    subtitle: 'Laisvas Pokalbis • Open Talk',
+    icon: Sparkles,
+    color: 'from-amber-400 via-rose-400 to-indigo-500',
+    greeting: 'Labas! Aš esu Aistė. Apie ką norėtum pasikalbėti šiandien?',
+    greetingEn: "Hi! I'm Aistė. What would you like to talk about today?",
+    tip: 'Feel free to speak about any topic! Aistė adapts to your level and gently corrects mistakes.',
+    promptSystem: FREE_CHAT_SCENARIO.promptSystem,
+    initialSuggestions: [
+      { lt: 'Kaip sekasi?', en: 'How are you?' },
+      { lt: 'Papasakok apie Lietuvą 🇱🇹', en: 'Tell me about Lithuania' },
+      { lt: 'Išmokyk mane naują žodį', en: 'Teach me a new word' },
+    ],
+  },
+  {
     id: 'cafe' as ScenarioType,
     title: 'Kavinėje',
     subtitle: 'Vilnius Old Town Café',
@@ -221,20 +241,24 @@ const SCENARIOS = [
 export default function TutorPage() {
   const { addXp } = useGame();
   useActiveTimer(true);
-  const [scenario, setScenario] = useState<ScenarioType>('cafe');
+  const [scenario, setScenario] = useState<ScenarioType>('free-chat');
   const [messages, setMessages] = useState<Message[]>(() => [
     {
       id: 'init-1',
       role: 'assistant',
-      textLt: SCENARIOS[0].greeting,
-      textEn: SCENARIOS[0].greetingEn,
-      tip: SCENARIOS[0].tip,
+      textLt: 'Labas! Aš esu Aistė. Apie ką norėtum pasikalbėti šiandien?',
+      textEn: "Hi! I'm Aistė. What would you like to talk about today?",
+      tip: 'Feel free to speak about any topic! Aistė adapts to your level and gently corrects mistakes.',
       timestamp: '12:00',
     },
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => SCENARIOS[0].initialSuggestions);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => [
+    { lt: 'Kaip sekasi?', en: 'How are you?' },
+    { lt: 'Papasakok apie Lietuvą 🇱🇹', en: 'Tell me about Lithuania' },
+    { lt: 'Išmokyk mane naują žodį', en: 'Teach me a new word' },
+  ]);
   const [showEnglishMap, setShowEnglishMap] = useState<Record<string, boolean>>({});
   const [isRecording, setIsRecording] = useState(false);
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
@@ -845,25 +869,36 @@ export default function TutorPage() {
       </div>
 
       {/* 3. Suggested Response Chips (Quick Replies) */}
-      {suggestions.length > 0 && !loading && (
-        <div className="relative shrink-0 bg-slate-50/95 border-t border-slate-100">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-3 py-1.5 scroll-smooth">
-            {suggestions.map((s, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSendMessage(s.lt)}
-                title={s.en ? `"${s.en}" (Tap to reply)` : 'Tap to reply'}
-                className="shrink-0 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
-              >
-                {s.lt}
-              </button>
-            ))}
+      {(() => {
+        const displayedSuggestions =
+          scenario === 'free-chat' && messages.length === 1
+            ? [
+                { lt: 'Kaip sekasi?', en: 'How are you?' },
+                { lt: 'Papasakok apie Lietuvą 🇱🇹', en: 'Tell me about Lithuania' },
+                { lt: 'Išmokyk mane naują žodį', en: 'Teach me a new word' },
+              ]
+            : suggestions;
+
+        return displayedSuggestions.length > 0 && !loading ? (
+          <div className="relative shrink-0 bg-slate-50/95 border-t border-slate-100">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-3 py-1.5 scroll-smooth">
+              {displayedSuggestions.map((s, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSendMessage(s.lt)}
+                  title={s.en ? `"${s.en}" (Tap to reply)` : 'Tap to reply'}
+                  className="shrink-0 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+                >
+                  {s.lt}
+                </button>
+              ))}
+            </div>
+            {/* Subtle right-edge fade mask */}
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-50/95 to-transparent" />
           </div>
-          {/* Subtle right-edge fade mask */}
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-50/95 to-transparent" />
-        </div>
-      )}
+        ) : null;
+      })()}
 
       {/* Listening Status Indicator */}
       {isRecording && (
