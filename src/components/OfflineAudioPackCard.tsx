@@ -77,7 +77,7 @@ export const OfflineAudioPackCard: React.FC = () => {
     : 0;
 
   return (
-    <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xs transition-all mb-8">
+    <div className="rounded-3xl bg-white border-2 border-slate-200 p-4 sm:p-5 shadow-xs transition-all mb-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-500 text-white shadow-md shadow-sky-500/20">

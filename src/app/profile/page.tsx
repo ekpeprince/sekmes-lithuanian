@@ -63,71 +63,71 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-8 pb-24">
-      <div className="mx-auto max-w-4xl">
-        {/* Profile Header Card */}
-        <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 sm:p-8 shadow-xs mb-8 flex flex-col sm:flex-row items-center gap-6">
-          {/* Avatar */}
-          <div className="relative">
-            <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-5xl shadow-lg shadow-emerald-500/20">
+    <div className="min-h-screen bg-slate-50 py-4 sm:py-6 px-3 sm:px-6 pb-24">
+      <div className="mx-auto max-w-4xl flex flex-col gap-3">
+        {/* Compact Horizontal Hero Card */}
+        <div className="flex items-center gap-3 sm:gap-4 p-4 rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs mb-0">
+          {/* Left: Avatar Icon */}
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shrink-0 flex items-center justify-center text-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 shadow-md shadow-emerald-500/20">
               🇱🇹
             </div>
-            <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-amber-400 text-white font-black text-xs border-2 border-white shadow-xs">
+            <div className="absolute -bottom-1 -right-1 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-amber-400 text-white font-black text-[9px] sm:text-[10px] border-2 border-white shadow-xs">
               L{level}
             </div>
           </div>
 
-          <div className="text-center sm:text-left flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  {displayName}
-                </h1>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mt-0.5">
-                  Lithuanian Learner • Level {level}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 self-center sm:self-auto">
-                <span className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 font-extrabold text-xs px-3 py-1.5 rounded-xl">
-                  <Sparkles className="h-4 w-4 fill-amber-500" />
-                  {progress.gems} Amber Gems
+          {/* Right: User Details & Progress */}
+          <div className="flex-1 min-w-0">
+            {/* Top Row: User Name + Gems + Settings Gear Icon */}
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="text-base sm:text-lg font-black text-slate-900 truncate">
+                {displayName}
+              </h1>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 font-extrabold text-[11px] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xl">
+                  <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-amber-500" />
+                  <span>{progress.gems}</span>
+                  <span className="hidden sm:inline">Amber Gems</span>
                 </span>
-
-                {/* Subtle settings gear icon */}
                 <button
                   type="button"
                   onClick={() => {
                     sounds.playClick();
                     setShowSettingsModal(true);
                   }}
-                  className="flex items-center justify-center h-8 w-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                  className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
                   title="Settings & Preferences"
                   aria-label="Settings"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </button>
               </div>
             </div>
 
-            {/* Course Completion Progress Bar */}
-            <div className="mt-4">
-              <div className="flex justify-between text-xs font-black text-slate-600 mb-1">
-                <span>Curriculum Progress:</span>
-                <span>{completedCount} / {totalCount} Lessons ({completionPercent}%)</span>
-              </div>
-              <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200">
-                <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-                  style={{ width: `${completionPercent}%` }}
-                />
-              </div>
+            {/* Subtitle */}
+            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mt-0.5">
+              Lithuanian Learner • Level {level}
+            </p>
+
+            {/* Progress Row */}
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1 mb-1">
+              <span>Curriculum Progress: </span>
+              <span>{completedCount} / {totalCount} Lessons ({completionPercent}%)</span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                style={{ width: `${completionPercent}%` }}
+              />
             </div>
           </div>
         </div>
 
         {/* Total Immersion Dashboard */}
-        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs mb-4">
+        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs mb-0">
           {/* Header */}
           <div className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
             <span>🇱🇹</span>
@@ -172,7 +172,7 @@ export default function ProfilePage() {
         </div>
 
         {/* League & Speed Drill Highlights: 2-Column Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-0">
           {/* Left: Bronze League Card */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-3 p-3 sm:p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 h-full">
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-xl sm:text-2xl">
@@ -204,36 +204,43 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Achievements Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
-            <Award className="h-6 w-6 text-amber-500" />
+        {/* 2-Column Achievements Grid */}
+        <div>
+          <h2 className="text-sm sm:text-base font-black text-slate-900 mb-2 flex items-center gap-1.5">
+            <Award className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
             <span>Achievements</span>
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             {achievements.map((item) => (
               <div
                 key={item.id}
-                className={`rounded-3xl p-5 border-2 flex items-center gap-4 transition-all ${
+                className={`p-2.5 sm:p-3 rounded-2xl border-2 flex flex-col justify-between transition-all ${
                   item.isUnlocked
-                    ? 'bg-white border-amber-300 shadow-xs'
-                    : 'bg-slate-100/60 border-slate-200 opacity-60'
+                    ? 'bg-amber-50/60 border-amber-300'
+                    : 'bg-slate-50 border-slate-200 opacity-75'
                 }`}
               >
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-2xl border border-amber-200">
-                  {item.icon}
-                </div>
                 <div>
-                  <h4 className="font-extrabold text-slate-900 text-sm sm:text-base">
-                    {item.title}
-                  </h4>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-xl bg-white border border-amber-200/80 text-base sm:text-lg shadow-2xs">
+                      {item.icon}
+                    </span>
+                    <h4 className="text-xs font-black text-slate-900 truncate">
+                      {item.title}
+                    </h4>
+                  </div>
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-tight line-clamp-2 mb-1.5">
                     {item.desc}
                   </p>
-                  <span className={`inline-block mt-1 text-[10px] font-black uppercase tracking-wider ${
-                    item.isUnlocked ? 'text-emerald-600' : 'text-slate-400'
-                  }`}>
+                </div>
+
+                <div>
+                  <span
+                    className={`inline-block text-[10px] font-black uppercase tracking-wider ${
+                      item.isUnlocked ? 'text-emerald-600' : 'text-slate-400'
+                    }`}
+                  >
                     {item.isUnlocked ? '✓ Unlocked' : 'Locked'}
                   </span>
                 </div>
@@ -252,27 +259,27 @@ export default function ProfilePage() {
             sounds.playClick();
             setShowNotificationModal(true);
           }}
-          className="w-full flex items-center justify-between p-5 rounded-3xl bg-white border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xs transition-all text-left cursor-pointer group mb-8"
+          className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-3xl bg-white border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xs transition-all text-left cursor-pointer group"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 group-hover:scale-105 transition-transform">
-              <BellRing className="h-6 w-6" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 group-hover:scale-105 transition-transform">
+              <BellRing className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-black text-slate-800 text-sm sm:text-base">
+              <h3 className="font-black text-slate-800 text-xs sm:text-sm">
                 Notifications & Reminders
               </h3>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-[11px] text-slate-500 font-medium">
                 Streak protection, Word of the Day & heart refill alerts
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-block text-xs font-black px-3 py-1 rounded-full bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+            <span className="hidden sm:inline-block text-[11px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
               Configure
             </span>
-            <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
           </div>
         </button>
 
