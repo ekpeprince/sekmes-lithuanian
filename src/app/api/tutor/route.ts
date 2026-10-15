@@ -108,8 +108,8 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       ? `Conversation history:\n${transcript}\n\nRespond directly as Aistė to the user's latest statement in structured JSON.`
       : `Start the conversation warmly as Aistė in structured JSON.`;
 
-    const MODEL_NAME = 'gemini-2.5-flash';
-    const CANDIDATES = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+    const CANDIDATES = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'];
+    const MODEL_NAME = 'gemini-3.6-flash';
     let lastError: unknown = null;
 
     try {
