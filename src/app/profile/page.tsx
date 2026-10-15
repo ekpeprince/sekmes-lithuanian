@@ -79,10 +79,10 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 p-3 sm:p-4 pb-20 md:pb-8">
-      <div className="mx-auto max-w-4xl flex flex-col gap-2 sm:gap-2.5">
+    <div className="min-h-screen bg-slate-50 p-3 pb-20 md:pb-8">
+      <div className="mx-auto max-w-4xl flex flex-col gap-2">
         {/* Compact Horizontal Hero Card */}
-        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs mb-2">
           {/* Left: Avatar Icon */}
           <div className="relative shrink-0">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shrink-0 flex items-center justify-center text-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 shadow-md shadow-emerald-500/20">
@@ -143,7 +143,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Total Immersion Dashboard */}
-        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-3 sm:p-3.5 shadow-xs">
+        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-3 sm:p-3.5 shadow-xs mb-2">
           {/* Header */}
           <div className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
             <span>🇱🇹</span>
@@ -188,7 +188,7 @@ export default function ProfilePage() {
         </div>
 
         {/* League & Speed Drill Highlights: 2-Column Grid */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           {/* Left: Bronze League Card */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 h-full">
             <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-lg sm:text-xl">
@@ -220,29 +220,29 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* 2-Column Gamified Achievements Grid */}
-        <div>
+        {/* Achievements Horizontal Carousel Strip */}
+        <div className="mb-2">
           <div className="flex items-center gap-1.5 mb-1.5 text-xs font-black uppercase tracking-wider text-slate-600">
             <span>🏅</span>
             <span>Achievements</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
             {achievements.map((item) => {
               const progressPercent = Math.min(100, Math.round((item.current / item.max) * 100));
               return (
                 <div
                   key={item.id}
-                  className={`p-3 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+                  className={`w-[140px] shrink-0 p-2.5 rounded-2xl border-2 flex flex-col justify-between transition-all ${
                     item.isUnlocked
                       ? 'bg-gradient-to-b from-amber-50/80 to-white border-amber-300 shadow-2xs'
                       : 'bg-slate-50/70 border-slate-200/90 opacity-85'
                   }`}
                 >
-                  {/* Top Row: Circular Medallion + Reward Pill */}
+                  {/* Top row: Medallion + Reward pill */}
                   <div className="flex items-center justify-between">
                     <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0 ${
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 ${
                         item.isUnlocked
                           ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xs ring-2 ring-amber-200'
                           : 'bg-slate-200/80 text-slate-400 border border-slate-300'
@@ -251,37 +251,37 @@ export default function ProfilePage() {
                       {item.icon}
                     </div>
 
-                    <span className="text-[10px] font-black text-amber-600 bg-amber-100/60 px-1.5 py-0.5 rounded-md">
+                    <span className="text-[9px] font-black text-amber-600 bg-amber-100/60 px-1.5 py-0.5 rounded-md">
                       {item.reward}
                     </span>
                   </div>
 
-                  {/* Middle: Title & Short Description */}
+                  {/* Middle row: Title + Subtitle */}
                   <div>
-                    <h4 className="text-xs font-black text-slate-900 mt-2 truncate">
+                    <h4 className="text-[11px] font-black text-slate-900 truncate mt-1.5">
                       {item.title}
                     </h4>
-                    <p className="text-[10px] text-slate-500 font-medium line-clamp-1">
+                    <p className="text-[9px] text-slate-500 font-medium truncate">
                       {item.desc}
                     </p>
                   </div>
 
-                  {/* Bottom State */}
+                  {/* Bottom status */}
                   <div>
                     {item.isUnlocked ? (
-                      <div className="text-[10px] font-black text-emerald-600 flex items-center gap-1 mt-2">
+                      <div className="text-[9px] font-black text-emerald-600 flex items-center gap-1 mt-1.5">
                         <span>✓</span>
                         <span>Unlocked</span>
                       </div>
                     ) : (
-                      <div className="mt-2">
-                        <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                      <div className="mt-1.5">
+                        <div className="h-[3px] w-full bg-slate-200 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full bg-amber-500 transition-all duration-300"
                             style={{ width: `${progressPercent}%` }}
                           />
                         </div>
-                        <p className="text-[9px] font-bold text-slate-400 mt-0.5 text-right">
+                        <p className="text-[8px] font-bold text-slate-400 mt-0.5 text-right">
                           {item.progressText}
                         </p>
                       </div>
