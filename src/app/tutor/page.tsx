@@ -26,6 +26,9 @@ import {
   Info,
   ChevronDown,
   Lightbulb,
+  Plus,
+  History,
+  Search,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
@@ -40,6 +43,19 @@ import {
   clearTutorMemory,
   TutorMemory,
 } from '@/lib/tutorMemory';
+import {
+  getSessions,
+  saveSession,
+  deleteSession,
+  createNewSession,
+  getActiveSessionId,
+  setActiveSessionId,
+  getSession,
+  TutorMessage,
+  TutorSession,
+  INITIAL_AISTE_GREETING,
+  INITIAL_AISTE_TRANSLATION,
+} from '@/lib/tutorStorage';
 
 import { FREE_CHAT_SCENARIO } from '@/data/scenarios';
 
@@ -238,6 +254,54 @@ const SCENARIOS = [
   },
 ];
 
+function convertToTutorMessages(msgs: Message[], lastSuggestions?: Suggestion[]): TutorMessage[] {
+  return msgs.map((m, idx) => ({
+    id: m.id,
+    sender: m.role === 'user' ? 'user' : 'aiste',
+    text: m.textLt,
+    translation: m.textEn,
+    suggestions:
+      idx === msgs.length - 1 && lastSuggestions && lastSuggestions.length > 0
+        ? lastSuggestions.map((s) => s.lt)
+        : undefined,
+    timestamp: m.timestamp,
+  }));
+}
+
+function convertFromTutorMessages(tMsgs: TutorMessage[]): { messages: Message[]; suggestions: Suggestion[] } {
+  const loadedMessages: Message[] = tMsgs.map((tm) => ({
+    id: tm.id,
+    role: tm.sender === 'user' ? 'user' : 'assistant',
+    textLt: tm.text,
+    textEn: tm.translation,
+    timestamp: tm.timestamp,
+  }));
+
+  const lastAssistantWithSuggestions = [...tMsgs]
+    .reverse()
+    .find((m) => m.sender === 'aiste' && m.suggestions && m.suggestions.length > 0);
+
+  const loadedSuggestions: Suggestion[] = lastAssistantWithSuggestions?.suggestions
+    ? lastAssistantWithSuggestions.suggestions.map((lt) => ({ lt, en: '' }))
+    : [
+        { lt: 'Kaip sekasi?', en: 'How are you?' },
+        { lt: 'Papasakok apie Lietuvą 🇱🇹', en: 'Tell me about Lithuania' },
+        { lt: 'Išmokyk mane naują žodį', en: 'Teach me a new word' },
+      ];
+
+  return { messages: loadedMessages, suggestions: loadedSuggestions };
+}
+
+function formatSessionDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  return date.toLocaleDateString('lt-LT', { month: 'short', day: 'numeric' });
+}
+
 export default function TutorPage() {
   const { addXp } = useGame();
   useActiveTimer(true);
@@ -246,8 +310,8 @@ export default function TutorPage() {
     {
       id: 'init-1',
       role: 'assistant',
-      textLt: 'Labas! Aš esu Aistė. Apie ką norėtum pasikalbėti šiandien?',
-      textEn: "Hi! I'm Aistė. What would you like to talk about today?",
+      textLt: INITIAL_AISTE_GREETING,
+      textEn: INITIAL_AISTE_TRANSLATION,
       tip: 'Feel free to speak about any topic! Aistė adapts to your level and gently corrects mistakes.',
       timestamp: '12:00',
     },
@@ -262,6 +326,12 @@ export default function TutorPage() {
   const [showEnglishMap, setShowEnglishMap] = useState<Record<string, boolean>>({});
   const [isRecording, setIsRecording] = useState(false);
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
+
+  // Active chat session & history drawer states
+  const [activeSessionId, setActiveSessionIdState] = useState<string>('');
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [sessionsList, setSessionsList] = useState<TutorSession[]>([]);
 
   // Auto-speak voice mode
   const [autoSpeak, setAutoSpeak] = useState(true);
@@ -315,6 +385,37 @@ export default function TutorPage() {
     const updated = recordNewSession(currentScenario.title);
     setMemory(updated);
     setEditingLearnerName(updated.learnerName || '');
+  }, []);
+
+  // Load or create active chat session from storage
+  useEffect(() => {
+    const allSessions = getSessions();
+    const storedActiveId = getActiveSessionId();
+    let currentSession: TutorSession | null = null;
+
+    if (storedActiveId) {
+      currentSession = allSessions.find((s) => s.id === storedActiveId) || null;
+    }
+
+    if (!currentSession) {
+      if (allSessions.length > 0) {
+        currentSession = allSessions[0];
+      } else {
+        currentSession = createNewSession();
+      }
+    }
+
+    setActiveSessionId(currentSession.id);
+    setActiveSessionIdState(currentSession.id);
+    setSessionsList(getSessions());
+
+    if (currentSession.messages && currentSession.messages.length > 0) {
+      const { messages: restoredMsgs, suggestions: restoredSuggs } = convertFromTutorMessages(
+        currentSession.messages
+      );
+      setMessages(restoredMsgs);
+      setSuggestions(restoredSuggs);
+    }
   }, []);
 
   // Clear toast after 4s
@@ -437,8 +538,90 @@ export default function TutorPage() {
     setShowEnglishMap({});
     recordNewSession(target.title);
 
+    // Create and save new session for selected scenario
+    const newSession = createNewSession(target.title.replace(/^✨\s*/, ''));
+    newSession.messages = [
+      {
+        id: initialMsg.id,
+        sender: 'aiste',
+        text: initialMsg.textLt,
+        translation: initialMsg.textEn,
+        suggestions: target.initialSuggestions.map((s) => s.lt),
+        timestamp: initialMsg.timestamp,
+      },
+    ];
+    saveSession(newSession);
+    setActiveSessionId(newSession.id);
+    setActiveSessionIdState(newSession.id);
+    setSessionsList(getSessions());
+
     if (autoSpeak) {
       handlePlayAudio(initialMsg.id, initialMsg.textLt);
+    }
+  };
+
+  // Start new clean chat session (+ Naujas)
+  const handleNewChat = () => {
+    // 1. Archive active session: auto-title from first user message if still default
+    if (activeSessionId) {
+      const current = getSession(activeSessionId);
+      if (current && (current.title === 'Naujas pokalbis' || !current.title)) {
+        const firstUser = current.messages.find((m) => m.sender === 'user');
+        if (firstUser) {
+          const autoTitle =
+            firstUser.text.length > 30 ? `${firstUser.text.slice(0, 30)}...` : firstUser.text;
+          saveSession({ ...current, title: autoTitle });
+        }
+      }
+    }
+
+    // 2. Create clean session
+    const newSession = createNewSession();
+    setActiveSessionId(newSession.id);
+    setActiveSessionIdState(newSession.id);
+    setSessionsList(getSessions());
+
+    // 3. Reset active state
+    const { messages: freshMsgs, suggestions: freshSuggs } = convertFromTutorMessages(
+      newSession.messages
+    );
+    setMessages(freshMsgs);
+    setSuggestions(freshSuggs);
+    setShowEnglishMap({});
+    setInputText('');
+    setScenario('free-chat');
+
+    if (autoSpeak && freshMsgs[0]) {
+      handlePlayAudio(freshMsgs[0].id, freshMsgs[0].textLt);
+    }
+  };
+
+  // Switch to another session from history drawer
+  const handleSelectSession = (targetSession: TutorSession) => {
+    setActiveSessionId(targetSession.id);
+    setActiveSessionIdState(targetSession.id);
+    const { messages: restoredMsgs, suggestions: restoredSuggs } = convertFromTutorMessages(
+      targetSession.messages
+    );
+    setMessages(restoredMsgs);
+    setSuggestions(restoredSuggs);
+    setShowEnglishMap({});
+    setIsHistoryDrawerOpen(false);
+  };
+
+  // Delete a session
+  const handleDeleteSession = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteSession(id);
+    const updated = getSessions();
+    setSessionsList(updated);
+
+    if (activeSessionId === id) {
+      if (updated.length > 0) {
+        handleSelectSession(updated[0]);
+      } else {
+        handleNewChat();
+      }
     }
   };
 
@@ -447,21 +630,7 @@ export default function TutorPage() {
     if (scenario === 'custom') {
       initCustomScenario(customTopic, customRole);
     } else {
-      const initialMsg: Message = {
-        id: createMessageId(`init-${scenario}`),
-        role: 'assistant',
-        textLt: currentScenario.greeting,
-        textEn: currentScenario.greetingEn,
-        tip: currentScenario.tip,
-        timestamp: getCurrentTimestamp(),
-      };
-      setMessages([initialMsg]);
-      setSuggestions(currentScenario.initialSuggestions);
-      setShowEnglishMap({});
-
-      if (autoSpeak) {
-        handlePlayAudio(initialMsg.id, initialMsg.textLt);
-      }
+      handleNewChat();
     }
   };
 
@@ -535,10 +704,36 @@ export default function TutorPage() {
     setMessages(newHistory);
     setLoading(true);
 
+    // Auto-title session if it's the first user message
+    let currentSessionId = activeSessionId;
+    let activeSession = currentSessionId ? getSession(currentSessionId) : null;
+    if (!activeSession) {
+      const fresh = createNewSession();
+      currentSessionId = fresh.id;
+      setActiveSessionId(fresh.id);
+      setActiveSessionIdState(fresh.id);
+      activeSession = fresh;
+    }
+
+    let sessionTitle = activeSession.title || 'Naujas pokalbis';
+    if (sessionTitle === 'Naujas pokalbis' || !sessionTitle.trim()) {
+      sessionTitle = text.length > 32 ? `${text.slice(0, 32)}...` : text;
+    }
+
+    // Save immediate user message to active session
+    saveSession({
+      id: currentSessionId,
+      title: sessionTitle,
+      createdAt: activeSession.createdAt || Date.now(),
+      updatedAt: Date.now(),
+      messages: convertToTutorMessages(newHistory),
+    });
+    setSessionsList(getSessions());
+
     try {
-      const apiMessages = newHistory.map((m) => ({
-        role: m.role,
-        content: m.textLt,
+      const historyPayload = messages.map((m) => ({
+        role: m.role === 'assistant' ? ('model' as const) : ('user' as const),
+        text: m.textLt,
       }));
 
       const memoryPrompt = formatTutorMemoryPrompt(getTutorMemory());
@@ -547,11 +742,11 @@ export default function TutorPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          message: text,
+          history: historyPayload,
           scenario,
           customTopic,
           customRole,
-          messages: apiMessages,
-          userText: text,
           learnerMemory: memoryPrompt,
         }),
       });
@@ -570,7 +765,8 @@ export default function TutorPage() {
         timestamp: getCurrentTimestamp(),
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      const finalMessages = [...newHistory, assistantMsg];
+      setMessages(finalMessages);
 
       // Normalize suggestions to Suggestion[] ({ lt: string, en: string })
       const rawSuggestions = data.suggestions || data.suggestedReplies || [];
@@ -579,6 +775,16 @@ export default function TutorPage() {
           typeof item === 'string' ? { lt: item, en: '' } : { lt: item.lt, en: item.en || '' }
       );
       setSuggestions(normalizedSuggestions);
+
+      // Save complete session with assistant reply and suggestions
+      saveSession({
+        id: currentSessionId,
+        title: sessionTitle,
+        createdAt: activeSession.createdAt || Date.now(),
+        updatedAt: Date.now(),
+        messages: convertToTutorMessages(finalMessages, normalizedSuggestions),
+      });
+      setSessionsList(getSessions());
 
       // Automatically speak the response if autoSpeak is on
       if (autoSpeak) {
@@ -629,72 +835,116 @@ export default function TutorPage() {
     }
   };
 
+  const filteredSessions = sessionsList.filter((s) => {
+    if (!historySearchQuery.trim()) return true;
+    const q = historySearchQuery.toLowerCase();
+    const matchTitle = (s.title || '').toLowerCase().includes(q);
+    const matchMessages = (s.messages || []).some(
+      (m) =>
+        m.text.toLowerCase().includes(q) ||
+        (m.translation && m.translation.toLowerCase().includes(q))
+    );
+    return matchTitle || matchMessages;
+  });
+
   return (
     <div className="flex flex-col h-[calc(100dvh-57px)] md:h-[calc(100vh-65px)] pb-16 md:pb-0 max-w-4xl w-full mx-auto overflow-hidden bg-slate-50 relative select-none">
       {/* 1. Sub-Header Scenario Dock */}
-      <header className="sticky top-0 w-full px-4 py-2 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between backdrop-blur-md shadow-2xs z-30 shrink-0">
-        {/* Scenario Switcher Dropdown Trigger */}
-        <div className="relative" ref={scenarioDropdownRef}>
+      <header className="sticky top-0 w-full px-3 sm:px-4 py-2 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between backdrop-blur-md shadow-2xs z-30 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Scenario Switcher Dropdown Trigger */}
+          <div className="relative shrink-0" ref={scenarioDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setScenarioDropdownOpen((prev) => !prev)}
+              className="btn-tactile bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 font-bold text-xs px-2.5 sm:px-3 py-1.5 rounded-full flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
+              aria-expanded={scenarioDropdownOpen}
+              aria-haspopup="true"
+            >
+              <currentScenario.icon className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+              <span className="truncate max-w-[105px] xs:max-w-[130px] sm:max-w-[190px]">
+                {scenario === 'custom'
+                  ? customTopic.split('(')[0].trim()
+                  : currentScenario.title.replace(/^✨\s*/, '')}
+              </span>
+              <span className="text-slate-400 text-[10px] leading-none shrink-0 ml-0.5">▾</span>
+            </button>
+
+            {/* Dropdown Popover */}
+            {scenarioDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-72 sm:w-80 rounded-2xl bg-white border-2 border-slate-200 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Choose Scenario
+                </div>
+                <div className="space-y-1">
+                  {SCENARIOS.map((sc) => {
+                    const Icon = sc.icon;
+                    const isSelected = sc.id === scenario;
+                    return (
+                      <button
+                        key={sc.id}
+                        type="button"
+                        onClick={() => {
+                          handleSelectScenario(sc.id);
+                          setScenarioDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-sky-50 text-sky-900 font-bold border border-sky-200'
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${sc.color} text-white flex items-center justify-center shrink-0 shadow-xs`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold truncate">{sc.title.replace(/^✨\s*/, '')}</div>
+                            <div className="text-[10px] text-slate-400 truncate">{sc.subtitle}</div>
+                          </div>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-sky-600 shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* New Chat Button (+ Naujas) */}
           <button
             type="button"
-            onClick={() => setScenarioDropdownOpen((prev) => !prev)}
-            className="btn-tactile bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 font-bold text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
-            aria-expanded={scenarioDropdownOpen}
-            aria-haspopup="true"
+            onClick={handleNewChat}
+            className="btn-tactile bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs px-2.5 sm:px-3 py-1.5 rounded-full flex items-center gap-1 transition cursor-pointer shadow-xs shrink-0"
+            title="Pradėti naują pokalbį (+ Naujas)"
           >
-            <currentScenario.icon className="w-3.5 h-3.5 text-slate-700 shrink-0" />
-            <span className="truncate max-w-[130px] sm:max-w-[200px]">
-              {scenario === 'custom'
-                ? customTopic.split('(')[0].trim()
-                : currentScenario.title.replace(/^✨\s*/, '')}
-            </span>
-            <span className="text-slate-400 text-[10px] leading-none shrink-0 ml-0.5">▾</span>
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span className="hidden xs:inline sm:inline text-xs tracking-tight">+ Naujas</span>
           </button>
-
-          {/* Dropdown Popover */}
-          {scenarioDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1.5 w-72 sm:w-80 rounded-2xl bg-white border-2 border-slate-200 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Choose Scenario
-              </div>
-              <div className="space-y-1">
-                {SCENARIOS.map((sc) => {
-                  const Icon = sc.icon;
-                  const isSelected = sc.id === scenario;
-                  return (
-                    <button
-                      key={sc.id}
-                      type="button"
-                      onClick={() => {
-                        handleSelectScenario(sc.id);
-                        setScenarioDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition cursor-pointer ${
-                        isSelected
-                          ? 'bg-sky-50 text-sky-900 font-bold border border-sky-200'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${sc.color} text-white flex items-center justify-center shrink-0 shadow-xs`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold truncate">{sc.title.replace(/^✨\s*/, '')}</div>
-                          <div className="text-[10px] text-slate-400 truncate">{sc.subtitle}</div>
-                        </div>
-                      </div>
-                      {isSelected && <Check className="w-4 h-4 text-sky-600 shrink-0 ml-2" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Right side: Scenario Progress / Fluency Score chip + Settings gear icon */}
+        {/* Right side: History Drawer + Scenario Progress / Fluency Score chip + Settings gear icon */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* History Drawer Trigger */}
+          <button
+            type="button"
+            onClick={() => {
+              setSessionsList(getSessions());
+              setIsHistoryDrawerOpen(true);
+            }}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 cursor-pointer relative"
+            title="Pokalbių istorija (Chat history)"
+            aria-label="Pokalbių istorija"
+          >
+            <History className="w-4 h-4 text-slate-600" />
+            {sessionsList.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                {sessionsList.length > 9 ? '9+' : sessionsList.length}
+              </span>
+            )}
+          </button>
+
           {/* Scenario Progress / Fluency Score Chip */}
           <button
             type="button"
@@ -1384,6 +1634,164 @@ export default function TutorPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 4. Slide-over History Drawer */}
+      {isHistoryDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setIsHistoryDrawerOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Slide-over Sheet */}
+          <aside className="relative w-full max-w-sm sm:max-w-md bg-white h-full shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-300">
+            {/* Drawer Header */}
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shadow-xs">
+                  <History className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-800 leading-tight">Pokalbių istorija</h2>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {sessionsList.length} {sessionsList.length === 1 ? 'pokalbis' : 'pokalbiai'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleNewChat();
+                    setIsHistoryDrawerOpen(false);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition active:scale-95 cursor-pointer shadow-xs"
+                  title="Pradėti naują pokalbį"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>+ Naujas</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsHistoryDrawerOpen(false)}
+                  className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
+                  aria-label="Uždaryti"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Real-time Search Input Bar */}
+            <div className="p-3.5 border-b border-slate-100 bg-white">
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
+                <input
+                  type="text"
+                  value={historySearchQuery}
+                  onChange={(e) => setHistorySearchQuery(e.target.value)}
+                  placeholder="Ieškoti pokalbių..."
+                  className="w-full pl-9 pr-8 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition shadow-2xs"
+                />
+                {historySearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setHistorySearchQuery('')}
+                    className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200"
+                    title="Išvalyti paiešką"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Chronological Sessions List */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {filteredSessions.length === 0 ? (
+                <div className="py-14 text-center text-slate-400 px-4">
+                  <MessageCircle className="w-10 h-10 mx-auto text-slate-300 mb-2 opacity-60" />
+                  <p className="text-xs font-bold text-slate-700">
+                    {historySearchQuery ? 'Nerasta jokių pokalbių' : 'Istorija tuščia'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                    {historySearchQuery
+                      ? 'Pabandykite ieškoti kito žodžio, temos ar frazės.'
+                      : 'Pradėkite kalbėtis su Aiste – pokalbiai išsisaugos automatiškai!'}
+                  </p>
+                </div>
+              ) : (
+                filteredSessions.map((s) => {
+                  const isActive = s.id === activeSessionId;
+                  const messageCount = s.messages.length;
+                  const lastMsg = s.messages[s.messages.length - 1];
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => handleSelectSession(s)}
+                      className={`group relative p-3 rounded-2xl border transition cursor-pointer flex flex-col gap-1.5 ${
+                        isActive
+                          ? 'bg-sky-50/70 border-sky-300 ring-1 ring-sky-300/60 shadow-xs'
+                          : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h3
+                            className={`text-xs font-black truncate ${
+                              isActive ? 'text-sky-950' : 'text-slate-800'
+                            }`}
+                          >
+                            {s.title || 'Pokalbis'}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10px] text-slate-400 font-semibold">
+                            {formatSessionDate(s.updatedAt || s.createdAt)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteSession(e, s.id)}
+                            className="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition active:scale-95"
+                            title="Ištrinti pokalbį"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {lastMsg && (
+                        <p className="text-[11px] text-slate-500 line-clamp-1 italic">
+                          {lastMsg.sender === 'user' ? 'Tu: ' : 'Aistė: '}
+                          {lastMsg.text}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium pt-0.5">
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3 text-slate-400" />
+                          <span>
+                            {messageCount} {messageCount === 1 ? 'žinutė' : 'žinutės'}
+                          </span>
+                        </span>
+                        {isActive && (
+                          <span className="text-sky-700 font-bold bg-sky-100 px-2 py-0.5 rounded-full text-[9px]">
+                            Aktyvus
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </aside>
         </div>
       )}
     </div>

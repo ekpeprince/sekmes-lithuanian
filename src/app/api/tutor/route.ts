@@ -3,12 +3,19 @@ import { GoogleGenAI } from '@google/genai';
 
 export const runtime = 'nodejs';
 
+interface ChatHistoryItem {
+  role: 'user' | 'model';
+  text: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
 interface TutorRequest {
+  message?: string;
+  history?: ChatHistoryItem[];
   messages?: Message[];
   scenario?: string;
   customTopic?: string;
@@ -100,13 +107,38 @@ Output structured JSON matching this schema:
 }
 Do NOT output markdown code blocks. Output pure JSON only.`;
 
-    const transcript = messages
-      .map((m) => `${m.role === 'user' ? 'User' : 'Aistė'}: ${m.content}`)
-      .join('\n');
+    // Normalize incoming history and latest message
+    let incomingMessage = (body.message || '').trim();
+    let history: ChatHistoryItem[] = Array.isArray(body.history) ? body.history : [];
 
-    const prompt = transcript.trim()
-      ? `Conversation history:\n${transcript}\n\nRespond directly as Aistė to the user's latest statement in structured JSON.`
-      : `Start the conversation warmly as Aistė in structured JSON.`;
+    // Fallback if legacy messages array was passed
+    if (!incomingMessage && Array.isArray(body.messages) && body.messages.length > 0) {
+      const lastMsg = body.messages[body.messages.length - 1];
+      if (lastMsg.role === 'user') {
+        incomingMessage = lastMsg.content;
+        history = body.messages.slice(0, -1).map((m) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          text: m.content,
+        }));
+      } else {
+        incomingMessage = 'Start the conversation warmly as Aistė in structured JSON.';
+      }
+    }
+
+    if (!incomingMessage) {
+      incomingMessage = 'Start the conversation warmly as Aistė in structured JSON.';
+    }
+
+    // Convert incoming history into Gemini's contents format, capped to the last 8 messages for optimal token efficiency
+    const formattedHistory = (history || []).slice(-8).map((item: ChatHistoryItem) => ({
+      role: item.role === 'model' ? 'model' : 'user',
+      parts: [{ text: item.text }],
+    }));
+
+    const contents = [
+      ...formattedHistory,
+      { role: 'user', parts: [{ text: incomingMessage }] },
+    ];
 
     const CANDIDATES = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'];
     const MODEL_NAME = 'gemini-3.6-flash';
@@ -119,7 +151,7 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
         try {
           const response = await ai.models.generateContent({
             model: modelName,
-            contents: prompt,
+            contents,
             config: {
               systemInstruction,
               responseMimeType: 'application/json',
