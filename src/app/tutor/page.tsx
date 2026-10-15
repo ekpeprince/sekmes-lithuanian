@@ -367,18 +367,25 @@ export default function TutorPage() {
       });
 
       const data = await res.json();
+      const reply = data.reply || data.replyLithuanian || '';
+      const translation = data.translation || data.replyEnglish || '';
       const assistantMsg: Message = {
         id: createMessageId('init-custom'),
         role: 'assistant',
-        textLt: data.replyLithuanian,
-        textEn: data.replyEnglish,
+        textLt: reply,
+        textEn: translation,
         tip: data.grammarTip,
         timestamp: getCurrentTimestamp(),
       };
 
       setMessages([assistantMsg]);
-      if (data.suggestedReplies && data.suggestedReplies.length > 0) {
-        setSuggestions(data.suggestedReplies);
+      const rawSuggestions = data.suggestions || data.suggestedReplies || [];
+      const normalizedSuggestions: Suggestion[] = rawSuggestions.map(
+        (item: string | { lt: string; en?: string }) =>
+          typeof item === 'string' ? { lt: item, en: '' } : { lt: item.lt, en: item.en || '' }
+      );
+      if (normalizedSuggestions.length > 0) {
+        setSuggestions(normalizedSuggestions);
       }
 
       if (autoSpeak) {
@@ -551,21 +558,27 @@ export default function TutorPage() {
 
       const data = await res.json();
 
+      const reply = data.reply || data.replyLithuanian || '';
+      const translation = data.translation || data.replyEnglish || '';
+
       const assistantMsg: Message = {
         id: createMessageId('ast'),
         role: 'assistant',
-        textLt: data.replyLithuanian,
-        textEn: data.replyEnglish,
+        textLt: reply,
+        textEn: translation,
         tip: data.grammarTip,
         timestamp: getCurrentTimestamp(),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-      if (data.suggestedReplies && Array.isArray(data.suggestedReplies) && data.suggestedReplies.length > 0) {
-        setSuggestions(data.suggestedReplies);
-      } else {
-        setSuggestions([]);
-      }
+
+      // Normalize suggestions to Suggestion[] ({ lt: string, en: string })
+      const rawSuggestions = data.suggestions || data.suggestedReplies || [];
+      const normalizedSuggestions: Suggestion[] = rawSuggestions.map(
+        (item: string | { lt: string; en?: string }) =>
+          typeof item === 'string' ? { lt: item, en: '' } : { lt: item.lt, en: item.en || '' }
+      );
+      setSuggestions(normalizedSuggestions);
 
       // Automatically speak the response if autoSpeak is on
       if (autoSpeak) {
