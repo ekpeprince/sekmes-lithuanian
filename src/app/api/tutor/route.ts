@@ -108,7 +108,7 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       ? `Conversation history:\n${transcript}\n\nRespond directly as Aistė to the user's latest statement in structured JSON.`
       : `Start the conversation warmly as Aistė in structured JSON.`;
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro'];
     let lastError: unknown = null;
 
     try {
