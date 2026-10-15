@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getAllLessons } from '@/data/curriculum';
-import { Zap, Flame, Heart, Trophy, Award, RotateCcw, Sparkles, BellRing, ChevronRight } from 'lucide-react';
+import { Heart, Award, RotateCcw, Sparkles, BellRing, ChevronRight, Settings, X } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { NotificationModal } from '@/components/NotificationModal';
@@ -18,7 +19,9 @@ export default function ProfilePage() {
     refillHearts,
     resetProgress,
   } = useGame();
+  const { user } = useAuth();
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const allLessons = getAllLessons();
 
   const completedCount = progress.completedLessons.length;
@@ -26,32 +29,33 @@ export default function ProfilePage() {
   const completionPercent = Math.round((completedCount / totalCount) * 100);
 
   const level = Math.floor(progress.xp / 50) + 1;
+  const displayName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Lithuanian Learner');
 
   const achievements = [
     {
       id: 'first_lesson',
-      title: 'Pirmas Žingsnis (First Step)',
+      title: 'First Step',
       desc: 'Complete your first Lithuanian lesson',
       isUnlocked: completedCount >= 1,
       icon: '🌱',
     },
     {
       id: 'streak_master',
-      title: 'Lietuvos Ugnis (Lithuanian Flame)',
+      title: 'Lithuanian Flame',
       desc: 'Achieve an active study streak',
       isUnlocked: progress.streak >= 1,
       icon: '🔥',
     },
     {
       id: 'xp_warrior',
-      title: 'Šimtas Taškų (Centurion)',
+      title: 'Centurion',
       desc: 'Earn over 50 XP in your journey',
       isUnlocked: progress.xp >= 50,
       icon: '⚡',
     },
     {
       id: 'unit_champion',
-      title: 'Vilniaus Žinovas (Vilnius Expert)',
+      title: 'Vilnius Expert',
       desc: 'Complete 3 or more lessons',
       isUnlocked: completedCount >= 3,
       icon: '🏰',
@@ -61,7 +65,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-8 pb-24">
       <div className="mx-auto max-w-4xl">
-        {/* Profile Card */}
+        {/* Profile Header Card */}
         <div className="rounded-3xl bg-white border-2 border-slate-200 p-6 sm:p-8 shadow-xs mb-8 flex flex-col sm:flex-row items-center gap-6">
           {/* Avatar */}
           <div className="relative">
@@ -77,7 +81,7 @@ export default function ProfilePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  Lietuvių Mokinys • Learner
+                  {displayName}
                 </h1>
                 <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 mt-0.5">
                   Lithuanian Learner • Level {level}
@@ -87,8 +91,22 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2 self-center sm:self-auto">
                 <span className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 font-extrabold text-xs px-3 py-1.5 rounded-xl">
                   <Sparkles className="h-4 w-4 fill-amber-500" />
-                  {progress.gems} Gintarai (Amber Gems)
+                  {progress.gems} Amber Gems
                 </span>
+
+                {/* Subtle settings gear icon */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setShowSettingsModal(true);
+                  }}
+                  className="flex items-center justify-center h-8 w-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                  title="Settings & Preferences"
+                  aria-label="Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
@@ -109,7 +127,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Total Immersion Dashboard */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-5 shadow-xs mb-8">
+        <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-xs dark:bg-slate-900 dark:border-slate-800 mb-8">
           {/* Header */}
           <div className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
             <span>🇱🇹</span>
@@ -119,103 +137,81 @@ export default function ProfilePage() {
           {/* 3-Tile Grid */}
           <div className="grid grid-cols-3 gap-2.5">
             {/* 1. Time Learned */}
-            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-center">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center dark:bg-slate-800 dark:border-slate-700 text-center">
               <span className="text-xl mb-1">⏱️</span>
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
                 {formatTimeLearned(totalPracticeSeconds)}
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
                 Time Learned
               </span>
             </div>
 
             {/* 2. Words Mastered */}
-            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-center">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center dark:bg-slate-800 dark:border-slate-700 text-center">
               <span className="text-xl mb-1">📚</span>
-              <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 leading-tight">
+              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
                 {wordsMasteredCount}
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
                 Words Mastered
               </span>
             </div>
 
             {/* 3. Duels Won */}
-            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-center">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center dark:bg-slate-800 dark:border-slate-700 text-center">
               <span className="text-xl mb-1">⚔️</span>
-              <span className="text-base sm:text-lg font-black text-amber-500 dark:text-amber-400 leading-tight">
+              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
                 {duelsWonCount}
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
                 Duels Won
               </span>
             </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 flex flex-col items-center text-center">
-            <Zap className="h-8 w-8 text-amber-500 fill-amber-500 mb-2" />
-            <span className="text-2xl font-black text-slate-800">{progress.xp}</span>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total XP</span>
-          </div>
-
-          <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 flex flex-col items-center text-center">
-            <Flame className="h-8 w-8 text-orange-500 fill-orange-500 mb-2" />
-            <span className="text-2xl font-black text-slate-800">{progress.streak}</span>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Day Streak</span>
-          </div>
-
-          <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 flex flex-col items-center text-center">
-            <Heart className="h-8 w-8 text-rose-500 fill-rose-500 mb-2" />
-            <span className="text-2xl font-black text-slate-800">{progress.hearts} / 5</span>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hearts</span>
-          </div>
-
-          <div className="rounded-3xl bg-white border-2 border-slate-200 p-5 flex flex-col items-center text-center">
-            <Trophy className="h-8 w-8 text-sky-500 mb-2" />
-            <span className="text-2xl font-black text-slate-800">{completedCount}</span>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Completed</span>
-          </div>
-        </div>
-
-        {/* Amber League & Speed Drill Highlights */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider opacity-80 block">
-                Current League Division
-              </span>
-              <h3 className="text-2xl font-black">{progress.leagueTier || 'Bronza'} Tier</h3>
-              <p className="text-xs text-white/90 font-medium mt-0.5">
-                Division Rank #{progress.leagueRank || 4} • Amber League
-              </p>
+        {/* Consolidated League & Speed Drill Highlights Card */}
+        <div className="rounded-3xl bg-white border-2 border-slate-200 p-4 sm:p-5 shadow-xs mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {/* Left Tile: Amber/Bronze League Status */}
+            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-2xl">
+                💎
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block">
+                  Current League Division
+                </span>
+                <p className="text-sm sm:text-base font-black text-slate-900 truncate">
+                  Rank #{progress.leagueRank || 4} • {progress.leagueTier || 'Bronze'} Tier
+                </p>
+              </div>
             </div>
-            <span className="text-4xl">💎</span>
-          </div>
 
-          <div className="p-5 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-xs flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider opacity-80 block">
-                60s Speed Drill High Score
-              </span>
-              <h3 className="text-2xl font-black">{progress.speedDrillHighScore || 0} pts</h3>
-              <p className="text-xs text-white/90 font-medium mt-0.5">
-                Practice Gym Speed Record
-              </p>
+            {/* Right Tile: Speed Drill Record */}
+            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 border border-indigo-300/60 text-2xl">
+                ⏱️
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">
+                  60s Speed Drill
+                </span>
+                <p className="text-sm sm:text-base font-black text-slate-900 truncate">
+                  Best: {progress.speedDrillHighScore || 0} pts
+                </p>
+              </div>
             </div>
-            <span className="text-4xl">⏱️</span>
           </div>
         </div>
 
         {/* Achievements Section */}
-        <div className="mb-10">
+        <div className="mb-8">
           <h2 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
             <Award className="h-6 w-6 text-amber-500" />
-            <span>Pasiekimai (Achievements)</span>
+            <span>Achievements</span>
           </h2>
-
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {achievements.map((item) => (
@@ -258,16 +254,15 @@ export default function ProfilePage() {
             sounds.playClick();
             setShowNotificationModal(true);
           }}
-          className="w-full flex items-center justify-between p-5 rounded-3xl bg-white border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xs transition-all text-left cursor-pointer group"
+          className="w-full flex items-center justify-between p-5 rounded-3xl bg-white border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xs transition-all text-left cursor-pointer group mb-8"
         >
           <div className="flex items-center gap-3.5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 group-hover:scale-105 transition-transform">
               <BellRing className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-black text-slate-800 text-sm sm:text-base flex items-center gap-2">
-                <span>Pranešimai & Priminimai</span>
-                <span className="text-[11px] font-bold text-slate-400 font-sans">(Notifications)</span>
+              <h3 className="font-black text-slate-800 text-sm sm:text-base">
+                Notifications & Reminders
               </h3>
               <p className="text-xs text-slate-500 font-medium">
                 Streak protection, Word of the Day & heart refill alerts
@@ -277,7 +272,7 @@ export default function ProfilePage() {
 
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-block text-xs font-black px-3 py-1 rounded-full bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-              Nustatymai • Open
+              Configure
             </span>
             <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
           </div>
@@ -289,43 +284,64 @@ export default function ProfilePage() {
           onClose={() => setShowNotificationModal(false)}
         />
 
-        {/* Quick Testing & Management Controls */}
-        <div className="rounded-3xl bg-white border-2 border-slate-200 p-6">
-          <h3 className="font-extrabold text-slate-800 text-base mb-1">
-            Testing & Progress Settings
-          </h3>
-          <p className="text-xs text-slate-500 mb-4">
-            Quickly adjust your local state while evaluating and practicing different lesson modules.
-          </p>
+        {/* Settings Modal (Developer & Progress Controls hidden from primary view) */}
+        {showSettingsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="w-full max-w-sm rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Close settings"
+              >
+                <X className="h-5 w-5" />
+              </button>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                refillHearts();
-                sounds.playSuccess();
-              }}
-              className="btn-3d btn-green-3d py-2.5 px-4 text-xs font-bold flex items-center gap-2"
-            >
-              <Heart className="h-4 w-4 fill-white" />
-              <span>Refill 5 Hearts</span>
-            </button>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                  <Settings className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">
+                    Settings & Testing
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Adjust practice state & hearts
+                  </p>
+                </div>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Are you sure you want to reset all XP and completed lessons?')) {
-                  resetProgress();
-                  sounds.playClick();
-                }
-              }}
-              className="rounded-2xl border-2 border-rose-200 py-2.5 px-4 font-bold text-rose-600 hover:bg-rose-50 text-xs flex items-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              <span>Reset Progress</span>
-            </button>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    refillHearts();
+                    sounds.playSuccess();
+                  }}
+                  className="w-full btn-3d btn-green-3d py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Heart className="h-4 w-4 fill-white" />
+                  <span>Refill 5 Hearts</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to reset all XP and completed lessons?')) {
+                      resetProgress();
+                      sounds.playClick();
+                      setShowSettingsModal(false);
+                    }
+                  }}
+                  className="w-full rounded-2xl border-2 border-rose-200 py-2.5 px-4 font-bold text-rose-600 hover:bg-rose-50 text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Reset All Progress</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

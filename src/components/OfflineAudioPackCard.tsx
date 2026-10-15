@@ -86,7 +86,7 @@ export const OfflineAudioPackCard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-black text-slate-900">
-                Offline Audio Pack • Režimas be interneto
+                Offline Audio Pack
               </h3>
               {isOnline ? (
                 <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
