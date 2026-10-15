@@ -35,7 +35,12 @@ export function getSessions(): TutorSession[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed.sort((a, b) => b.updatedAt - a.updatedAt);
+      const activeId = getActiveSessionId();
+      const filtered = parsed.filter((s: TutorSession) => {
+        const hasUserMsg = s.messages && s.messages.some((m) => m.sender === 'user');
+        return hasUserMsg || s.id === activeId;
+      });
+      return filtered.sort((a, b) => b.updatedAt - a.updatedAt);
     }
     return [];
   } catch (err) {

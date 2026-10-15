@@ -562,16 +562,22 @@ export default function TutorPage() {
 
   // Start new clean chat session (+ Naujas)
   const handleNewChat = () => {
+    const current = activeSessionId ? getSession(activeSessionId) : null;
+    const hasUserMessage = current?.messages.some((m) => m.sender === 'user');
+
+    // If the user hasn't sent any messages in the current session, do not create a duplicate
+    if (current && !hasUserMessage) {
+      setIsHistoryDrawerOpen(false);
+      return;
+    }
+
     // 1. Archive active session: auto-title from first user message if still default
-    if (activeSessionId) {
-      const current = getSession(activeSessionId);
-      if (current && (current.title === 'Naujas pokalbis' || !current.title)) {
-        const firstUser = current.messages.find((m) => m.sender === 'user');
-        if (firstUser) {
-          const autoTitle =
-            firstUser.text.length > 30 ? `${firstUser.text.slice(0, 30)}...` : firstUser.text;
-          saveSession({ ...current, title: autoTitle });
-        }
+    if (current && (current.title === 'Naujas pokalbis' || !current.title)) {
+      const firstUser = current.messages.find((m) => m.sender === 'user');
+      if (firstUser) {
+        const autoTitle =
+          firstUser.text.length > 30 ? `${firstUser.text.slice(0, 30)}...` : firstUser.text;
+        saveSession({ ...current, title: autoTitle });
       }
     }
 
