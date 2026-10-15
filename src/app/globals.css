@@ -60,6 +60,10 @@ textarea {
   }
 }
 
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
+}
+
 /* Enterprise Tactile 3D Button Mechanics */
 .btn-tactile {
   position: relative;

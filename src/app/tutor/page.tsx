@@ -591,24 +591,22 @@ export default function TutorPage() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-57px)] md:h-[calc(100vh-65px)] pb-16 md:pb-0 max-w-4xl w-full mx-auto overflow-hidden bg-slate-50 relative select-none">
-      {/* 1. Compact Top Bar with Scenario Switcher & Settings */}
-      <header className="shrink-0 px-3 sm:px-4 py-2.5 bg-white border-b border-slate-200/80 flex items-center justify-between gap-2 shadow-2xs z-30">
+      {/* 1. Clean Sticky Scenario Header */}
+      <header className="sticky top-0 bg-white/95 backdrop-blur-md shrink-0 px-3 sm:px-4 py-2.5 border-b border-slate-100 pb-2.5 flex items-center justify-between gap-2 shadow-2xs z-30">
         {/* Scenario Switcher Dropdown Trigger */}
         <div className="relative" ref={scenarioDropdownRef}>
           <button
             type="button"
             onClick={() => setScenarioDropdownOpen((prev) => !prev)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200 font-extrabold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer shadow-2xs"
+            className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
             aria-expanded={scenarioDropdownOpen}
             aria-haspopup="true"
           >
-            <div className={`w-6 h-6 rounded-xl bg-gradient-to-br ${currentScenario.color} text-white flex items-center justify-center shadow-xs text-xs shrink-0`}>
-              <currentScenario.icon className="w-3.5 h-3.5" />
-            </div>
-            <span className="truncate max-w-[130px] sm:max-w-[220px]">
+            <currentScenario.icon className="w-3.5 h-3.5 text-slate-700" />
+            <span className="truncate max-w-[130px] sm:max-w-[200px]">
               {scenario === 'custom' ? customTopic.split('(')[0].trim() : currentScenario.title}
             </span>
-            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${scenarioDropdownOpen ? 'rotate-180' : ''}`} />
+            <span className="text-slate-400 text-[10px] leading-none">▾</span>
           </button>
 
           {/* Dropdown Popover */}
@@ -653,31 +651,27 @@ export default function TutorPage() {
           )}
         </div>
 
-        {/* Right side: Quick Memory & Settings Buttons */}
+        {/* Right side: Scenario Progress / Fluency Score chip + Settings gear icon */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Quick Memory Pill */}
+          {/* Scenario Progress / Fluency Score Chip */}
           <button
             type="button"
             onClick={() => setIsMemoryModalOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-xl transition shadow-2xs cursor-pointer"
-            title="Aistė's Memory: What she remembers about you"
+            className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 font-black text-xs px-2.5 py-1 rounded-full flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs"
+            title="Fluency Score & Aistė's Memory"
           >
-            <Brain className="w-3.5 h-3.5 text-violet-600" />
-            <span className="hidden sm:inline">Memory</span>
-            <span className="text-[11px] bg-violet-200/80 text-violet-800 px-1.5 py-0.2 rounded-full font-black">
-              {memory.facts.length + (memory.learnerName ? 1 : 0)}
-            </span>
+            <Brain className="w-3.5 h-3.5 text-purple-600" />
+            <span>{messages.filter((m) => m.role === 'user').length * 10} pts</span>
           </button>
 
           {/* Settings Modal Button */}
           <button
             type="button"
             onClick={() => setIsSettingsModalOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition shadow-2xs cursor-pointer"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-95 cursor-pointer"
             title="Tutor settings & audio controls"
           >
-            <Settings className="w-3.5 h-3.5 text-slate-500" />
-            <span className="hidden sm:inline">Settings</span>
+            <Settings className="w-4 h-4 text-slate-500" />
           </button>
         </div>
       </header>
@@ -746,40 +740,38 @@ export default function TutorPage() {
 
               {/* Speech Bubble */}
               {isAssistant ? (
-                <div className="max-w-[92%] sm:max-w-[80%] flex flex-col items-start">
-                  <div className="w-full bg-white border border-slate-200/90 rounded-2xl rounded-tl-xs p-3.5 sm:p-4 shadow-2xs text-slate-800">
+                <div className="w-full flex flex-col items-start">
+                  <div className="bg-white border-2 border-slate-100 rounded-2xl rounded-tl-sm p-4 shadow-xs relative max-w-[88%] text-slate-800">
                     {/* Primary Lithuanian Text + Inline Action Icons */}
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-base font-semibold text-slate-900 leading-relaxed">
                         {msg.textLt}
                       </p>
 
-                      <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-0.5">
+                      <div className="flex items-center gap-1.5 shrink-0 -mr-1 -mt-0.5">
                         <button
                           type="button"
                           onClick={() => handlePlayAudio(msg.id, msg.textLt, false)}
                           disabled={isPlayingThis}
-                          className={`p-1.5 rounded-xl transition cursor-pointer ${
-                            isPlayingThis
-                              ? 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-300 animate-pulse'
-                              : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-100'
+                          className={`w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition active:scale-95 cursor-pointer ${
+                            isPlayingThis ? 'ring-2 ring-emerald-300 animate-pulse bg-emerald-100' : ''
                           }`}
                           title="Play pronunciation"
                         >
-                          <Volume2 className="w-4 h-4" />
+                          <Volume2 className="w-3.5 h-3.5" />
                         </button>
                         {msg.tip && (
                           <button
                             type="button"
                             onClick={() => toggleTip(msg.id)}
-                            className={`p-1.5 rounded-xl transition cursor-pointer ${
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition active:scale-95 cursor-pointer ${
                               expandedTips[msg.id]
                                 ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-200'
-                                : 'text-slate-400 hover:text-amber-600 hover:bg-slate-100'
+                                : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
                             }`}
                             title="Toggle grammar hint"
                           >
-                            <Lightbulb className="w-4 h-4" />
+                            <Lightbulb className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </div>
@@ -792,14 +784,25 @@ export default function TutorPage() {
                         <span className="font-medium leading-snug">{msg.tip}</span>
                       </div>
                     )}
-                  </div>
 
-                  {/* Subtle Subtitle directly below bubble */}
-                  {msg.textEn && (
-                    <p className="text-xs text-slate-500 font-medium italic mt-1 pl-1 leading-relaxed">
-                      &ldquo;{msg.textEn}&rdquo;
-                    </p>
-                  )}
+                    {/* Smart Translation Toggle */}
+                    {msg.textEn && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleEnglish(msg.id)}
+                          className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 cursor-pointer block text-left transition"
+                        >
+                          {showEnglishMap[msg.id] ? 'Hide translation' : 'Show translation'}
+                        </button>
+                        {showEnglishMap[msg.id] && (
+                          <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded-xl mt-2 border border-slate-100 animate-in fade-in">
+                            &ldquo;{msg.textEn}&rdquo;
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="max-w-[88%] sm:max-w-[75%] bg-emerald-600 text-white rounded-2xl rounded-tr-xs p-3.5 px-4 shadow-2xs text-left">
@@ -837,20 +840,17 @@ export default function TutorPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. Suggested Horizontal Chip Tray */}
+      {/* 3. Suggested Response Chips (Quick Replies) */}
       {suggestions.length > 0 && !loading && (
-        <div className="shrink-0 px-3 sm:px-4 py-1.5 bg-slate-50/95 border-t border-slate-200/60">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 select-none">
-              Suggested:
-            </span>
+        <div className="shrink-0 px-3 bg-slate-50/95 border-t border-slate-100">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 px-1">
             {suggestions.map((s, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSendMessage(s.lt)}
                 title={s.en ? `"${s.en}" (Tap to reply)` : 'Tap to reply'}
-                className="px-3 py-1.5 rounded-full border border-slate-200/90 bg-white text-xs font-medium text-slate-700 whitespace-nowrap active:scale-95 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/50 shadow-2xs transition-all shrink-0 cursor-pointer"
+                className="shrink-0 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
               >
                 {s.lt}
               </button>
@@ -876,24 +876,24 @@ export default function TutorPage() {
         </div>
       )}
 
-      {/* 4. Floating 3D Interaction Input Bar */}
-      <div className="shrink-0 p-3 sm:p-4 bg-white/95 backdrop-blur-md border-t border-slate-200/80">
-        <div className="flex items-center gap-2 bg-slate-50/90 border-2 border-slate-200/90 rounded-2xl p-1.5 shadow-2xs focus-within:border-emerald-500 focus-within:bg-white transition-all">
-          {/* Elevated 3D Mic button */}
+      {/* 4. Sticky Bottom Interaction Input Bar */}
+      <div className="sticky bottom-0 bg-white/95 backdrop-blur-md border-t border-slate-100 pt-2 pb-safe px-3 shrink-0">
+        <div className="flex items-center gap-2 bg-slate-100 border border-slate-200/80 rounded-2xl px-2 py-1.5 focus-within:bg-white focus-within:border-emerald-500 transition-all">
+          {/* Voice Button */}
           <button
             type="button"
             onClick={toggleSpeechRecognition}
-            className={`p-2.5 sm:p-3 rounded-full transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs active:scale-95 transition cursor-pointer ${
               isRecording
-                ? 'bg-rose-500 hover:bg-rose-600 text-white ring-4 ring-rose-200 animate-pulse shadow-md'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md active:translate-y-0.5'
+                ? 'bg-rose-500 hover:bg-rose-600 text-white ring-2 ring-rose-300 animate-pulse'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
             }`}
             title={isRecording ? 'Listening in Lithuanian... Click to stop' : 'Speak in Lithuanian (Microphone)'}
           >
-            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            {isRecording ? <MicOff className="w-4.5 h-4.5" /> : <Mic className="w-4.5 h-4.5" />}
           </button>
 
-          {/* Clean Input Field */}
+          {/* Text Input */}
           <input
             type="text"
             value={inputText}
@@ -905,26 +905,29 @@ export default function TutorPage() {
               }
             }}
             placeholder={isRecording ? 'Listening... Speak in Lithuanian' : 'Reply in Lithuanian...'}
-            className="flex-1 bg-transparent px-2.5 py-2 text-sm sm:text-base font-semibold text-slate-800 placeholder-slate-400 focus:outline-none min-w-0"
+            className="flex-1 bg-transparent border-0 outline-none text-xs font-medium text-slate-800 placeholder:text-slate-400 min-w-0"
           />
 
-          {/* Send button with +5 XP micro-badge */}
-          <button
-            type="button"
-            onClick={() => handleSendMessage()}
-            disabled={!inputText.trim() || loading}
-            className={`relative btn-tactile p-2.5 sm:p-3 rounded-full font-bold transition-all flex items-center justify-center shrink-0 cursor-pointer ${
-              inputText.trim() && !loading
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md active:translate-y-0.5'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
-            }`}
-            title="Send reply (+5 XP)"
-          >
-            <Send className="w-4.5 h-4.5" />
-            <span className="absolute -top-1 -right-1 bg-amber-400 text-amber-950 font-black text-[9px] px-1.5 py-0.2 rounded-full border border-white shadow-xs select-none">
-              +5 XP
-            </span>
-          </button>
+          {/* Send / XP Pill */}
+          {inputText.trim() ? (
+            <button
+              type="button"
+              onClick={() => handleSendMessage()}
+              disabled={loading}
+              className="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs active:scale-95 transition cursor-pointer"
+              title="Send reply (+5 XP)"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          ) : (
+            <div
+              className="px-2.5 py-1 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-600 font-bold text-[10px] uppercase tracking-wider shrink-0 select-none flex items-center gap-1"
+              title="Send a message to earn +5 XP"
+            >
+              <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+              <span>+5 XP</span>
+            </div>
+          )}
         </div>
       </div>
 
