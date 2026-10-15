@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({
+      apiKey,
+      apiVersion: 'v1',
+    });
 
     const scenarioInstruction =
       scenario === 'cafe'
@@ -108,43 +111,22 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       ? `Conversation history:\n${transcript}\n\nRespond directly as Aistė to the user's latest statement in structured JSON.`
       : `Start the conversation warmly as Aistė in structured JSON.`;
 
-    const CANDIDATES = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash-001',
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro-latest',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-    ];
-    let lastError: unknown = null;
+    const MODEL_NAME = 'gemini-2.5-flash';
 
     try {
-      let responseText: string | null = null;
+      const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          temperature: 0.7,
+        },
+      });
 
-      for (const modelName of CANDIDATES) {
-        try {
-          const response = await ai.models.generateContent({
-            model: modelName,
-            contents: prompt,
-            config: {
-              systemInstruction,
-              responseMimeType: 'application/json',
-              temperature: 0.7,
-            },
-          });
-
-          if (response.text) {
-            responseText = response.text;
-            break;
-          }
-        } catch (err) {
-          console.warn(`[Tutor API] Model ${modelName} attempt failed:`, err);
-          lastError = err;
-        }
-      }
-
+      const responseText = response.text;
       if (!responseText) {
-        throw lastError || new Error('No response received from candidate Gemini models.');
+        throw new Error(`No response received from Gemini model ${MODEL_NAME}.`);
       }
 
       // Defensive JSON response parsing to handle optional markdown code fences
