@@ -591,22 +591,22 @@ export default function TutorPage() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-57px)] md:h-[calc(100vh-65px)] pb-16 md:pb-0 max-w-4xl w-full mx-auto overflow-hidden bg-slate-50 relative select-none">
-      {/* 1. Clean Sticky Scenario Header */}
-      <header className="sticky top-0 bg-white/95 backdrop-blur-md shrink-0 px-3 sm:px-4 py-2.5 border-b border-slate-100 pb-2.5 flex items-center justify-between gap-2 shadow-2xs z-30">
+      {/* 1. Sub-Header Scenario Dock */}
+      <header className="sticky top-0 w-full px-4 py-2 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between backdrop-blur-md shadow-2xs z-30 shrink-0">
         {/* Scenario Switcher Dropdown Trigger */}
         <div className="relative" ref={scenarioDropdownRef}>
           <button
             type="button"
             onClick={() => setScenarioDropdownOpen((prev) => !prev)}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+            className="btn-tactile bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 font-bold text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
             aria-expanded={scenarioDropdownOpen}
             aria-haspopup="true"
           >
-            <currentScenario.icon className="w-3.5 h-3.5 text-slate-700" />
+            <currentScenario.icon className="w-3.5 h-3.5 text-slate-700 shrink-0" />
             <span className="truncate max-w-[130px] sm:max-w-[200px]">
               {scenario === 'custom' ? customTopic.split('(')[0].trim() : currentScenario.title}
             </span>
-            <span className="text-slate-400 text-[10px] leading-none">▾</span>
+            <span className="text-slate-400 text-[10px] leading-none shrink-0 ml-0.5">▾</span>
           </button>
 
           {/* Dropdown Popover */}
@@ -742,19 +742,49 @@ export default function TutorPage() {
               {isAssistant ? (
                 <div className="w-full flex flex-col items-start">
                   <div className="bg-white border-2 border-slate-100 rounded-2xl rounded-tl-sm p-4 shadow-xs relative max-w-[88%] text-slate-800">
-                    {/* Primary Lithuanian Text + Inline Action Icons */}
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-base font-semibold text-slate-900 leading-relaxed">
-                        {msg.textLt}
-                      </p>
+                    {/* Top: Full-width Lithuanian dialogue */}
+                    <p className="text-sm sm:text-base font-bold text-slate-900 leading-relaxed">
+                      {msg.textLt}
+                    </p>
 
-                      <div className="flex items-center gap-1.5 shrink-0 -mr-1 -mt-0.5">
+                    {/* Middle (conditional): Grammar Hint Callout */}
+                    {msg.tip && expandedTips[msg.id] && (
+                      <div className="mt-2.5 p-2.5 border border-amber-200/70 bg-amber-50/80 rounded-xl flex items-start gap-1.5 text-xs text-amber-900 animate-in fade-in">
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                        <span className="font-medium leading-snug">{msg.tip}</span>
+                      </div>
+                    )}
+
+                    {/* Middle (conditional): Expanded English translation */}
+                    {msg.textEn && showEnglishMap[msg.id] && (
+                      <div className="bg-slate-50 text-xs text-slate-600 p-2 rounded-xl border border-slate-100 mt-2 animate-in fade-in">
+                        &ldquo;{msg.textEn}&rdquo;
+                      </div>
+                    )}
+
+                    {/* Bottom Action Row */}
+                    <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-100">
+                      {/* Left: "Show translation" toggle */}
+                      {msg.textEn ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleEnglish(msg.id)}
+                          className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer transition select-none"
+                        >
+                          {showEnglishMap[msg.id] ? 'Hide translation' : 'Show translation'}
+                        </button>
+                      ) : (
+                        <div />
+                      )}
+
+                      {/* Right: Action buttons (Audio & Hint) */}
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => handlePlayAudio(msg.id, msg.textLt, false)}
                           disabled={isPlayingThis}
-                          className={`w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition active:scale-95 cursor-pointer ${
-                            isPlayingThis ? 'ring-2 ring-emerald-300 animate-pulse bg-emerald-100' : ''
+                          className={`w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition active:scale-95 cursor-pointer ${
+                            isPlayingThis ? 'ring-2 ring-emerald-300 animate-pulse bg-emerald-100 text-emerald-700' : ''
                           }`}
                           title="Play pronunciation"
                         >
@@ -767,7 +797,7 @@ export default function TutorPage() {
                             className={`w-7 h-7 rounded-lg flex items-center justify-center transition active:scale-95 cursor-pointer ${
                               expandedTips[msg.id]
                                 ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-200'
-                                : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                             }`}
                             title="Toggle grammar hint"
                           >
@@ -776,32 +806,6 @@ export default function TutorPage() {
                         )}
                       </div>
                     </div>
-
-                    {/* Smooth Grammar Hint Callout */}
-                    {msg.tip && expandedTips[msg.id] && (
-                      <div className="mt-2.5 pt-2 border-t border-amber-100/90 flex items-start gap-1.5 text-xs text-amber-900 bg-amber-50/80 border border-amber-200/70 rounded-xl p-2.5 animate-in fade-in">
-                        <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                        <span className="font-medium leading-snug">{msg.tip}</span>
-                      </div>
-                    )}
-
-                    {/* Smart Translation Toggle */}
-                    {msg.textEn && (
-                      <div className="mt-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleEnglish(msg.id)}
-                          className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 cursor-pointer block text-left transition"
-                        >
-                          {showEnglishMap[msg.id] ? 'Hide translation' : 'Show translation'}
-                        </button>
-                        {showEnglishMap[msg.id] && (
-                          <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded-xl mt-2 border border-slate-100 animate-in fade-in">
-                            &ldquo;{msg.textEn}&rdquo;
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               ) : (
@@ -842,8 +846,8 @@ export default function TutorPage() {
 
       {/* 3. Suggested Response Chips (Quick Replies) */}
       {suggestions.length > 0 && !loading && (
-        <div className="shrink-0 px-3 bg-slate-50/95 border-t border-slate-100">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 px-1">
+        <div className="relative shrink-0 bg-slate-50/95 border-t border-slate-100">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-3 py-1.5 scroll-smooth">
             {suggestions.map((s, idx) => (
               <button
                 key={idx}
@@ -856,6 +860,8 @@ export default function TutorPage() {
               </button>
             ))}
           </div>
+          {/* Subtle right-edge fade mask */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-50/95 to-transparent" />
         </div>
       )}
 
@@ -914,10 +920,10 @@ export default function TutorPage() {
               type="button"
               onClick={() => handleSendMessage()}
               disabled={loading}
-              className="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs active:scale-95 transition cursor-pointer"
+              className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition shadow-xs shrink-0 active:scale-95 cursor-pointer"
               title="Send reply (+5 XP)"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4 ml-0.5" />
             </button>
           ) : (
             <div
