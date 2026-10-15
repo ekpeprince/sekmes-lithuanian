@@ -108,23 +108,37 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       ? `Conversation history:\n${transcript}\n\nRespond directly as Aistė to the user's latest statement in structured JSON.`
       : `Start the conversation warmly as Aistė in structured JSON.`;
 
-    const MODEL_NAME = 'gemini-3.8-flash';
-    const CANDIDATES = ['gemini-3.8-flash'];
+    const MODEL_NAME = 'gemini-2.5-flash';
+    const CANDIDATES = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+    let lastError: unknown = null;
 
     try {
-      const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        },
-      });
+      let responseText: string | null = null;
 
-      const responseText = response.text;
+      for (const modelName of CANDIDATES) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              temperature: 0.7,
+            },
+          });
+
+          if (response.text) {
+            responseText = response.text;
+            break;
+          }
+        } catch (err) {
+          console.warn(`[Tutor API] Model ${modelName} attempt failed:`, err);
+          lastError = err;
+        }
+      }
+
       if (!responseText) {
-        throw new Error(`No response received from Gemini model ${MODEL_NAME}.`);
+        throw lastError || new Error(`No response received from candidate Gemini models (${CANDIDATES.join(', ')}).`);
       }
 
       // Defensive JSON response parsing to handle optional markdown code fences
@@ -149,7 +163,9 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
 
       const reply = parsed.reply || responseText.replace(/```[a-z]*\n?/gi, '').trim();
       const translation = parsed.translation || '';
-      const suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions : [];
+      const suggestions = Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0
+        ? parsed.suggestions
+        : ['Taip!', 'Ačiū!'];
 
       return NextResponse.json({
         reply,
@@ -171,10 +187,13 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
           error: error instanceof Error ? error.message : 'Failed to generate response from Gemini AI.',
           reply: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
           translation: 'Sorry, a connection error occurred. Let us try once more!',
-          suggestions: ['Bandykime dar kartą'],
+          suggestions: ['Bandykime dar kartą', 'Labas!'],
           replyLithuanian: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
           replyEnglish: 'Sorry, a connection error occurred. Let us try once more!',
-          suggestedReplies: [{ lt: 'Bandykime dar kartą', en: 'Try again' }],
+          suggestedReplies: [
+            { lt: 'Bandykime dar kartą', en: 'Try again' },
+            { lt: 'Labas!', en: 'Hello!' },
+          ],
         },
         { status: 502 }
       );
@@ -184,12 +203,15 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
     return NextResponse.json(
       {
         error: 'Internal server error',
-        reply: 'Atsiprašau, įvyko klaida. Bandykime dar kartą!',
-        translation: 'Sorry, an error occurred. Let us try again!',
-        suggestions: ['Bandykime dar kartą'],
-        replyLithuanian: 'Atsiprašau, įvyko klaida. Bandykime dar kartą!',
-        replyEnglish: 'Sorry, an error occurred. Let us try again!',
-        suggestedReplies: [{ lt: 'Bandykime dar kartą', en: 'Try again' }],
+        reply: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
+        translation: 'Sorry, a connection error occurred. Let us try once more!',
+        suggestions: ['Bandykime dar kartą', 'Labas!'],
+        replyLithuanian: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
+        replyEnglish: 'Sorry, a connection error occurred. Let us try once more!',
+        suggestedReplies: [
+          { lt: 'Bandykime dar kartą', en: 'Try again' },
+          { lt: 'Labas!', en: 'Hello!' },
+        ],
       },
       { status: 500 }
     );
