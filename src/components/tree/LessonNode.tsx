@@ -10,6 +10,7 @@ interface LessonNodeProps {
   lesson: Lesson;
   isCompleted: boolean;
   isUnlocked: boolean;
+  isActive?: boolean;
   offset: number; // e.g. -45, 0, 45 px for wavy snake curve
 }
 
@@ -17,6 +18,7 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
   lesson,
   isCompleted,
   isUnlocked,
+  isActive = false,
   offset,
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -36,6 +38,17 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
       }`}
       style={{ transform: `translateX(${offset}px)` }}
     >
+      {/* Floating Animated START Beacon on Active Node */}
+      {isActive && !isCompleted && !showTooltip && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center animate-bounce">
+          <div className="bg-emerald-600 text-white font-black text-[11px] uppercase tracking-wider px-3 py-1 rounded-xl shadow-md border border-emerald-400 flex items-center gap-1 shrink-0">
+            <span>START</span>
+            <span className="text-[9px]">▶</span>
+          </div>
+          <div className="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-emerald-600 -mt-[1px]" />
+        </div>
+      )}
+
       {/* Stepping Stone Node Button */}
       <button
         type="button"
@@ -45,7 +58,11 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
           isCompleted
             ? 'bg-amber-400 hover:bg-amber-300 shadow-md border-b-[5px] border-amber-600 active:border-b-0 active:translate-y-[5px] transition-all duration-75'
             : isUnlocked
-            ? 'bg-emerald-500 hover:bg-emerald-400 ring-8 ring-emerald-100 shadow-md border-b-[5px] border-emerald-700 active:border-b-0 active:translate-y-[5px] transition-all duration-75'
+            ? `bg-emerald-500 hover:bg-emerald-400 shadow-md border-b-[5px] border-emerald-700 active:border-b-0 active:translate-y-[5px] transition-all duration-75 ${
+                isActive
+                  ? 'ring-4 ring-emerald-300 ring-offset-2 animate-pulse'
+                  : 'ring-8 ring-emerald-100'
+              }`
             : 'bg-slate-200 shadow-xs border-b-[5px] border-slate-300 cursor-not-allowed opacity-75'
         }`}
       >

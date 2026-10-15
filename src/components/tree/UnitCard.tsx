@@ -4,14 +4,19 @@ import React from 'react';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { Unit } from '@/types/lesson';
+import { sounds } from '@/lib/audio';
 import { LessonNode } from './LessonNode';
 
 interface UnitCardProps {
   unit: Unit;
   completedLessons: string[];
+  activeLessonId?: string;
 }
 
-export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) => {
+export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons, activeLessonId }) => {
+  // Find active lesson in this unit (first uncompleted lesson, or fallback to first lesson)
+  const activeLesson = unit.lessons.find((l) => !completedLessons.includes(l.id)) || unit.lessons[0];
+
   // Compute zigzag offsets for nodes that stay within mobile screen bounds
   const getOffset = (index: number) => {
     const pattern = [0, -22, 0, 22];
@@ -45,13 +50,27 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) =>
             </p>
           </div>
 
-          <Link
-            href="/grammar"
-            className="self-start sm:self-center shrink-0 flex items-center gap-1.5 py-1.5 px-3 text-xs font-semibold bg-white/15 backdrop-blur border border-white/25 text-white rounded-xl hover:bg-white/20 active:scale-95 transition-all shadow-2xs"
-          >
-            <BookOpen className="h-3.5 w-3.5 text-white" />
-            <span>Guidebook</span>
-          </Link>
+          <div className="self-start sm:self-center shrink-0 flex items-center gap-2 flex-wrap">
+            {activeLesson && (
+              <Link
+                href={`/lesson/${activeLesson.id}`}
+                onClick={() => sounds.playClick()}
+                className="btn-tactile bg-white text-emerald-900 hover:bg-emerald-50 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              >
+                <span>▶</span>
+                <span>Start Lesson</span>
+              </Link>
+            )}
+
+            <Link
+              href="/grammar"
+              onClick={() => sounds.playClick()}
+              className="bg-white/20 text-white hover:bg-white/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 backdrop-blur-xs border border-white/20 active:scale-95 transition-all shadow-2xs"
+            >
+              <BookOpen className="h-3.5 w-3.5 text-white" />
+              <span>Guidebook</span>
+            </Link>
+          </div>
         </div>
 
         {/* Decorative background shape */}
@@ -69,12 +88,17 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons }) =>
           const prevLesson = idx > 0 ? unit.lessons[idx - 1] : null;
           const isUnlocked = isFirstLesson || isCompleted || (prevLesson ? completedLessons.includes(prevLesson.id) : true);
 
+          const isActive = activeLessonId
+            ? lesson.id === activeLessonId && isUnlocked && !isCompleted
+            : activeLesson?.id === lesson.id && isUnlocked && !isCompleted;
+
           return (
             <LessonNode
               key={lesson.id}
               lesson={lesson}
               isCompleted={isCompleted}
               isUnlocked={isUnlocked}
+              isActive={isActive}
               offset={getOffset(idx)}
             />
           );

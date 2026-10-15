@@ -18,6 +18,10 @@ export default function DashboardPage() {
   const isGoalMet = dailyXp >= dailyXpTarget;
   const dailyXpProgress = Math.min(100, Math.round((dailyXp / dailyXpTarget) * 100));
 
+  // Determine active lesson across the curriculum
+  const allLessons = UNITS.flatMap((u) => u.lessons);
+  const globalActiveLesson = allLessons.find((l) => !progress.completedLessons.includes(l.id)) || allLessons[0];
+
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 pt-3 sm:pt-6 pb-44 md:pb-12">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
@@ -53,6 +57,7 @@ export default function DashboardPage() {
               key={unit.id}
               unit={unit}
               completedLessons={progress.completedLessons}
+              activeLessonId={globalActiveLesson?.id}
             />
           ))}
 
