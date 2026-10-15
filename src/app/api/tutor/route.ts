@@ -70,10 +70,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ai = new GoogleGenAI({
-      apiKey,
-      apiVersion: 'v1',
-    });
+    const ai = new GoogleGenAI({ apiKey });
 
     const scenarioInstruction =
       scenario === 'cafe'
@@ -111,7 +108,8 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       ? `Conversation history:\n${transcript}\n\nRespond directly as Aistė to the user's latest statement in structured JSON.`
       : `Start the conversation warmly as Aistė in structured JSON.`;
 
-    const MODEL_NAME = 'gemini-2.5-flash';
+    const MODEL_NAME = 'gemini-3.8-flash';
+    const CANDIDATES = ['gemini-3.8-flash'];
 
     try {
       const response = await ai.models.generateContent({
@@ -168,24 +166,14 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
     } catch (error) {
       console.error("[TUTOR_API_ERROR]:", error);
 
-      // Log available models on failure to inspect the catalog
-      try {
-        const modelList = await ai.models.list();
-        console.log("[AVAILABLE_MODELS]:", modelList);
-      } catch (e) {
-        console.error("[MODEL_LIST_FAILED]:", e);
-      }
-
-      const errorMessage = error instanceof Error ? error.message : String(error || 'Nežinoma klaida');
-
       return NextResponse.json(
         {
-          error: errorMessage,
-          reply: `Atsiprašau, įvyko klaida: ${errorMessage}`,
-          translation: `Connection error: ${errorMessage}`,
+          error: error instanceof Error ? error.message : 'Failed to generate response from Gemini AI.',
+          reply: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
+          translation: 'Sorry, a connection error occurred. Let us try once more!',
           suggestions: ['Bandykime dar kartą'],
-          replyLithuanian: `Atsiprašau, įvyko klaida: ${errorMessage}`,
-          replyEnglish: `Connection error: ${errorMessage}`,
+          replyLithuanian: 'Atsiprašau, įvyko ryšio klaida. Bandykime dar kartą!',
+          replyEnglish: 'Sorry, a connection error occurred. Let us try once more!',
           suggestedReplies: [{ lt: 'Bandykime dar kartą', en: 'Try again' }],
         },
         { status: 502 }
@@ -193,15 +181,14 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
     }
   } catch (error) {
     console.error("[TUTOR_API_ERROR]:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error || 'Nežinoma klaida');
     return NextResponse.json(
       {
-        error: 'Internal server error: ' + errorMessage,
-        reply: `Atsiprašau, įvyko klaida: ${errorMessage}`,
-        translation: `Internal error: ${errorMessage}`,
+        error: 'Internal server error',
+        reply: 'Atsiprašau, įvyko klaida. Bandykime dar kartą!',
+        translation: 'Sorry, an error occurred. Let us try again!',
         suggestions: ['Bandykime dar kartą'],
-        replyLithuanian: `Atsiprašau, įvyko klaida: ${errorMessage}`,
-        replyEnglish: `Internal error: ${errorMessage}`,
+        replyLithuanian: 'Atsiprašau, įvyko klaida. Bandykime dar kartą!',
+        replyEnglish: 'Sorry, an error occurred. Let us try again!',
         suggestedReplies: [{ lt: 'Bandykime dar kartą', en: 'Try again' }],
       },
       { status: 500 }
