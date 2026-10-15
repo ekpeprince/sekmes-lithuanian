@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllLessons } from '@/data/curriculum';
-import { Heart, Award, RotateCcw, Sparkles, BellRing, ChevronRight, Settings, X } from 'lucide-react';
+import { Heart, RotateCcw, Sparkles, BellRing, ChevronRight, Settings, X } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { NotificationModal } from '@/components/NotificationModal';
@@ -35,29 +35,45 @@ export default function ProfilePage() {
     {
       id: 'first_lesson',
       title: 'First Step',
-      desc: 'Complete your first Lithuanian lesson',
+      desc: 'Complete 1 lesson',
       isUnlocked: completedCount >= 1,
+      current: Math.min(1, completedCount),
+      max: 1,
+      progressText: `${Math.min(1, completedCount)} / 1`,
+      reward: '+10 💎',
       icon: '🌱',
     },
     {
       id: 'streak_master',
       title: 'Lithuanian Flame',
-      desc: 'Achieve an active study streak',
+      desc: 'Active study streak',
       isUnlocked: progress.streak >= 1,
+      current: Math.min(1, progress.streak),
+      max: 1,
+      progressText: `${Math.min(1, progress.streak)} / 1 day`,
+      reward: '+15 💎',
       icon: '🔥',
     },
     {
       id: 'xp_warrior',
       title: 'Centurion',
-      desc: 'Earn over 50 XP in your journey',
+      desc: 'Earn 50 XP in journey',
       isUnlocked: progress.xp >= 50,
+      current: Math.min(50, progress.xp),
+      max: 50,
+      progressText: `${Math.min(50, progress.xp)} / 50 XP`,
+      reward: '+20 💎',
       icon: '⚡',
     },
     {
       id: 'unit_champion',
       title: 'Vilnius Expert',
-      desc: 'Complete 3 or more lessons',
+      desc: 'Complete 3 lessons',
       isUnlocked: completedCount >= 3,
+      current: Math.min(3, completedCount),
+      max: 3,
+      progressText: `${Math.min(3, completedCount)} / 3`,
+      reward: '+25 💎',
       icon: '🏰',
     },
   ];
@@ -204,48 +220,76 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* 2-Column Achievements Grid */}
+        {/* 2-Column Gamified Achievements Grid */}
         <div>
-          <h2 className="text-xs sm:text-sm font-black text-slate-900 mb-1.5 flex items-center gap-1.5">
-            <Award className="h-4 w-4 text-amber-500" />
+          <div className="flex items-center gap-1.5 mb-1.5 text-xs font-black uppercase tracking-wider text-slate-600">
+            <span>🏅</span>
             <span>Achievements</span>
-          </h2>
+          </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-            {achievements.map((item) => (
-              <div
-                key={item.id}
-                className={`min-h-[94px] p-2.5 sm:p-3 rounded-2xl border-2 flex flex-col justify-between transition-all ${
-                  item.isUnlocked
-                    ? 'bg-amber-50/60 border-amber-300'
-                    : 'bg-slate-50 border-slate-200 opacity-75'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-white border border-amber-200/80 text-sm sm:text-base shadow-2xs">
+          <div className="grid grid-cols-2 gap-2.5">
+            {achievements.map((item) => {
+              const progressPercent = Math.min(100, Math.round((item.current / item.max) * 100));
+              return (
+                <div
+                  key={item.id}
+                  className={`p-3 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+                    item.isUnlocked
+                      ? 'bg-gradient-to-b from-amber-50/80 to-white border-amber-300 shadow-2xs'
+                      : 'bg-slate-50/70 border-slate-200/90 opacity-85'
+                  }`}
+                >
+                  {/* Top Row: Circular Medallion + Reward Pill */}
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0 ${
+                        item.isUnlocked
+                          ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xs ring-2 ring-amber-200'
+                          : 'bg-slate-200/80 text-slate-400 border border-slate-300'
+                      }`}
+                    >
                       {item.icon}
+                    </div>
+
+                    <span className="text-[10px] font-black text-amber-600 bg-amber-100/60 px-1.5 py-0.5 rounded-md">
+                      {item.reward}
                     </span>
-                    <h4 className="text-xs font-black text-slate-900 truncate">
+                  </div>
+
+                  {/* Middle: Title & Short Description */}
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 mt-2 truncate">
                       {item.title}
                     </h4>
+                    <p className="text-[10px] text-slate-500 font-medium line-clamp-1">
+                      {item.desc}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-medium leading-tight line-clamp-2 mb-1">
-                    {item.desc}
-                  </p>
-                </div>
 
-                <div>
-                  <span
-                    className={`inline-block text-[10px] font-black uppercase tracking-wider ${
-                      item.isUnlocked ? 'text-emerald-600' : 'text-slate-400'
-                    }`}
-                  >
-                    {item.isUnlocked ? '✓ Unlocked' : 'Locked'}
-                  </span>
+                  {/* Bottom State */}
+                  <div>
+                    {item.isUnlocked ? (
+                      <div className="text-[10px] font-black text-emerald-600 flex items-center gap-1 mt-2">
+                        <span>✓</span>
+                        <span>Unlocked</span>
+                      </div>
+                    ) : (
+                      <div className="mt-2">
+                        <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                        <p className="text-[9px] font-bold text-slate-400 mt-0.5 text-right">
+                          {item.progressText}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
