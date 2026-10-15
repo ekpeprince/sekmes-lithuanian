@@ -168,7 +168,7 @@ class SoundManager {
     return this.voiceGender;
   }
 
-  // Pronounce Lithuanian text with authentic native Lithuanian neural audio
+  // Pronounce Lithuanian text with native Lithuanian audio
   public speak(
     text: string,
     optionsOrOnEnd?: { slow?: boolean; onEnd?: () => void } | (() => void)
@@ -176,13 +176,11 @@ class SoundManager {
     if (typeof window === 'undefined') return;
     const cleanText = text.replace(/[_]/g, '').trim();
 
-    let slow = false;
     let onEnd: (() => void) | undefined;
 
     if (typeof optionsOrOnEnd === 'function') {
       onEnd = optionsOrOnEnd;
     } else if (optionsOrOnEnd && typeof optionsOrOnEnd === 'object') {
-      slow = !!optionsOrOnEnd.slow;
       onEnd = optionsOrOnEnd.onEnd;
     }
 
@@ -199,9 +197,7 @@ class SoundManager {
     }
 
     try {
-      const speed = slow ? 'slow' : 'normal';
-      const audioUrl = `/api/tts?text=${encodeURIComponent(cleanText)}&gender=${this.voiceGender}&speed=${speed}&v=natural-v5-prosody`;
-      const audio = new Audio(audioUrl);
+      const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}`);
       this.currentAudio = audio;
 
       audio.onended = () => {
@@ -209,37 +205,19 @@ class SoundManager {
         if (onEnd) onEnd();
       };
 
-      audio.onerror = () => {
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
         this.currentAudio = null;
-        this.fallbackSpeak(cleanText, onEnd, slow);
+        if (onEnd) onEnd();
       };
 
-      audio.play().catch(() => {
-        this.fallbackSpeak(cleanText, onEnd, slow);
+      audio.play().catch((err) => {
+        console.error('Audio play failed:', err);
+        this.currentAudio = null;
+        if (onEnd) onEnd();
       });
-    } catch {
-      this.fallbackSpeak(cleanText, onEnd, slow);
-    }
-  }
-
-  // Browser SpeechSynthesis fallback in case network is disconnected
-  private fallbackSpeak(cleanText: string, onEnd?: () => void, slow: boolean = false) {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      if (onEnd) onEnd();
-      return;
-    }
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'lt-LT';
-      utterance.rate = slow ? 0.7 : 0.9;
-      const voices = window.speechSynthesis.getVoices();
-      const ltVoice = voices.find(v => v.lang.startsWith('lt') || v.lang.includes('LT'));
-      if (ltVoice) utterance.voice = ltVoice;
-      utterance.onend = () => { if (onEnd) onEnd(); };
-      utterance.onerror = () => { if (onEnd) onEnd(); };
-      window.speechSynthesis.speak(utterance);
-    } catch {
+    } catch (err) {
+      console.error('Audio initialization failed:', err);
       if (onEnd) onEnd();
     }
   }
