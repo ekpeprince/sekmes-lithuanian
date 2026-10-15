@@ -158,32 +158,46 @@ export async function POST(req: NextRequest) {
       : (SCENARIO_CONTEXTS[scenario] || SCENARIO_CONTEXTS.cafe).role;
 
     // Check if Gemini API key exists
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    const apiKey =
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
+    // Deduplicate: If the last message in messages matches userText, separate prior turns from the new turn
+    const priorMessages =
+      messages.length > 0 && messages[messages.length - 1].content.trim() === userText.trim()
+        ? messages.slice(0, -1)
+        : messages;
 
     if (apiKey) {
       try {
         const ai = new GoogleGenAI({ apiKey });
 
-        const memorySection = learnerMemory ? `\n\n--- LEARNER MEMORY & CONTEXT ---\n${learnerMemory}\n---------------------------------` : '';
+        const memorySection = learnerMemory
+          ? `\n\n--- LEARNER MEMORY & CONTEXT ---\n${learnerMemory}\n---------------------------------`
+          : '';
 
-        const systemPrompt = `You are Aistė (or the persona specified below), a warm, supportive, authentic human native Lithuanian language teacher living in Vilnius. You genuinely care about this student and act like a real person helping them learn.
+        const systemPrompt = `You are Aistė, an authentic, supportive Lithuanian native tutor and peer living in Vilnius. You genuinely care about this student and converse naturally like a real person.
 Scenario Title: ${effectiveTitle}
-Role & Situation: ${effectiveRole}${memorySection}
+Scenario Instructions: ${effectiveRole}${memorySection}
 
 Guidelines:
-1. Speak in clean, natural A1/A2 level Lithuanian (simple sentences, vocabulary appropriate for learners).
-2. Keep your answer brief: 1 to 3 conversational sentences in Lithuanian.
-3. If learner memory mentions their name or previous topics, weave them in naturally like a friend and real teacher!
-4. Respond in strict JSON format with the following keys:
+1. Converse primarily in clear, natural A1/A2 level Lithuanian (simple, friendly sentences).
+2. Direct Personal Engagement: If the student speaks about themselves (their identity, their country, e.g. "Aš esu iš Nigerijos", their feelings, or hobbies), directly and warmly acknowledge what they said in Lithuanian! (e.g. "Labai malonu! Nigerija – nuostabi ir didelė šalis!"). Never ignore what they said or change the subject abruptly.
+3. If the student writes in English, reply in Lithuanian with a brief English note or translation.
+4. If the student makes a clear grammatical or case error, gently provide the friendly correction in a small parenthetical note, then continue the conversation conversationally.
+5. Keep your spoken Lithuanian reply brief (1 to 3 conversational sentences).
+6. Dynamic Suggestions: For "suggestedReplies", generate 2-3 dynamic, contextual follow-up replies that make sense for the student to say next in this specific conversation. NEVER return static starters.
+7. Respond in strict JSON format with the following keys:
 {
   "replyLithuanian": "your spoken Lithuanian reply",
   "replyEnglish": "accurate English translation of your reply",
-  "grammarTip": "a short 1-sentence tip explaining a grammar rule, word ending, or polite phrase used",
+  "grammarTip": "a short 1-sentence tip explaining a grammar rule, word ending, or case used in this exchange",
   "suggestedReplies": [
-    { "lt": "Lithuanian option 1", "en": "English meaning" },
-    { "lt": "Lithuanian option 2", "en": "English meaning" }
+    { "lt": "Contextual Lithuanian reply 1", "en": "English meaning" },
+    { "lt": "Contextual Lithuanian reply 2", "en": "English meaning" }
   ],
-  "extractedFact": "a concise new fact learned about the student from their last message (e.g. 'Lives in Vilnius', 'Prefers tea over coffee', 'Has a cat') or null if nothing new learned",
+  "extractedFact": "a concise new fact learned about the student from their last message (e.g. 'From Nigeria', 'Lives in Vilnius', 'Prefers tea over coffee') or null if nothing new learned",
   "extractedName": "student's first name if they introduced themselves or said their name, or null"
 }
 Do NOT output markdown code blocks. Output pure JSON only.`;
@@ -192,35 +206,50 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
         if (isInitial) {
           promptContent = `Task: Start the conversation with an opening welcoming line in Lithuanian matching the situation ("${effectiveTitle}"). If you know the student's name or history from the memory above, greet them warmly and reference it! Provide a helpful grammar/cultural tip and 3 suggested starter replies the student could say in Lithuanian.`;
         } else {
-          const conversationHistory = messages
-            .map((m) => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`)
+          const conversationHistory = priorMessages
+            .map((m) => `${m.role === 'user' ? 'Student' : 'Aistė (Tutor)'}: ${m.content}`)
             .join('\n');
-          promptContent = `Conversation so far:\n${conversationHistory}\nStudent: ${userText}\nTutor:`;
+          promptContent = `Conversation History:\n${conversationHistory}\n\nCurrent Student Input: "${userText}"\n\nAistė (respond directly to what the student just said, engaging with their statements, questions, or country of origin in warm Lithuanian):`;
         }
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: promptContent,
-          config: {
-            systemInstruction: systemPrompt,
-            responseMimeType: 'application/json',
-            temperature: 0.7,
-          },
-        });
+        const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+        let lastError: unknown = null;
 
-        const rawText = response.text?.trim() || '';
-        let cleanedJson = rawText;
-        if (cleanedJson.startsWith('```')) {
-          cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        for (const modelName of candidateModels) {
+          try {
+            console.log(`[Tutor API] Invoking Gemini model: ${modelName}`);
+            const response = await ai.models.generateContent({
+              model: modelName,
+              contents: promptContent,
+              config: {
+                systemInstruction: systemPrompt,
+                responseMimeType: 'application/json',
+                temperature: 0.7,
+              },
+            });
+
+            const rawText = response.text?.trim() || '';
+            let cleanedJson = rawText;
+            if (cleanedJson.startsWith('```')) {
+              cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+            }
+            const parsed = JSON.parse(cleanedJson);
+            console.log(`[Tutor API] Model ${modelName} completed successfully`);
+            return NextResponse.json(parsed);
+          } catch (modelErr) {
+            console.warn(`[Tutor API] Model ${modelName} failed:`, modelErr);
+            lastError = modelErr;
+          }
         }
-        const parsed = JSON.parse(cleanedJson);
-        return NextResponse.json(parsed);
+        console.error('[Tutor API] All Gemini candidate models failed:', lastError);
       } catch (geminiError) {
-        console.warn('Gemini API call failed, falling back to dialogue engine:', geminiError);
+        console.error('[Tutor API] Gemini API call failed, falling back to dialogue engine:', geminiError);
       }
+    } else {
+      console.warn('[Tutor API] No GEMINI_API_KEY found in process.env. Using adaptive contextual dialogue engine.');
     }
 
-    // Fallback dialogue engine (works offline without API key)
+    // Fallback dialogue engine (works offline without API key or when API is unreachable)
     if (isCustom && isInitial) {
       const topicLower = customTopic.toLowerCase();
       if (topicLower.includes('nuom') || topicLower.includes('but') || topicLower.includes('apartment') || topicLower.includes('rent')) {
@@ -289,6 +318,8 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       { lt: 'Ačiū labai!', en: 'Thank you very much!' },
       { lt: 'Prašom papasakoti daugiau.', en: 'Please tell me more.' },
     ];
+    let extractedFact: string | null = null;
+    let extractedName: string | null = null;
 
     if (isCustom) {
       replyLithuanian = 'Supratau! Jūs labai gerai ir aiškiai pasakėte. Kaip norėtumėte tęsti mūsų pokalbį šia tema?';
@@ -369,8 +400,81 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
         ];
       }
     } else {
-      // Free talk / Free chat
-      if (normalizedInput.includes('lietuv') || normalizedInput.includes('papasakok')) {
+      // Free talk / Free chat (Adaptive contextual handler)
+      if (
+        normalizedInput.includes('about my self') ||
+        normalizedInput.includes('about myself') ||
+        normalizedInput.includes('about me') ||
+        normalizedInput.includes('apie save') ||
+        normalizedInput.includes('papasakot apie save') ||
+        normalizedInput.includes('noriu papasakot')
+      ) {
+        replyLithuanian = 'Su didžiausiu džiaugsmu! Labai noriu daugiau sužinoti apie tave. Papasakok, iš kur esi kilęs ir ką veiki gyvenime?';
+        replyEnglish = 'With the greatest pleasure! I really want to know more about you. Tell me, where are you from and what do you do in life?';
+        grammarTip = '„Apie tave“ (about you) uses the preposition „apie“ with the Accusative pronoun „tave“.';
+        suggestedReplies = [
+          { lt: 'Aš esu iš Nigerijos 🇳🇬', en: 'I am from Nigeria' },
+          { lt: 'Esu studentas ir gyvenu čia.', en: 'I am a student and live here.' },
+          { lt: 'Mokausi ir dirbu.', en: 'I study and work.' },
+        ];
+        extractedFact = 'Wants to talk about themselves';
+      } else if (
+        normalizedInput.includes('nigerij') ||
+        normalizedInput.includes('nigeria')
+      ) {
+        replyLithuanian = 'Labai malonu! Nigerija yra nuostabi, didelė ir labai turtingos kultūros šalis. Kiek laiko jau mokaisi lietuvių kalbos?';
+        replyEnglish = 'Very nice to meet you! Nigeria is a wonderful, large country with a very rich culture. How long have you been learning Lithuanian?';
+        grammarTip = 'Preposition „iš“ (from) always requires the Genitive case: „iš Nigerijos“ (from Nigeria).';
+        suggestedReplies = [
+          { lt: 'Mokausi jau kelis mėnesius.', en: 'I have been learning for several months.' },
+          { lt: 'Pradėjau mokytis visai neseniai.', en: 'I started learning quite recently.' },
+          { lt: 'Lietuvių kalba man labai patinka!', en: 'I like the Lithuanian language very much!' },
+        ];
+        extractedFact = 'Kilęs iš Nigerijos (From Nigeria)';
+      } else if (
+        normalizedInput.includes('esu iš') ||
+        normalizedInput.includes('esu is') ||
+        normalizedInput.includes('gimiau') ||
+        normalizedInput.includes('kilęs') ||
+        normalizedInput.includes('kiles') ||
+        normalizedInput.includes('šalis')
+      ) {
+        replyLithuanian = 'Nuostabu susipažinti! Labai džiaugiuosi, kad mokaisi lietuviškai. Kas paskatino tave pradėti mokytis mūsų kalbos?';
+        replyEnglish = 'Wonderful to meet you! I am very glad that you are learning Lithuanian. What inspired you to start learning our language?';
+        grammarTip = '„Mūsų kalbos“ (our language) uses the Genitive case after the verb „mokytis“ (to learn).';
+        suggestedReplies = [
+          { lt: 'Gyvenu Lietuvoje ir noriu kalbėti laisvai.', en: 'I live in Lithuania and want to speak fluently.' },
+          { lt: 'Mane domina lietuvių kultūra ir istorija.', en: 'I am interested in Lithuanian culture and history.' },
+        ];
+      } else if (
+        normalizedInput.includes('mano vardas') ||
+        (normalizedInput.startsWith('esu ') && !normalizedInput.includes('iš')) ||
+        normalizedInput.includes('my name is')
+      ) {
+        const words = userText.split(/\s+/);
+        const nameCandidate = words[words.length - 1]?.replace(/[^a-zA-ZąčęėįšųūžĄČĘĖĮŠŲŪŽ]/g, '');
+        extractedName = nameCandidate || null;
+        replyLithuanian = `Labai malonu susipažinti${nameCandidate ? `, ${nameCandidate}` : ''}! Esu Aistė. Kaip šiandien sekasi tavo lietuvių kalbos pamoka?`;
+        replyEnglish = `Very nice to meet you${nameCandidate ? `, ${nameCandidate}` : ''}! I am Aistė. How is your Lithuanian language practice going today?`;
+        grammarTip = 'Direct address uses the Vocative case (Šauksmininkas), e.g., Jonas -> Jonai!';
+        suggestedReplies = [
+          { lt: 'Sekasi puikiai, ačiū!', en: 'Going great, thank you!' },
+          { lt: 'Mokausi naujų žodžių.', en: 'I am learning new words.' },
+        ];
+      } else if (
+        normalizedInput.includes('dirbu') ||
+        normalizedInput.includes('darbas') ||
+        normalizedInput.includes('studentas') ||
+        normalizedInput.includes('universitet')
+      ) {
+        replyLithuanian = 'Tai labai įdomu! Ar savo kasdieniame darbe ar studijose jau tenka pasakyti kelis žodžius lietuviškai?';
+        replyEnglish = 'That is very interesting! In your daily work or studies, do you already get to say a few words in Lithuanian?';
+        grammarTip = '„Darbe ar studijose“ is in the Locative case (Vietininkas), answering "where?".';
+        suggestedReplies = [
+          { lt: 'Taip, visada pasisveikinu lietuviškai!', en: 'Yes, I always greet in Lithuanian!' },
+          { lt: 'Dar nedrąsu, bet bandau.', en: 'Still a bit shy, but I am trying.' },
+        ];
+      } else if (normalizedInput.includes('lietuv') || normalizedInput.includes('papasakok')) {
         replyLithuanian = 'Lietuva yra nuostabi šalis prie Baltijos jūros! Turime žalius miškus, gražius ežerus ir seną, dainingą kalbą. Ar esi buvęs Lietuvoje?';
         replyEnglish = 'Lithuania is a wonderful country by the Baltic Sea! We have green forests, beautiful lakes, and an ancient, melodic language. Have you been to Lithuania?';
         grammarTip = '„Prie Baltijos jūros“ uses preposition „prie“ (by/near) with Genitive case.';
@@ -392,15 +496,15 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
         grammarTip = '„Kaip sekasi?“ is the standard friendly inquiry: "How is it going?".';
         suggestedReplies = [
           { lt: 'Man sekasi labai gerai, ačiū!', en: 'I am doing very well, thank you!' },
-          { lt: 'Mokausi naujų lietuviškų žodžių.', en: 'I am learning new Lithuanian words.' },
+          { lt: 'Noriu pasikalbėti apie save.', en: 'I want to talk about myself.' },
         ];
       } else {
-        replyLithuanian = 'Puikiai kalbi! Kiekvieną dieną praktikuojantis, kalbėti taps vis lengviau ir natūraliau. Apie ką dar norėtum pasikalbėti?';
-        replyEnglish = 'You speak wonderfully! Practicing every day, speaking will become easier and more natural. What else would you like to talk about?';
-        grammarTip = 'Lithuanian adverb „puikiai“ (wonderfully/excellently) ends in -iai.';
+        replyLithuanian = 'Labai įdomu! Džiaugiuosi mūsų pokalbiu. Papasakok daugiau – ką labiausiai mėgsti veikti laisvalaikiu?';
+        replyEnglish = 'Very interesting! I am glad to chat with you. Tell me more – what do you like to do most in your free time?';
+        grammarTip = '„Laisvalaikiu“ (in one\'s free time) is in the Instrumental case (Įnagininkas).';
         suggestedReplies = [
-          { lt: 'Papasakok apie Lietuvą 🇱🇹', en: 'Tell me about Lithuania' },
-          { lt: 'Išmokyk mane naują žodį', en: 'Teach me a new word' },
+          { lt: 'Laisvalaikiu mėgstu klausytis muzikos.', en: 'In my free time I like listening to music.' },
+          { lt: 'Mėgstu keliauti ir atrasti naujas vietas.', en: 'I like traveling and discovering new places.' },
         ];
       }
     }
@@ -410,6 +514,8 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
       replyEnglish,
       grammarTip,
       suggestedReplies,
+      extractedFact,
+      extractedName,
     });
   } catch (error) {
     console.error('Error in tutor route:', error);
