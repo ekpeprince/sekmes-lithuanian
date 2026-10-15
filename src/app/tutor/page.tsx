@@ -299,7 +299,7 @@ function formatSessionDate(timestamp: number): string {
   if (isToday) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
-  return date.toLocaleDateString('lt-LT', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 export default function TutorPage() {
@@ -572,7 +572,7 @@ export default function TutorPage() {
     }
 
     // 1. Archive active session: auto-title from first user message if still default
-    if (current && (current.title === 'Naujas pokalbis' || !current.title)) {
+    if (current && (current.title === 'New Conversation' || current.title === 'Naujas pokalbis' || !current.title)) {
       const firstUser = current.messages.find((m) => m.sender === 'user');
       if (firstUser) {
         const autoTitle =
@@ -722,7 +722,10 @@ export default function TutorPage() {
     }
 
     const latestStoredSession = currentSessionId ? getSession(currentSessionId) : null;
-    const isDefaultTitle = !latestStoredSession?.title || latestStoredSession.title === 'Naujas pokalbis';
+    const isDefaultTitle =
+      !latestStoredSession?.title ||
+      latestStoredSession.title === 'New Conversation' ||
+      latestStoredSession.title === 'Naujas pokalbis';
     const sessionTitle = isDefaultTitle
       ? (text.length > 32 ? `${text.slice(0, 32)}...` : text)
       : latestStoredSession.title;
@@ -920,15 +923,15 @@ export default function TutorPage() {
             )}
           </div>
 
-          {/* New Chat Button (+ Naujas) */}
+          {/* New Chat Button (+ New Chat) */}
           <button
             type="button"
             onClick={handleNewChat}
             className="btn-tactile bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs px-2.5 sm:px-3 py-1.5 rounded-full flex items-center gap-1 transition cursor-pointer shadow-xs shrink-0"
-            title="Pradėti naują pokalbį (+ Naujas)"
+            title="Start new chat (+ New Chat)"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span className="hidden xs:inline sm:inline text-xs tracking-tight">+ Naujas</span>
+            <span className="hidden xs:inline sm:inline text-xs tracking-tight">+ New Chat</span>
           </button>
         </div>
 
@@ -942,8 +945,8 @@ export default function TutorPage() {
               setIsHistoryDrawerOpen(true);
             }}
             className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 cursor-pointer relative"
-            title="Pokalbių istorija (Chat history)"
-            aria-label="Pokalbių istorija"
+            title="Chat History"
+            aria-label="Chat History"
           >
             <History className="w-4 h-4 text-slate-600" />
             {sessionsList.length > 0 && (
@@ -1664,9 +1667,9 @@ export default function TutorPage() {
                   <History className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-800 leading-tight">Pokalbių istorija</h2>
+                  <h2 className="text-sm font-black text-slate-800 leading-tight">Chat History</h2>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {sessionsList.length} {sessionsList.length === 1 ? 'pokalbis' : 'pokalbiai'}
+                    {sessionsList.length} {sessionsList.length === 1 ? 'chat' : 'chats'}
                   </p>
                 </div>
               </div>
@@ -1679,16 +1682,16 @@ export default function TutorPage() {
                     setIsHistoryDrawerOpen(false);
                   }}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition active:scale-95 cursor-pointer shadow-xs"
-                  title="Pradėti naują pokalbį"
+                  title="Start new chat"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>+ Naujas</span>
+                  <span>+ New Chat</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsHistoryDrawerOpen(false)}
                   className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
-                  aria-label="Uždaryti"
+                  aria-label="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1703,7 +1706,7 @@ export default function TutorPage() {
                   type="text"
                   value={historySearchQuery}
                   onChange={(e) => setHistorySearchQuery(e.target.value)}
-                  placeholder="Ieškoti pokalbių..."
+                  placeholder="Search conversations..."
                   className="w-full pl-9 pr-8 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:outline-none transition shadow-2xs"
                 />
                 {historySearchQuery && (
@@ -1711,7 +1714,7 @@ export default function TutorPage() {
                     type="button"
                     onClick={() => setHistorySearchQuery('')}
                     className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200"
-                    title="Išvalyti paiešką"
+                    title="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1725,12 +1728,12 @@ export default function TutorPage() {
                 <div className="py-14 text-center text-slate-400 px-4">
                   <MessageCircle className="w-10 h-10 mx-auto text-slate-300 mb-2 opacity-60" />
                   <p className="text-xs font-bold text-slate-700">
-                    {historySearchQuery ? 'Nerasta jokių pokalbių' : 'Istorija tuščia'}
+                    {historySearchQuery ? 'No conversations found' : 'No chat history yet'}
                   </p>
                   <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
                     {historySearchQuery
-                      ? 'Pabandykite ieškoti kito žodžio, temos ar frazės.'
-                      : 'Pradėkite kalbėtis su Aiste – pokalbiai išsisaugos automatiškai!'}
+                      ? 'Try searching for another word or phrase.'
+                      : 'Start chatting with Aistė — conversations are saved automatically!'}
                   </p>
                 </div>
               ) : (
@@ -1755,7 +1758,7 @@ export default function TutorPage() {
                               isActive ? 'text-sky-950' : 'text-slate-800'
                             }`}
                           >
-                            {s.title || 'Pokalbis'}
+                            {s.title || 'New Conversation'}
                           </h3>
                         </div>
 
@@ -1767,7 +1770,7 @@ export default function TutorPage() {
                             type="button"
                             onClick={(e) => handleDeleteSession(e, s.id)}
                             className="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition active:scale-95"
-                            title="Ištrinti pokalbį"
+                            title="Delete conversation"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1776,7 +1779,7 @@ export default function TutorPage() {
 
                       {lastMsg && (
                         <p className="text-[11px] text-slate-500 line-clamp-1 italic">
-                          {lastMsg.sender === 'user' ? 'Tu: ' : 'Aistė: '}
+                          {lastMsg.sender === 'user' ? 'You: ' : 'Aistė: '}
                           {lastMsg.text}
                         </p>
                       )}
@@ -1785,12 +1788,12 @@ export default function TutorPage() {
                         <span className="flex items-center gap-1">
                           <MessageCircle className="w-3 h-3 text-slate-400" />
                           <span>
-                            {messageCount} {messageCount === 1 ? 'žinutė' : 'žinutės'}
+                            {messageCount} {messageCount === 1 ? 'message' : 'messages'}
                           </span>
                         </span>
                         {isActive && (
                           <span className="text-sky-700 font-bold bg-sky-100 px-2 py-0.5 rounded-full text-[9px]">
-                            Aktyvus
+                            Active
                           </span>
                         )}
                       </div>

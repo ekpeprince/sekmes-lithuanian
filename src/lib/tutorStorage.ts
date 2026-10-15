@@ -100,7 +100,7 @@ export function setActiveSessionId(id: string): void {
   localStorage.setItem(ACTIVE_SESSION_KEY, id);
 }
 
-export function createNewSession(initialTitle = 'Naujas pokalbis'): TutorSession {
+export function createNewSession(initialTitle = 'New Conversation'): TutorSession {
   const now = Date.now();
   const newSession: TutorSession = {
     id: `session_${now}_${Math.random().toString(36).substring(2, 7)}`,
