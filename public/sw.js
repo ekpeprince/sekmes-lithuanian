@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'labasapp-sw-v7';
+const CACHE_VERSION = 'labasapp-sw-v8';
 const CACHE_STATIC = `labasapp-static-${CACHE_VERSION}`;
 const CACHE_AUDIO = `labasapp-audio-${CACHE_VERSION}`;
 
