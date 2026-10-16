@@ -4,17 +4,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Zap,
-  Clock,
-  Trophy,
   RotateCcw,
   X,
-  Swords,
-  CheckCircle2,
-  XCircle,
-  Sparkles,
-  ShieldAlert,
-  ArrowRight,
-  Flame,
+  Share2,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { haptics } from '@/lib/haptics';
@@ -22,11 +14,13 @@ import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { BATTLE_QUESTIONS, BattleQuestion } from '@/data/battleQuestions';
 import { LeagueTier, LEAGUE_TIERS, Competitor } from '@/lib/league';
+import { shareBattleInvite } from '@/lib/shareUtils';
 
 interface LeagueBattleModalProps {
   isOpen: boolean;
   onClose: () => void;
   tier?: LeagueTier;
+  activeTier?: string; // Dynamic tier name e.g. "SIDABRINĖ LYGA" or "Silver League"
   competitors?: Competitor[];
   onRewardClaimed?: (xp: number) => void;
 }
@@ -84,14 +78,21 @@ const ROUND_SECONDS = 7;
 export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   isOpen,
   onClose,
-  tier = 'Sidabras',
+  tier,
+  activeTier,
   competitors = [],
   onRewardClaimed,
 }) => {
-  const { addXp, recordDuelWin } = useGame();
+  const { progress, addXp, recordDuelWin } = useGame();
   const { user } = useAuth();
 
-  const [phase, setPhase] = useState<'matchmaking' | 'battle' | 'summary'>('matchmaking');
+  // Dynamic Tier Resolution
+  const userAssignedTier: LeagueTier = progress.leagueTier || 'Sidabras';
+  const effectiveTier: LeagueTier = tier || userAssignedTier;
+  const tierConfig = LEAGUE_TIERS[effectiveTier] || LEAGUE_TIERS.Sidabras;
+  const currentActiveTier = activeTier || tierConfig.name;
+
+  const [status, setStatus] = useState<'searching' | 'battle' | 'completed'>('searching');
   const [opponent, setOpponent] = useState<OpponentProfile>(FALLBACK_OPPONENTS[0]);
   const [questions, setQuestions] = useState<BattleQuestion[]>([]);
   const [currentRound, setCurrentRound] = useState(0); // 0-indexed (0..4)
@@ -102,25 +103,37 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   const [opponentAnswered, setOpponentAnswered] = useState<boolean>(false);
   const [roundCompleted, setRoundCompleted] = useState(false);
   const [xpAwarded, setXpAwarded] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const advanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const opponentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const matchmakingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const tierConfig = LEAGUE_TIERS[tier] || LEAGUE_TIERS.Sidabras;
-  const tierDisplayName =
-    tierConfig.name === 'SIDABRINĖ LYGA' || tierConfig.name === 'Sidabro Lyga'
-      ? 'Sidabrinė Lyga'
-      : tierConfig.name;
+  const cleanupTimers = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
+    if (matchmakingTimerRef.current) clearTimeout(matchmakingTimerRef.current);
+  };
+
+  const competitorsRef = useRef(competitors);
+  competitorsRef.current = competitors;
+  const userRef = useRef(user);
+  userRef.current = user;
 
   const currentUserName = user?.displayName || 'You';
   const currentUserAvatar = user?.photoURL || undefined;
 
-  // Pick random opponent and 5 random questions
-  const initializeBattle = useCallback(() => {
-    // 1. Pick an opponent from league competitors or fallback
-    const eligibleOpponents = competitors.filter(
-      (c) => !c.isUser && !c.isCurrentUser && c.name !== 'Ekpe PrinceEsor' && c.name !== user?.displayName
+  // Initialize and start a new 5-round match
+  const startNewMatch = useCallback(() => {
+    cleanupTimers();
+
+    // 1. Pick an opponent from competitors or fallback
+    const currentComps = competitorsRef.current;
+    const currentUser = userRef.current;
+    const eligibleOpponents = currentComps.filter(
+      (c) => !c.isUser && !c.isCurrentUser && c.name !== 'Ekpe PrinceEsor' && c.name !== currentUser?.displayName
     );
 
     let chosenOpponent: OpponentProfile;
@@ -155,59 +168,51 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     setRoundCompleted(false);
     setXpAwarded(false);
     setTimeLeft(ROUND_SECONDS);
-    setPhase('matchmaking');
-  }, [competitors, user]);
+    setStatus('searching');
 
-  // Handle open / close lifecycle
+    // 2-Second Matchmaking Transition (No confetti during matchmaking)
+    sounds.playClick();
+    matchmakingTimerRef.current = setTimeout(() => {
+      setStatus('battle');
+      sounds.playClick();
+      haptics.tap();
+    }, 2000);
+  }, []);
+
+  // Modal Open Lifecycle Guard to eliminate restart loops
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
-    if (isOpen) {
-      initializeBattle();
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-      if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
+    if (isOpen && !wasOpenRef.current) {
+      wasOpenRef.current = true;
+      startNewMatch();
+    } else if (!isOpen) {
+      wasOpenRef.current = false;
+      cleanupTimers();
     }
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-      if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
+      cleanupTimers();
     };
-  }, [isOpen, initializeBattle]);
-
-  // 2-Second Matchmaking transition
-  useEffect(() => {
-    if (phase !== 'matchmaking' || !isOpen) return;
-
-    sounds.playClick();
-    const mmTimer = setTimeout(() => {
-      setPhase('battle');
-      sounds.playSuccess();
-      haptics.success();
-    }, 2000);
-
-    return () => clearTimeout(mmTimer);
-  }, [phase, isOpen]);
+  }, [isOpen, startNewMatch]);
 
   // Round Timer & Opponent answering simulation
   useEffect(() => {
-    if (phase !== 'battle' || roundCompleted || !isOpen) return;
+    if (status !== 'battle' || roundCompleted || !isOpen) return;
 
     setTimeLeft(ROUND_SECONDS);
     setSelectedOption(null);
     setOpponentAnswered(false);
 
-    // Opponent response timer: between 1.8s and 4.8s
+    // Opponent response delay between 1.8s and 4.8s
     const opponentDelayMs = 1800 + Math.random() * 3000;
     opponentTimeoutRef.current = setTimeout(() => {
       setOpponentAnswered(true);
-      // Opponent 75% accuracy
       const isOpponentCorrect = Math.random() < 0.75;
       if (isOpponentCorrect) {
         setOpponentScore((prev) => prev + 100);
       }
     }, opponentDelayMs);
 
-    // Round countdown
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -223,7 +228,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
       if (timerRef.current) clearInterval(timerRef.current);
       if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
     };
-  }, [phase, currentRound, roundCompleted, isOpen]);
+  }, [status, currentRound, roundCompleted, isOpen]);
 
   // Handle timeout
   const handleTimeOut = () => {
@@ -232,17 +237,18 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     sounds.playWrong();
     haptics.error();
 
-    scheduleNextRound();
+    scheduleNextRound(currentRound);
   };
 
-  // Schedule advance to next round or summary
-  const scheduleNextRound = () => {
+  // Schedule advance to next round or complete match
+  const scheduleNextRound = (currentR: number) => {
     advanceTimerRef.current = setTimeout(() => {
-      if (currentRound + 1 < TOTAL_ROUNDS) {
-        setCurrentRound((prev) => prev + 1);
+      if (currentR + 1 < TOTAL_ROUNDS) {
+        setCurrentRound(currentR + 1);
         setRoundCompleted(false);
       } else {
-        setPhase('summary');
+        // Round 5 completed: Transition state to 'completed'. DO NOT route back to 'searching' or reset round counter
+        setStatus('completed');
       }
     }, 1400);
   };
@@ -256,12 +262,11 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     setRoundCompleted(true);
 
     const activeQuestion = questions[currentRound];
-    const isCorrect = ltText === activeQuestion.correctAnswer;
+    const isCorrect = activeQuestion && ltText === activeQuestion.correctAnswer;
 
     if (isCorrect) {
       sounds.playCorrect();
       haptics.success();
-      // Points: 100 base + speed bonus up to 40
       const points = 100 + timeLeft * 6;
       setUserScore((prev) => prev + points);
     } else {
@@ -269,36 +274,46 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
       haptics.error();
     }
 
-    scheduleNextRound();
+    scheduleNextRound(currentRound);
   };
 
-  // When battle finishes (summary screen)
+  // Post-match victory logic, XP persistence and Confetti Trigger
   useEffect(() => {
-    if (phase !== 'summary' || xpAwarded) return;
+    if (status !== 'completed' || xpAwarded) return;
 
-    const isVictory = userScore > opponentScore;
+    const isVictory = userScore >= opponentScore;
+    const earnedXp = isVictory ? 25 : 10;
 
+    // Persist XP reward to the user's total league XP in storage/context
+    addXp(earnedXp);
     if (isVictory) {
-      sounds.playSuccess();
-      haptics.success();
-      confetti({
-        particleCount: 75,
-        spread: 60,
-        origin: { y: 0.6 },
-      });
-
-      // Award +25 League XP
-      addXp(25);
       recordDuelWin();
-      setXpAwarded(true);
-      if (onRewardClaimed) onRewardClaimed(25);
-    } else if (userScore === opponentScore) {
-      // Draw gives +10 XP
-      addXp(10);
-      setXpAwarded(true);
-      if (onRewardClaimed) onRewardClaimed(10);
+      sounds.playSuccess();
+      haptics.victory();
+      // Confetti Trigger:
+      // Only fire confetti particle effect once the Victory screen mounts AND userScore >= opponentScore
+      confetti({
+        particleCount: 90,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'],
+      });
+    } else {
+      sounds.playError();
+      haptics.error();
     }
-  }, [phase, userScore, opponentScore, xpAwarded, addXp, recordDuelWin, onRewardClaimed]);
+
+    setXpAwarded(true);
+    if (onRewardClaimed) onRewardClaimed(earnedXp);
+  }, [status, userScore, opponentScore, xpAwarded, addXp, recordDuelWin, onRewardClaimed]);
+
+  const handleInviteFriend = async () => {
+    const res = await shareBattleInvite(currentUserName);
+    if (res.copied) {
+      setToastMessage('Nuoroda nukopijuota į iškarpinę!');
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -307,6 +322,14 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col">
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xl flex items-center gap-2 animate-in fade-in duration-200">
+            <span>📋</span>
+            <span>{toastMessage}</span>
+          </div>
+        )}
+
         {/* Top Modal Bar */}
         <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -314,7 +337,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
               ⚔️
             </span>
             <span className="text-xs font-black uppercase tracking-wider text-slate-800">
-              1v1 Speed Battle • {tierDisplayName}
+              1V1 SPEED BATTLE • {currentActiveTier.toUpperCase()}
             </span>
           </div>
 
@@ -331,19 +354,19 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
         {/* ============================================================== */}
         {/* PHASE 1: MATCHMAKING STATE (2-second search) */}
         {/* ============================================================== */}
-        {phase === 'matchmaking' && (
+        {status === 'searching' && (
           <div className="p-8 sm:p-12 text-center flex flex-col items-center justify-center min-h-[380px]">
-            {/* Radar Pulse Animation */}
-            <div className="relative flex items-center justify-center w-28 h-28 mb-6">
-              <div className="absolute inset-0 rounded-full bg-amber-400/20 animate-ping" />
-              <div className="absolute inset-2 rounded-full bg-amber-500/30 animate-pulse" />
+            {/* Animated Radar Pulse */}
+            <div className="relative flex items-center justify-center mb-6">
+              <span className="absolute inline-flex h-24 w-24 rounded-full bg-amber-400 opacity-25 animate-ping" />
+              <span className="absolute inline-flex h-32 w-32 rounded-full bg-amber-300 opacity-15 animate-pulse" />
               <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-3xl shadow-lg">
                 ⚔️
               </div>
             </div>
 
             <h3 className="text-base sm:text-lg font-black text-slate-900">
-              Searching for an opponent in {tierDisplayName}...
+              Searching for an opponent in {currentActiveTier}...
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-1 max-w-xs">
               Matching with a live learner from your weekly league cohort.
@@ -369,7 +392,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
         {/* ============================================================== */}
         {/* PHASE 2: ACTIVE 5-ROUND RAPID BATTLE */}
         {/* ============================================================== */}
-        {phase === 'battle' && currentQ && (
+        {status === 'battle' && currentQ && (
           <div className="p-4 sm:p-6 flex flex-col">
             {/* Split View Scoreboard */}
             <div className="grid grid-cols-3 items-center bg-slate-900 text-white rounded-2xl p-3.5 shadow-md mb-4 border border-slate-800">
@@ -497,95 +520,131 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* PHASE 3: MATCH RESULT & REWARD SCREEN */}
+        {/* PHASE 3: DEDICATED VICTORY / MATCH SUMMARY VIEW */}
         {/* ============================================================== */}
-        {phase === 'summary' && (
+        {status === 'completed' && (
           <div className="p-6 sm:p-8 text-center flex flex-col items-center">
-            {userScore > opponentScore ? (
+            {/* Result Header */}
+            {userScore >= opponentScore ? (
               <>
-                <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-3 shadow-md">
+                <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-3 shadow-md animate-bounce">
                   🏆
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-                  VICTORY! • Pergalė!
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                  Pergalė! 🏆
                 </h2>
                 <p className="text-xs text-slate-500 font-medium mt-1">
-                  You outpaced {opponent.name} in 5 rapid Lithuanian rounds!
+                  Puikiai pasirodei 5 greitų raundų kovoje!
                 </p>
-
-                {/* Reward Banner */}
-                <div className="my-5 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg flex items-center gap-2">
-                  <Zap className="w-5 h-5 fill-white text-white" />
-                  <span className="text-base font-black tracking-wide">+25 League XP Awarded!</span>
-                </div>
-              </>
-            ) : userScore === opponentScore ? (
-              <>
-                <div className="w-16 h-16 rounded-3xl bg-sky-100 text-sky-600 flex items-center justify-center text-3xl mb-3 shadow-md">
-                  🤝
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-                  DRAW! • Lygiosios!
-                </h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">
-                  Both competitors scored evenly across 5 rounds!
-                </p>
-
-                <div className="my-5 px-5 py-2.5 rounded-2xl bg-sky-600 text-white shadow-md flex items-center gap-2">
-                  <Zap className="w-4 h-4 fill-white text-white" />
-                  <span className="text-sm font-black">+10 League XP Awarded!</span>
-                </div>
               </>
             ) : (
               <>
-                <div className="w-16 h-16 rounded-3xl bg-rose-100 text-rose-600 flex items-center justify-center text-3xl mb-3 shadow-md">
-                  🛡️
+                <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-700 flex items-center justify-center text-3xl mb-3 shadow-md">
+                  ⚔️
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-                  DEFEAT • Pralaimėjimas
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                  Gera kova! ⚔️
                 </h2>
                 <p className="text-xs text-slate-500 font-medium mt-1">
-                  {opponent.name} won this round. Practice makes perfect!
+                  {opponent.name} šįkart buvo greitesnis. Nenusimink ir treniruokis toliau!
                 </p>
-
-                <div className="my-5 px-4 py-2 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
-                  Keep training to climb the {tierDisplayName}!
-                </div>
               </>
             )}
 
-            {/* Score Comparison Box */}
-            <div className="w-full max-w-sm rounded-2xl bg-slate-50 border border-slate-200 p-4 mb-6">
-              <div className="flex items-center justify-around">
-                <div className="text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    You
-                  </span>
-                  <span className="text-xl font-black text-slate-900">{userScore}</span>
-                  <span className="text-[10px] text-slate-500 block">pts</span>
+            {/* Score Comparison */}
+            <div className="w-full max-w-sm grid grid-cols-2 gap-3 my-5">
+              {/* Player Card */}
+              <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
+                userScore >= opponentScore
+                  ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
+                  : 'bg-white border-slate-200'
+              }`}>
+                <div className="relative mb-2">
+                  {currentUserAvatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={currentUserAvatar} alt="You" className="w-12 h-12 rounded-full object-cover ring-2 ring-emerald-500 shadow-xs" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-sm flex items-center justify-center ring-2 ring-emerald-400 shadow-xs">
+                      Tu
+                    </div>
+                  )}
+                  {userScore >= opponentScore && (
+                    <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
+                  )}
                 </div>
+                <span className="text-xs font-bold text-slate-800 truncate max-w-full">
+                  {currentUserName} (Tu)
+                </span>
+                <span className="text-xl font-black text-emerald-600 mt-1">
+                  {userScore} <span className="text-xs text-slate-400 font-semibold">pts</span>
+                </span>
+              </div>
 
-                <span className="text-xs font-black text-slate-300 uppercase">VS</span>
-
-                <div className="text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    {opponent.name}
-                  </span>
-                  <span className="text-xl font-black text-slate-900">{opponentScore}</span>
-                  <span className="text-[10px] text-slate-500 block">pts</span>
+              {/* Opponent Card */}
+              <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
+                opponentScore > userScore
+                  ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
+                  : 'bg-white border-slate-200'
+              }`}>
+                <div className="relative mb-2">
+                  {opponent.photoURL ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={opponent.photoURL} alt={opponent.name} className="w-12 h-12 rounded-full object-cover ring-2 ring-amber-400 shadow-xs" />
+                  ) : (
+                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${opponent.avatarColor} text-white font-bold text-sm flex items-center justify-center ring-2 ring-amber-400 shadow-xs`}>
+                      {opponent.initials}
+                    </div>
+                  )}
+                  {opponentScore > userScore && (
+                    <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
+                  )}
                 </div>
+                <span className="text-xs font-bold text-slate-800 truncate max-w-full">
+                  {opponent.name} {opponent.flag}
+                </span>
+                <span className="text-xl font-black text-amber-600 mt-1">
+                  {opponentScore} <span className="text-xs text-slate-400 font-semibold">pts</span>
+                </span>
               </div>
             </div>
 
-            {/* CTAs */}
+            {/* XP Award Card */}
+            <div className="w-full max-w-sm rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white p-3.5 shadow-md flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Zap className="w-5 h-5 fill-white text-white" />
+                </div>
+                <div className="text-left">
+                  <span className="text-xs font-semibold text-amber-100 block">Lygos apdovanojimas</span>
+                  <span className="text-sm font-black">
+                    {userScore >= opponentScore ? '+25 Lygos XP' : '+10 Lygos XP'}
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-xl">
+                Įskaityta!
+              </span>
+            </div>
+
+            {/* Challenge a Friend Secondary Action Button */}
+            <button
+              type="button"
+              onClick={handleInviteFriend}
+              className="w-full max-w-sm mb-5 py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+            >
+              <Share2 className="w-4 h-4 text-amber-700" />
+              <span>Challenge a Friend • Iššūkis draugui</span>
+            </button>
+
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-sm">
               <button
                 type="button"
-                onClick={initializeBattle}
+                onClick={startNewMatch}
                 className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider transition active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-1.5"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span>Play Again</span>
+                <span>Žaisti dar kartą</span>
               </button>
 
               <button
@@ -593,7 +652,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
                 onClick={onClose}
                 className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
               >
-                Back to League
+                Grįžti į lygą
               </button>
             </div>
           </div>

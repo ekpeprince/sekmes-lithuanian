@@ -12,12 +12,14 @@ import {
   ArrowRight,
   Award,
   Info,
+  Share2,
 } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LEAGUE_TIERS, LeagueTier, getLeagueTimeRemaining, getWeeklyCohort, Competitor } from '@/lib/league';
 import { syncUserToLeaderboard, fetchRealLeaderboardMembers } from '@/lib/leagueSync';
 import { LeagueBattleModal } from '@/components/LeagueBattleModal';
+import { shareBattleInvite } from '@/lib/shareUtils';
 
 export default function LeaguePage() {
   const { progress } = useGame();
@@ -28,7 +30,27 @@ export default function LeaguePage() {
   const [realMembers, setRealMembers] = useState<Competitor[]>([]);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [isBattleOpen, setIsBattleOpen] = useState(false);
+  const [inviteToast, setInviteToast] = useState<string | null>(null);
   const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
+
+  const handleInviteFriend = async () => {
+    const userName = user?.displayName || 'Ekpe PrinceEsor';
+    const res = await shareBattleInvite(userName);
+    if (res.copied) {
+      setInviteToast('Nuoroda nukopijuota į iškarpinę!');
+      setTimeout(() => setInviteToast(null), 3000);
+    }
+  };
+
+  // Auto-launch battle modal if navigated via an invite link (?battle=invite)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('battle') === 'invite') {
+        setIsBattleOpen(true);
+      }
+    }
+  }, []);
 
   // Periodically refresh countdown
   useEffect(() => {
@@ -290,13 +312,24 @@ export default function LeaguePage() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsBattleOpen(true)}
-            className="btn-tactile btn-tactile-amber px-3.5 py-1.5 text-xs font-bold rounded-xl shrink-0 shadow-2xs uppercase tracking-wider cursor-pointer"
-          >
-            Play
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleInviteFriend}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-amber-950 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+            >
+              <Share2 className="h-3.5 w-3.5 text-amber-700" />
+              <span className="hidden sm:inline">Invite Friend</span>
+              <span className="sm:hidden">Invite</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsBattleOpen(true)}
+              className="btn-tactile btn-tactile-amber px-3.5 py-1.5 text-xs font-bold rounded-xl shadow-2xs uppercase tracking-wider cursor-pointer"
+            >
+              Play
+            </button>
+          </div>
         </div>
 
         {/* Top 3 Podium Cards */}
@@ -651,9 +684,18 @@ export default function LeaguePage() {
       <LeagueBattleModal
         isOpen={isBattleOpen}
         onClose={() => setIsBattleOpen(false)}
+        activeTier={activeTierConfig.name}
         tier={activeTier}
         competitors={unifiedList}
       />
+
+      {/* Invite Toast Notification */}
+      {inviteToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200">
+          <span>📋</span>
+          <span>{inviteToast}</span>
+        </div>
+      )}
     </div>
   );
 }
