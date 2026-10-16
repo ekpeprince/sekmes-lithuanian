@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Flame,
@@ -23,9 +24,13 @@ import { LeagueBattleModal } from '@/components/LeagueBattleModal';
 import { RealtimeBattleModal } from '@/components/RealtimeBattleModal';
 import { shareBattleInvite } from '@/lib/shareUtils';
 
-export default function LeaguePage() {
+function LeagueContent() {
   const { progress } = useGame();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const battleParam = searchParams.get('battle');
+  const roomIdParam = searchParams.get('roomId');
+  const isGuestInvite = (battleParam === 'room' || !!roomIdParam) && !!roomIdParam;
 
   const userAssignedTier: LeagueTier = progress.leagueTier || 'Bronza';
   const [activeTier, setActiveTier] = useState<LeagueTier>(userAssignedTier);
@@ -55,20 +60,10 @@ export default function LeaguePage() {
 
   // Auto-launch battle modal or realtime room if navigated via URL params
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const battleParam = params.get('battle');
-      const roomIdParam = params.get('roomId');
-
-      if (battleParam === 'room' && roomIdParam) {
-        setRealtimeRoomId(roomIdParam);
-        setIsRealtimeHost(false);
-        setIsRealtimeBattleOpen(true);
-      } else if (battleParam === 'invite') {
-        setIsBattleOpen(true);
-      }
+    if (battleParam === 'invite') {
+      setIsBattleOpen(true);
     }
-  }, []);
+  }, [battleParam]);
 
   // Periodically refresh countdown
   useEffect(() => {
@@ -713,14 +708,14 @@ export default function LeaguePage() {
 
       {/* Real-time 1v1 Battle Room Modal (Live Room Lobby & Synchronized Play) */}
       <RealtimeBattleModal
-        isOpen={isRealtimeBattleOpen}
+        isOpen={isRealtimeBattleOpen || isGuestInvite}
         onClose={() => {
           setIsRealtimeBattleOpen(false);
           setRealtimeRoomId(null);
         }}
         tierName={activeTierConfig.name}
-        initialRoomId={realtimeRoomId}
-        isHostInitial={isRealtimeHost}
+        initialRoomId={roomIdParam || realtimeRoomId}
+        isHostInitial={!isGuestInvite && isRealtimeHost}
         onPlayBot={() => {
           setIsRealtimeBattleOpen(false);
           setIsBattleOpen(true);
@@ -735,5 +730,19 @@ export default function LeaguePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function LeaguePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <LeagueContent />
+    </Suspense>
   );
 }

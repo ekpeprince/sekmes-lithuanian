@@ -77,11 +77,18 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const { progress, addXp, recordDuelWin } = useGame();
   const { user } = useAuth();
 
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const initialQueryRoomId = initialRoomId || urlParams?.get('roomId');
+  const isGuestFromUrl = Boolean(initialQueryRoomId && initialQueryRoomId.trim());
+
   const [roomId, setRoomId] = useState<string>(() => {
-    if (initialRoomId && initialRoomId.trim()) return initialRoomId.trim().toUpperCase();
+    if (initialQueryRoomId && initialQueryRoomId.trim()) return initialQueryRoomId.trim().toUpperCase();
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   });
-  const [isHost, setIsHost] = useState<boolean>(isHostInitial);
+  const [isHost, setIsHost] = useState<boolean>(() => {
+    if (isGuestFromUrl) return false;
+    return isHostInitial;
+  });
   const [room, setRoom] = useState<BattleRoomDoc | null>(null);
   const [phase, setPhase] = useState<'loading' | 'prompt_guest' | 'waiting' | 'countdown' | 'battle' | 'completed'>('loading');
   const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -145,7 +152,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         console.error('[BATTLE_ARENA_ERROR]: Connection timeout after 4 seconds. Forcing lobby resolution.');
         setPhase((prev) => {
           if (prev === 'loading') {
-            return 'waiting';
+            return isHost ? 'waiting' : 'prompt_guest';
           }
           return prev;
         });
@@ -153,8 +160,11 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     }, 4000);
 
     const init = async () => {
-      // HOST FLOW: Generate roomId immediately & transition to 'waiting' without waiting on network
-      if (!initialRoomId) {
+      const activeUrlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const queryRoomId = initialRoomId || activeUrlParams?.get('roomId');
+
+      // HOST FLOW: When there is no queryRoomId (opened directly via Host button)
+      if (!queryRoomId) {
         setIsHost(true);
         const generatedId = Math.random().toString(36).substring(2, 8).toUpperCase();
         setRoomId(generatedId);
@@ -176,13 +186,15 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
           console.error('[BATTLE_ARENA_ERROR]: Room creation error, falling back locally:', err);
         }
       } else {
-        // GUEST FLOW: Joining an existing room
-        const cleanInitialId = initialRoomId.trim().toUpperCase();
+        // GUEST FLOW: A queryRoomId exists!
+        const cleanInitialId = queryRoomId.trim().toUpperCase();
         setRoomId(cleanInitialId);
+        setIsHost(false); // Force guest role
+
         try {
           const existing = await getBattleRoom(cleanInitialId);
 
-          // Check if current user is already the host of this room
+          // Check if current user is actually the host of this room
           if (existing && user?.uid && existing.host.id === user.uid) {
             if (isMounted) {
               setIsHost(true);
@@ -202,7 +214,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
             setIsHost(false);
             const existingName = getStoredGuestName(user?.displayName, user?.email);
 
-            // Step 4: If they have an existing username/profile in localStorage, join with that name
+            // Step 4: If they have an existing username/profile in localStorage, join immediately
             if (existingName) {
               const updated = await joinBattleRoom(cleanInitialId, {
                 id: user?.uid || `guest_${Date.now()}`,
@@ -220,7 +232,19 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         } catch (err) {
           console.error('[BATTLE_ARENA_ERROR]: Failed to connect to room:', err);
           if (isMounted) {
-            setConnectionError('Could not connect to the battle room. Please verify the link or try again.');
+            setIsHost(false);
+            const existingName = getStoredGuestName(user?.displayName, user?.email);
+            if (existingName) {
+              joinBattleRoom(cleanInitialId, {
+                id: user?.uid || `guest_${Date.now()}`,
+                name: existingName,
+              }).catch(() => {});
+              setPhase('countdown');
+            } else {
+              const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
+              setGuestNameInput(randomDefault);
+              setPhase('prompt_guest');
+            }
           }
         }
       }
@@ -242,14 +266,20 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       if (!updatedRoom) return;
       setRoom(updatedRoom);
 
-      // Host Join Alert & Transition to Countdown:
-      // If updatedRoom.guest is present OR updatedRoom.status === 'ready', immediately trigger the host alert and advance to 'countdown'
-      if (updatedRoom.guest && isHost && phase === 'waiting') {
-        sounds.playSuccess();
-        haptics.success();
-        setHostJoinBanner(`🎉 ${updatedRoom.guest.name} has joined the match!`);
-        setPhase('countdown');
+      // On the Host device (isHost === true):
+      // When updatedRoom.guest is non-null, immediately alert host & transition to countdown
+      if (isHost && updatedRoom.guest) {
+        if (!prevGuestRef.current) {
+          prevGuestRef.current = updatedRoom.guest;
+          sounds.playSuccess();
+          haptics.success();
+        }
+        setHostJoinBanner(`🎉 ${updatedRoom.guest.name} has joined!`);
+        if (phase === 'waiting' || phase === 'loading') {
+          setPhase('countdown');
+        }
       } else if (
+        !isHost &&
         (updatedRoom.status === 'ready' || updatedRoom.status === 'starting' || updatedRoom.guest) &&
         (phase === 'waiting' || phase === 'loading')
       ) {
