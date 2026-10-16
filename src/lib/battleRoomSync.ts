@@ -13,8 +13,9 @@ import { BATTLE_QUESTIONS } from '@/data/battleQuestions';
 export interface BattleRoomPlayer {
   id: string;
   name: string;
+  joined: boolean;
   score: number;
-  currentRound: number;
+  currentRound?: number;
   lastAnswerCorrect?: boolean;
 }
 
@@ -27,13 +28,15 @@ export interface BattleRoomQuestion {
   category?: string;
 }
 
-export type BattleRoomStatus = 'waiting' | 'ready' | 'in_progress' | 'completed';
+export type BattleRoomStatus = 'waiting' | 'ready' | 'starting' | 'in_progress' | 'completed';
 
 export interface BattleRoomDoc {
   roomId: string;
+  status: BattleRoomStatus;
   host: BattleRoomPlayer;
   guest: BattleRoomPlayer | null;
-  status: BattleRoomStatus;
+  countdown: number; // 3, 2, 1
+  currentRound: number;
   tier: string;
   questions: BattleRoomQuestion[];
   createdAt: any;
@@ -102,19 +105,22 @@ export async function createBattleRoom(
   hostUser: { id: string; name: string },
   tier: string = 'SIDABRINĖ LYGA'
 ): Promise<BattleRoomDoc> {
-  const roomId = Math.random().toString(36).substring(2, 8);
+  const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
   const questions = generateBattleRoomQuestions(5);
 
   const roomDoc: BattleRoomDoc = {
     roomId,
+    status: 'waiting',
     host: {
       id: hostUser.id,
       name: hostUser.name || 'Host',
+      joined: true,
       score: 0,
       currentRound: 0,
     },
     guest: null,
-    status: 'waiting',
+    countdown: 3,
+    currentRound: 0,
     tier,
     questions,
     createdAt: Date.now(),
@@ -143,7 +149,7 @@ export async function createBattleRoom(
  * 2. Fetch a Battle Room by roomId with 3.5s timeout
  */
 export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | null> {
-  const cleanId = roomId.trim();
+  const cleanId = roomId.trim().toUpperCase();
   if (db && isFirebaseConfigured) {
     try {
       const roomRef = doc(db, 'battle_rooms', cleanId);
@@ -168,10 +174,11 @@ export async function joinBattleRoom(
   roomId: string,
   guestUser: { id: string; name: string }
 ): Promise<BattleRoomDoc> {
-  const cleanId = roomId.trim();
+  const cleanId = roomId.trim().toUpperCase();
   const guestData: BattleRoomPlayer = {
     id: guestUser.id,
-    name: guestUser.name || 'Mokinys #12',
+    name: guestUser.name || 'Player 2',
+    joined: true,
     score: 0,
     currentRound: 0,
   };
@@ -182,12 +189,15 @@ export async function joinBattleRoom(
         ...existing,
         guest: guestData,
         status: 'ready',
+        countdown: 3,
       }
     : {
         roomId: cleanId,
-        host: { id: 'host_fallback', name: 'Host', score: 0, currentRound: 0 },
-        guest: guestData,
         status: 'ready',
+        host: { id: 'host_fallback', name: 'Host', joined: true, score: 0, currentRound: 0 },
+        guest: guestData,
+        countdown: 3,
+        currentRound: 0,
         tier: 'SIDABRINĖ LYGA',
         questions: generateBattleRoomQuestions(5),
         createdAt: Date.now(),
@@ -200,6 +210,7 @@ export async function joinBattleRoom(
       updateDoc(doc(db, 'battle_rooms', cleanId), {
         guest: sanitizeForFirestore(guestData),
         status: 'ready',
+        countdown: 3,
       }),
       3500
     ).catch((err) => {
@@ -254,7 +265,7 @@ export async function updateBattlePlayerScore(
       existing.guest.currentRound = newRound;
       if (isCorrect !== undefined) existing.guest.lastAnswerCorrect = isCorrect;
     }
-    if (existing.host.currentRound >= 5 && (existing.guest?.currentRound ?? 0) >= 5) {
+    if ((existing.host.currentRound ?? 0) >= 5 && (existing.guest?.currentRound ?? 0) >= 5) {
       existing.status = 'completed';
     }
     saveLocalRoom(existing);
@@ -306,7 +317,7 @@ export function listenToBattleRoom(
   roomId: string,
   onUpdate: (room: BattleRoomDoc | null) => void
 ): () => void {
-  const cleanId = roomId.trim();
+  const cleanId = roomId.trim().toUpperCase();
   let unsubFirestore: Unsubscribe | null = null;
 
   // Initial local state
@@ -326,7 +337,7 @@ export function listenToBattleRoom(
 
   const handleCustomSync = (e: Event) => {
     const custom = e as CustomEvent<{ roomId: string; room: BattleRoomDoc }>;
-    if (custom.detail?.roomId === cleanId && custom.detail?.room) {
+    if (custom.detail?.roomId?.toUpperCase() === cleanId && custom.detail?.room) {
       onUpdate(custom.detail.room);
     }
   };
@@ -335,6 +346,14 @@ export function listenToBattleRoom(
     window.addEventListener('storage', handleStorage);
     window.addEventListener('battle_room_local_sync', handleCustomSync);
   }
+
+  // 1000ms periodic poll listener fallback
+  const pollInterval = setInterval(() => {
+    const local = getLocalRoom(cleanId);
+    if (local) {
+      onUpdate(local);
+    }
+  }, 1000);
 
   // Cloud Firestore Real-time listener
   if (db && isFirebaseConfigured) {
@@ -359,6 +378,7 @@ export function listenToBattleRoom(
   }
 
   return () => {
+    clearInterval(pollInterval);
     if (typeof window !== 'undefined') {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('battle_room_local_sync', handleCustomSync);

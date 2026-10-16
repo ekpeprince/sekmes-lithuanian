@@ -21,6 +21,7 @@ import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   BattleRoomDoc,
+  BattleRoomPlayer,
   createBattleRoom,
   getBattleRoom,
   joinBattleRoom,
@@ -40,6 +41,30 @@ interface RealtimeBattleModalProps {
 
 const TOTAL_ROUNDS = 5;
 const ROUND_SECONDS = 7;
+
+const LITHUANIAN_GUEST_NAMES = [
+  'Vilnius_Guest',
+  'Kaunas_Guest',
+  'Klaipėda_Guest',
+  'Šiauliai_Guest',
+  'Panevėžys_Guest',
+  'Player 2',
+];
+
+function getStoredGuestName(currentUserDisplayName?: string | null, currentUserEmail?: string | null): string | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored =
+        localStorage.getItem('sekmes_user_name') ||
+        localStorage.getItem('labas_user_name') ||
+        localStorage.getItem('sekmes_nickname');
+      if (stored && stored.trim()) return stored.trim();
+    } catch {}
+  }
+  if (currentUserDisplayName && currentUserDisplayName.trim()) return currentUserDisplayName.trim();
+  if (currentUserEmail && currentUserEmail.trim()) return currentUserEmail.split('@')[0];
+  return null;
+}
 
 export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   isOpen,
@@ -61,6 +86,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const [guestNameInput, setGuestNameInput] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [hostJoinBanner, setHostJoinBanner] = useState<string | null>(null);
 
   // Active quiz state
   const [currentRound, setCurrentRound] = useState(0); // 0..4
@@ -71,6 +97,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const [xpAwarded, setXpAwarded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const prevGuestRef = useRef<BattleRoomPlayer | null>(null);
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
   const advanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -88,7 +115,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   // 1. Initialize or join room when modal opens
@@ -106,6 +133,8 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     setCurrentRound(0);
     setLocalScore(0);
     setConnectionError(null);
+    setHostJoinBanner(null);
+    prevGuestRef.current = null;
 
     // 4-Second Timeout Guard to prevent infinite "Connecting to battle arena..." hanging
     connectionTimeoutRef.current = setTimeout(() => {
@@ -141,23 +170,24 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         } catch (err) {
           console.error('[BATTLE_ARENA_ERROR]: Room creation error, falling back locally:', err);
           if (isMounted) {
-            const fallbackId = Math.random().toString(36).substring(2, 8);
+            const fallbackId = Math.random().toString(36).substring(2, 8).toUpperCase();
             setRoomId(fallbackId);
             setPhase('waiting');
           }
         }
       } else {
         // GUEST FLOW: Joining an existing room
-        setRoomId(initialRoomId);
+        const cleanInitialId = initialRoomId.trim().toUpperCase();
+        setRoomId(cleanInitialId);
         try {
-          const existing = await getBattleRoom(initialRoomId);
+          const existing = await getBattleRoom(cleanInitialId);
 
           // Check if current user is already the host of this room
           if (existing && user?.uid && existing.host.id === user.uid) {
             if (isMounted) {
               setIsHost(true);
               setRoom(existing);
-              if (existing.status === 'ready') {
+              if (existing.status === 'ready' || existing.status === 'starting') {
                 setPhase('countdown');
               } else if (existing.status === 'in_progress') {
                 setPhase('battle');
@@ -170,20 +200,21 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
           if (isMounted) {
             setIsHost(false);
+            const existingName = getStoredGuestName(user?.displayName, user?.email);
 
-            // If user is not logged in and has no display name, prompt for guest name
-            if (!user?.displayName && !user?.email) {
-              const defaultGuestName = `Mokinys #${Math.floor(10 + Math.random() * 89)}`;
-              setGuestNameInput(defaultGuestName);
-              setPhase('prompt_guest');
-            } else {
-              // Auto-join with user credentials
-              const updated = await joinBattleRoom(initialRoomId, {
-                id: user.uid || `guest_${Date.now()}`,
-                name: currentUserName,
+            // Step 4: If they have an existing username/profile in localStorage, join with that name
+            if (existingName) {
+              const updated = await joinBattleRoom(cleanInitialId, {
+                id: user?.uid || `guest_${Date.now()}`,
+                name: existingName,
               });
               setRoom(updated);
               setPhase('countdown');
+            } else {
+              // New visitor: prompt with quick input: "Enter your nickname"
+              const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
+              setGuestNameInput(randomDefault);
+              setPhase('prompt_guest');
             }
           }
         } catch (err) {
@@ -211,8 +242,24 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       if (!updatedRoom) return;
       setRoom(updatedRoom);
 
+      // Host Join Alert:
+      // The moment a friend opens the link, registers their name, and joins:
+      // 1. Host triggers immediate audio/haptic chime
+      // 2. Host displays toast/banner: "🎉 [Guest Name] has joined the match!"
+      if (updatedRoom.guest && !prevGuestRef.current && isHost) {
+        prevGuestRef.current = updatedRoom.guest;
+        sounds.playSuccess();
+        haptics.success();
+        const alertMsg = `🎉 ${updatedRoom.guest.name} has joined the match!`;
+        setHostJoinBanner(alertMsg);
+        showToast(alertMsg);
+      }
+
       // Transition to Countdown when guest joins and status is ready
-      if (updatedRoom.status === 'ready' && (phase === 'waiting' || phase === 'loading')) {
+      if (
+        (updatedRoom.status === 'ready' || updatedRoom.status === 'starting') &&
+        (phase === 'waiting' || phase === 'loading')
+      ) {
         sounds.playClick();
         haptics.success();
         setPhase('countdown');
@@ -232,7 +279,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return () => {
       unsubscribe();
     };
-  }, [isOpen, roomId, phase]);
+  }, [isOpen, roomId, phase, isHost]);
 
   // 3. Handle 3-Second Synchronized Countdown
   useEffect(() => {
@@ -245,15 +292,17 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       setCountdown((prev) => {
         if (prev <= 1) {
           if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-          // When countdown hits 0, start match
-          if (roomId) {
+          // Only after the 3-second countdown reaches 0 does the room switch to status = 'in_progress'
+          if (roomId && isHost) {
             startBattleRoomMatch(roomId).catch((err) => {
               console.error('[BATTLE_ARENA_ERROR]: Error starting match:', err);
             });
           }
-          setPhase('battle');
           sounds.playSuccess();
           haptics.victory();
+          setTimeout(() => {
+            setPhase('battle');
+          }, 400);
           return 0;
         }
         sounds.playClick();
@@ -264,13 +313,19 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return () => {
       if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     };
-  }, [phase, isOpen, roomId]);
+  }, [phase, isOpen, roomId, isHost]);
 
-  // 4. Guest Confirms Display Name to Join
+  // 4. Guest Confirms Display Name to Join (Step 4)
   const handleConfirmGuestJoin = async () => {
     if (!roomId) return;
     try {
-      const finalName = guestNameInput.trim() || `Mokinys #${Math.floor(10 + Math.random() * 89)}`;
+      const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
+      const finalName = guestNameInput.trim() || randomDefault;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('sekmes_user_name', finalName);
+        } catch {}
+      }
       const updated = await joinBattleRoom(roomId, {
         id: user?.uid || `guest_${Date.now()}`,
         name: finalName,
@@ -285,7 +340,17 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   // 5. Active Round Countdown & Answer Timing
   useEffect(() => {
-    if (phase !== 'battle' || roundCompleted || !isOpen) return;
+    // Step 2 Guard: DO NOT start Round 1 or trigger any question timers while status === 'waiting' or guest === null
+    if (
+      phase !== 'battle' ||
+      roundCompleted ||
+      !isOpen ||
+      !room ||
+      room.status === 'waiting' ||
+      !room.guest
+    ) {
+      return;
+    }
 
     setTimeLeft(ROUND_SECONDS);
     setSelectedOptionIndex(null);
@@ -304,7 +369,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return () => {
       if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     };
-  }, [phase, currentRound, roundCompleted, isOpen]);
+  }, [phase, currentRound, roundCompleted, isOpen, room]);
 
   // Handle Timeout
   const handleRoundTimeout = () => {
@@ -538,6 +603,13 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
           </button>
         </div>
 
+        {/* Host Join Banner Alert (Step 2: 🎉 [Guest Name] has joined the match!) */}
+        {hostJoinBanner && (
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 text-xs font-black flex items-center justify-center gap-2 shadow-sm animate-in slide-in-from-top duration-200">
+            <span>{hostJoinBanner}</span>
+          </div>
+        )}
+
         {/* ============================================================== */}
         {/* 1. LOADING SCREEN (Protected with 4-second timeout & error fallback) */}
         {/* ============================================================== */}
@@ -594,18 +666,18 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* 2. GUEST NAME PROMPT (If not logged in) */}
+        {/* 2. GUEST NICKNAME PROMPT (Step 4: For new visitors) */}
         {/* ============================================================== */}
         {phase === 'prompt_guest' && (
           <div className="p-6 sm:p-8 text-center flex flex-col items-center min-h-[360px] justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-4 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-4 shadow-sm animate-bounce">
               👋
             </div>
-            <h3 className="text-lg font-black text-slate-900 mb-1">
-              Join 1v1 Battle
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 mb-1">
+              Enter your nickname
             </h3>
             <p className="text-xs text-slate-500 font-medium mb-5 max-w-xs">
-              Your friend has challenged you to a Lithuanian quiz battle. What should we call you?
+              Your friend has challenged you to a 1v1 Lithuanian Speed Battle! Enter your nickname to join the match.
             </p>
 
             <div className="w-full max-w-xs space-y-3">
@@ -613,16 +685,17 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                 type="text"
                 value={guestNameInput}
                 onChange={(e) => setGuestNameInput(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-200 focus:border-amber-500 focus:outline-hidden text-sm font-bold text-slate-800 text-center"
+                placeholder="Enter your nickname"
+                className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-200 focus:border-amber-500 focus:outline-hidden text-sm font-bold text-slate-800 text-center shadow-xs"
+                maxLength={24}
               />
 
               <button
                 type="button"
                 onClick={handleConfirmGuestJoin}
-                className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md cursor-pointer flex items-center justify-center gap-1.5"
               >
-                Join Battle Arena ⚔️
+                <span>Enter Battle Arena 🇱🇹⚔️</span>
               </button>
             </div>
           </div>
@@ -716,37 +789,91 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* 4. SYNCHRONIZED 3-SECOND COUNTDOWN */}
+        {/* 4. SYNCHRONIZED 3-SECOND COUNTDOWN WITH MATCHUP OVERLAY (Step 3) */}
         {/* ============================================================== */}
         {phase === 'countdown' && (
-          <div className="p-8 sm:p-12 text-center flex flex-col items-center justify-center min-h-[380px]">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mb-4 shadow-sm animate-bounce">
-              <Swords className="w-8 h-8" />
+          <div className="p-6 sm:p-8 text-center flex flex-col items-center justify-center min-h-[380px]">
+            {/* Header / Countdown Banner */}
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-100 border border-amber-300 rounded-full text-xs font-black text-amber-900 tracking-wider uppercase mb-3">
+              <span>Match starting in 3... 2... 1... Fight! 🇱🇹⚔️</span>
             </div>
 
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900">
-              Opponent Joined!
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
+              Opponent Joined! Matchup Ready
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              Game starts in...
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              5 rapid rounds of Lithuanian vocabulary. Answer fast for maximum XP!
             </p>
 
-            <div className="my-6 flex items-center justify-center w-20 h-20 rounded-full border-4 border-amber-500 bg-amber-50 text-4xl font-black text-amber-600 shadow-xl animate-pulse">
-              {countdown}
+            {/* Animated Matchup Overlay: [Host Avatar & Name] VS [Guest Avatar & Name] */}
+            <div className="w-full max-w-sm rounded-3xl bg-slate-900 text-white p-4 sm:p-5 shadow-2xl border-2 border-slate-800 my-4 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-emerald-500/10 pointer-events-none" />
+
+              <div className="flex items-center justify-between gap-3 relative z-10">
+                {/* Host Avatar & Name */}
+                <div className="flex flex-col items-center flex-1 min-w-0">
+                  <div className="relative mb-2">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-lg ring-4 ring-amber-400/40 animate-pulse">
+                      {hostPlayer?.name ? hostPlayer.name.slice(0, 2).toUpperCase() : 'H'}
+                    </div>
+                    <span className="absolute -top-1.5 -right-1.5 text-sm">👑</span>
+                  </div>
+                  <span className="text-xs sm:text-sm font-black text-white truncate max-w-full text-center">
+                    {hostPlayer?.name || 'Host'}
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-300 bg-amber-950/70 border border-amber-400/30 px-2 py-0.5 rounded-full mt-1">
+                    Host
+                  </span>
+                </div>
+
+                {/* VS Swords Center Badge */}
+                <div className="flex flex-col items-center justify-center shrink-0 px-2">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs sm:text-sm shadow-xl ring-4 ring-amber-300/30 animate-pulse">
+                    VS
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400 mt-1 uppercase font-bold tracking-wider">
+                    1v1
+                  </span>
+                </div>
+
+                {/* Guest Avatar & Name */}
+                <div className="flex flex-col items-center flex-1 min-w-0">
+                  <div className="relative mb-2">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-lg ring-4 ring-emerald-400/40 animate-pulse">
+                      {guestPlayer?.name ? guestPlayer.name.slice(0, 2).toUpperCase() : 'G'}
+                    </div>
+                    <span className="absolute -top-1.5 -right-1.5 text-sm">⚔️</span>
+                  </div>
+                  <span className="text-xs sm:text-sm font-black text-white truncate max-w-full text-center">
+                    {guestPlayer?.name || 'Guest'}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/70 border border-emerald-400/30 px-2 py-0.5 rounded-full mt-1">
+                    Challenger
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
-              <span>{hostPlayer?.name || 'Host'}</span>
-              <span className="text-amber-500">VS</span>
-              <span>{guestPlayer?.name || 'Guest'}</span>
+            {/* Countdown Badge */}
+            <div className="my-1 flex flex-col items-center justify-center">
+              <div className="flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-amber-500 bg-amber-50 text-4xl sm:text-5xl font-black text-amber-600 shadow-xl animate-bounce">
+                {countdown > 0 ? countdown : '⚔️'}
+              </div>
+              <div className="mt-3 text-sm sm:text-base font-black text-slate-800">
+                {countdown > 0 ? (
+                  <span>Starting in {countdown}...</span>
+                ) : (
+                  <span className="text-amber-600 animate-pulse">Fight! 🇱🇹⚔️</span>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {/* ============================================================== */}
-        {/* 5. ACTIVE SYNCHRONIZED 5-ROUND RAPID BATTLE */}
+        {/* 5. ACTIVE SYNCHRONIZED 5-ROUND RAPID BATTLE (Guarded: in_progress & guest present) */}
         {/* ============================================================== */}
-        {phase === 'battle' && currentQ && (
+        {phase === 'battle' && room && room.status === 'in_progress' && room.guest && currentQ && (
           <div className="p-4 sm:p-6 flex flex-col">
             {/* Split View Scoreboard */}
             <div className="grid grid-cols-3 items-center bg-slate-900 text-white rounded-2xl p-3.5 shadow-md mb-4 border border-slate-800">
