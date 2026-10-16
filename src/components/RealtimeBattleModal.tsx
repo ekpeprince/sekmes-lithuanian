@@ -242,22 +242,15 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       if (!updatedRoom) return;
       setRoom(updatedRoom);
 
-      // Host Join Alert:
-      // The moment a friend opens the link, registers their name, and joins:
-      // 1. Host triggers immediate audio/haptic chime
-      // 2. Host displays toast/banner: "🎉 [Guest Name] has joined the match!"
-      if (updatedRoom.guest && !prevGuestRef.current && isHost) {
-        prevGuestRef.current = updatedRoom.guest;
+      // Host Join Alert & Transition to Countdown:
+      // If updatedRoom.guest is present OR updatedRoom.status === 'ready', immediately trigger the host alert and advance to 'countdown'
+      if (updatedRoom.guest && isHost && phase === 'waiting') {
         sounds.playSuccess();
         haptics.success();
-        const alertMsg = `🎉 ${updatedRoom.guest.name} has joined the match!`;
-        setHostJoinBanner(alertMsg);
-        showToast(alertMsg);
-      }
-
-      // Transition to Countdown when guest joins and status is ready
-      if (
-        (updatedRoom.status === 'ready' || updatedRoom.status === 'starting') &&
+        setHostJoinBanner(`🎉 ${updatedRoom.guest.name} has joined the match!`);
+        setPhase('countdown');
+      } else if (
+        (updatedRoom.status === 'ready' || updatedRoom.status === 'starting' || updatedRoom.guest) &&
         (phase === 'waiting' || phase === 'loading')
       ) {
         sounds.playClick();

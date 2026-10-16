@@ -1,3 +1,13 @@
+import {
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  onSnapshot,
+  serverTimestamp,
+  Unsubscribe,
+} from 'firebase/firestore';
+import { db, isFirebaseConfigured } from './firebase';
 import { BATTLE_QUESTIONS } from '@/data/battleQuestions';
 
 export interface BattleRoomPlayer {
@@ -31,6 +41,11 @@ export interface BattleRoomDoc {
   questions: BattleRoomQuestion[];
   createdAt: any;
   countdownStartTime?: number | null;
+}
+
+// Strip undefined fields for Firestore compatibility
+function sanitizeForFirestore<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data));
 }
 
 // Generate 5 questions formatted to the required schema
@@ -124,7 +139,7 @@ function getLocalRoom(roomId: string): BattleRoomDoc | null {
 }
 
 /**
- * 1. Create a new Battle Room via POST /api/battle
+ * 1. Create a new Battle Room (Firestore + Server API Route)
  */
 export async function createBattleRoom(
   hostUser: { id: string; name: string },
@@ -154,6 +169,22 @@ export async function createBattleRoom(
   // Immediate local cache
   saveLocalRoom(roomDoc);
 
+  // Firestore sync: explicitly ensure setDoc uses status: 'waiting' and guest: null
+  if (db && isFirebaseConfigured) {
+    try {
+      const roomRef = doc(db, 'battle_rooms', roomId);
+      await setDoc(roomRef, {
+        ...sanitizeForFirestore(roomDoc),
+        status: 'waiting',
+        guest: null,
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('[BATTLE_SYNC_FIRESTORE_ERROR]: Failed to create room in Firestore:', err);
+    }
+  }
+
+  // Also sync to server API route /api/battle
   try {
     const res = await fetch('/api/battle', {
       method: 'POST',
@@ -180,11 +211,26 @@ export async function createBattleRoom(
 }
 
 /**
- * 2. Fetch Battle Room by roomId via GET /api/battle?roomId=...
+ * 2. Fetch Battle Room by roomId (Firestore + Server API Route)
  */
 export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | null> {
   const cleanId = roomId.trim().toUpperCase();
 
+  // Try Firestore first
+  if (db && isFirebaseConfigured) {
+    try {
+      const snap = await getDoc(doc(db, 'battle_rooms', cleanId));
+      if (snap.exists()) {
+        const mapped = mapServerRoomToDoc({ id: snap.id, ...snap.data() });
+        saveLocalRoom(mapped);
+        return mapped;
+      }
+    } catch (err) {
+      console.error('[BATTLE_SYNC_FIRESTORE_ERROR]: Failed to get room from Firestore:', err);
+    }
+  }
+
+  // Fallback to Server API route /api/battle
   try {
     const res = await fetch(`/api/battle?roomId=${cleanId}`);
     if (res.ok) {
@@ -201,7 +247,7 @@ export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | nul
 }
 
 /**
- * 3. Guest Join: POST /api/battle with action: 'join'
+ * 3. Guest Join: Updates Firestore directly with guest and status: 'ready', and notifies /api/battle
  */
 export async function joinBattleRoom(
   roomId: string,
@@ -216,6 +262,21 @@ export async function joinBattleRoom(
     currentRound: 0,
   };
 
+  // Direct Firestore update: writes both guest and status: 'ready'
+  if (db && isFirebaseConfigured) {
+    try {
+      const roomRef = doc(db, 'battle_rooms', cleanId);
+      await updateDoc(roomRef, {
+        guest: sanitizeForFirestore(guestData),
+        status: 'ready',
+        countdown: 3,
+      });
+    } catch (err) {
+      console.error('[BATTLE_SYNC_FIRESTORE_ERROR]: Failed to join room in Firestore:', err);
+    }
+  }
+
+  // Also notify server API route /api/battle
   try {
     const res = await fetch('/api/battle', {
       method: 'POST',
@@ -263,7 +324,7 @@ export async function joinBattleRoom(
 }
 
 /**
- * 4. Start Match: POST /api/battle with action: 'start'
+ * 4. Start Match: POST /api/battle with action: 'start' and update Firestore
  */
 export async function startBattleRoomMatch(roomId: string): Promise<void> {
   const cleanId = roomId.trim().toUpperCase();
@@ -271,6 +332,10 @@ export async function startBattleRoomMatch(roomId: string): Promise<void> {
   if (existing) {
     existing.status = 'in_progress';
     saveLocalRoom(existing);
+  }
+
+  if (db && isFirebaseConfigured) {
+    updateDoc(doc(db, 'battle_rooms', cleanId), { status: 'in_progress' }).catch(() => {});
   }
 
   try {
@@ -288,7 +353,7 @@ export async function startBattleRoomMatch(roomId: string): Promise<void> {
 }
 
 /**
- * 5. Update live player score: POST /api/battle with action: 'score'
+ * 5. Update live player score: updates Firestore and /api/battle
  */
 export async function updateBattlePlayerScore(
   roomId: string,
@@ -316,6 +381,18 @@ export async function updateBattlePlayerScore(
     saveLocalRoom(existing);
   }
 
+  if (db && isFirebaseConfigured) {
+    const fieldPrefix = isHost ? 'host' : 'guest';
+    const updates: Record<string, any> = {
+      [`${fieldPrefix}.score`]: newScore,
+      [`${fieldPrefix}.currentRound`]: newRound,
+    };
+    if (isCorrect !== undefined) {
+      updates[`${fieldPrefix}.lastAnswerCorrect`] = isCorrect;
+    }
+    updateDoc(doc(db, 'battle_rooms', cleanId), updates).catch(() => {});
+  }
+
   try {
     await fetch('/api/battle', {
       method: 'POST',
@@ -335,7 +412,7 @@ export async function updateBattlePlayerScore(
 }
 
 /**
- * 6. Set room completed: POST /api/battle with action: 'complete'
+ * 6. Set room completed: updates Firestore and /api/battle
  */
 export async function setBattleRoomCompleted(roomId: string): Promise<void> {
   const cleanId = roomId.trim().toUpperCase();
@@ -343,6 +420,10 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
   if (existing) {
     existing.status = 'completed';
     saveLocalRoom(existing);
+  }
+
+  if (db && isFirebaseConfigured) {
+    updateDoc(doc(db, 'battle_rooms', cleanId), { status: 'completed' }).catch(() => {});
   }
 
   try {
@@ -360,13 +441,14 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
 }
 
 /**
- * 7. Active Polling Listener: Polls /api/battle?roomId=... every 1000ms
+ * 7. Active Polling & Firestore Real-Time Listener
  */
 export function listenToBattleRoom(
   roomId: string,
   onUpdate: (room: BattleRoomDoc | null) => void
 ): () => void {
   const cleanId = roomId.trim().toUpperCase();
+  let unsubFirestore: Unsubscribe | null = null;
 
   // Initial local state
   const initial = getLocalRoom(cleanId);
@@ -395,7 +477,29 @@ export function listenToBattleRoom(
     window.addEventListener('battle_room_local_sync', handleCustomSync);
   }
 
-  // Active poller function
+  // 1. Live Firestore onSnapshot Listener
+  if (db && isFirebaseConfigured) {
+    try {
+      unsubFirestore = onSnapshot(
+        doc(db, 'battle_rooms', cleanId),
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            const mapped = mapServerRoomToDoc({ id: snap.id, ...data });
+            saveLocalRoom(mapped);
+            onUpdate(mapped);
+          }
+        },
+        (err) => {
+          console.error('[BATTLE_SYNC_FIRESTORE_SNAPSHOT_ERROR]:', err);
+        }
+      );
+    } catch (err) {
+      console.error('[BATTLE_SYNC_FIRESTORE_INIT_ERROR]:', err);
+    }
+  }
+
+  // 2. Active 1000ms Poller on /api/battle
   const fetchRoom = async () => {
     try {
       const res = await fetch(`/api/battle?roomId=${cleanId}`);
@@ -418,6 +522,9 @@ export function listenToBattleRoom(
 
   return () => {
     clearInterval(pollTimer);
+    if (unsubFirestore) {
+      unsubFirestore();
+    }
     if (typeof window !== 'undefined') {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('battle_room_local_sync', handleCustomSync);
