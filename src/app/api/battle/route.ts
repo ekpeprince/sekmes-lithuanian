@@ -31,12 +31,17 @@ function cleanupOldRooms() {
   }
 }
 
+function sanitizeRoomId(id?: any): string {
+  if (!id || typeof id !== 'string') return '';
+  return id.trim().replace(/^#+/, '').toUpperCase();
+}
+
 // GET /api/battle?roomId=ABC-123
 export async function GET(request: NextRequest) {
   cleanupOldRooms();
 
   const { searchParams } = new URL(request.url);
-  const roomId = searchParams.get('roomId')?.trim().toUpperCase();
+  const roomId = sanitizeRoomId(searchParams.get('roomId'));
 
   if (!roomId || !ROOM_ID_REGEX.test(roomId)) {
     return NextResponse.json({ error: 'Invalid or missing roomId parameter' }, { status: 400 });
@@ -61,7 +66,7 @@ export async function POST(request: NextRequest) {
     // 1. CREATE ROOM
     if (action === 'create') {
       const room = body.room;
-      const cleanId = (room?.roomId || room?.id)?.trim().toUpperCase();
+      const cleanId = sanitizeRoomId(room?.roomId || room?.id);
       if (!room || !cleanId || !ROOM_ID_REGEX.test(cleanId)) {
         return NextResponse.json({ error: 'Invalid room payload or format' }, { status: 400 });
       }
@@ -77,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     // 2. JOIN ROOM
     if (action === 'join') {
-      const roomId = body.roomId?.trim().toUpperCase();
+      const roomId = sanitizeRoomId(body.roomId);
       const guestUser = body.guestUser;
 
       if (!roomId || !ROOM_ID_REGEX.test(roomId) || !guestUser?.id) {
@@ -134,7 +139,7 @@ export async function POST(request: NextRequest) {
 
     // 3. START BATTLE
     if (action === 'start') {
-      const roomId = body.roomId?.trim().toUpperCase();
+      const roomId = sanitizeRoomId(body.roomId);
       if (!roomId || !ROOM_ID_REGEX.test(roomId)) {
         return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
       }
@@ -155,7 +160,7 @@ export async function POST(request: NextRequest) {
     // 4. UPDATE LIVE PLAYER SCORE (battleRoomSync)
     if (action === 'score' || action === 'updateScore' || (action === 'answer' && body.isHost !== undefined)) {
       const { roomId, isHost, newScore, newRound, isCorrect } = body;
-      const cleanRoomId = roomId?.trim().toUpperCase();
+      const cleanRoomId = sanitizeRoomId(roomId);
 
       if (!cleanRoomId || !ROOM_ID_REGEX.test(cleanRoomId)) {
         return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
@@ -186,7 +191,7 @@ export async function POST(request: NextRequest) {
 
     // 5. COMPLETE BATTLE
     if (action === 'complete') {
-      const roomId = body.roomId?.trim().toUpperCase();
+      const roomId = sanitizeRoomId(body.roomId);
       if (!roomId || !ROOM_ID_REGEX.test(roomId)) {
         return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
       }
@@ -201,10 +206,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(room);
     }
 
-    // 4. SUBMIT ANSWER (Server-Authoritative Answer Verification)
+    // 6. SUBMIT ANSWER (Server-Authoritative Answer Verification)
     if (action === 'answer') {
       const { roomId, playerId, roundIndex, selected, correctAnswer, timeMs } = body;
-      const cleanRoomId = roomId?.trim().toUpperCase();
+      const cleanRoomId = sanitizeRoomId(roomId);
 
       if (!cleanRoomId || !ROOM_ID_REGEX.test(cleanRoomId)) {
         return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
@@ -253,10 +258,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(room);
     }
 
-    // 5. ADVANCE ROUND
+    // 7. ADVANCE ROUND
     if (action === 'advance') {
       const { roomId, nextRound } = body;
-      const cleanRoomId = roomId?.trim().toUpperCase();
+      const cleanRoomId = sanitizeRoomId(roomId);
 
       if (!cleanRoomId || !ROOM_ID_REGEX.test(cleanRoomId)) {
         return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });

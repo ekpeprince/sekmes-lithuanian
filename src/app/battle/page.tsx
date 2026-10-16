@@ -141,7 +141,7 @@ function BattleArenaContent() {
 
   // Join friend's room with code
   const handleJoinRoomWithCode = async (code: string) => {
-    const cleanCode = code.trim().toUpperCase();
+    const cleanCode = code.trim().replace(/^#+/, '').toUpperCase();
     if (!cleanCode) {
       setErrorMessage('Įveskite 6 simbolių kambario kodą.');
       return;

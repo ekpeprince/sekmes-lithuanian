@@ -283,7 +283,7 @@ export async function joinBattleRoom(
   roomId: string,
   guestUser: { id: string; name: string; avatar: string }
 ): Promise<BattleRoom | null> {
-  const cleanId = roomId.trim().toUpperCase();
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   let room: BattleRoom | null = null;
 
   // 1. Try server first (supports cross-device joining from mobile or different browsers)

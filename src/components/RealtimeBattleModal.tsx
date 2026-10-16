@@ -28,6 +28,7 @@ import {
   startBattleRoomMatch,
   updateBattlePlayerScore,
   listenToBattleRoom,
+  sanitizeRoomId,
 } from '@/lib/battleRoomSync';
 
 interface RealtimeBattleModalProps {
@@ -187,7 +188,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         }
       } else {
         // GUEST FLOW: A queryRoomId exists!
-        const cleanInitialId = queryRoomId.trim().toUpperCase();
+        const cleanInitialId = sanitizeRoomId(queryRoomId);
         setRoomId(cleanInitialId);
         setIsHost(false); // Force guest role
 
@@ -341,23 +342,27 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   // 4. Guest Confirms Display Name to Join (Step 4)
   const handleConfirmGuestJoin = async () => {
     if (!roomId) return;
+    const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
+    const finalName = guestNameInput.trim() || randomDefault;
+
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('sekmes_user_name', finalName); } catch {}
+    }
+
+    setIsHost(false);
+    // Advance UI immediately so button never feels unresponsive
+    setPhase('countdown');
+    sounds.playClick();
+    haptics.success();
+
     try {
-      const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
-      const finalName = guestNameInput.trim() || randomDefault;
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('sekmes_user_name', finalName);
-        } catch {}
-      }
       const updated = await joinBattleRoom(roomId, {
         id: user?.uid || `guest_${Date.now()}`,
         name: finalName,
       });
       setRoom(updated);
-      setPhase('countdown');
     } catch (err) {
-      console.error('[BATTLE_ARENA_ERROR]: Guest join error:', err);
-      setPhase('countdown');
+      console.error('[BATTLE_ARENA_ERROR]: Join sync error:', err);
     }
   };
 
