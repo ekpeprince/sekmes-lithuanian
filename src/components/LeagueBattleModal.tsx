@@ -23,6 +23,7 @@ interface LeagueBattleModalProps {
   activeTier?: string; // Dynamic tier name e.g. "SIDABRINĖ LYGA" or "Silver League"
   competitors?: Competitor[];
   onRewardClaimed?: (xp: number) => void;
+  onChallengeFriend?: () => void;
 }
 
 interface OpponentProfile {
@@ -82,6 +83,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   activeTier,
   competitors = [],
   onRewardClaimed,
+  onChallengeFriend,
 }) => {
   const { progress, addXp, recordDuelWin } = useGame();
   const { user } = useAuth();
@@ -629,7 +631,13 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
             {/* Challenge a Friend Secondary Action Button */}
             <button
               type="button"
-              onClick={handleInviteFriend}
+              onClick={() => {
+                if (onChallengeFriend) {
+                  onChallengeFriend();
+                } else {
+                  handleInviteFriend();
+                }
+              }}
               className="w-full max-w-sm mb-5 py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
             >
               <Share2 className="w-4 h-4 text-amber-700" />

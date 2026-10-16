@@ -13,12 +13,14 @@ import {
   Award,
   Info,
   Share2,
+  Users,
 } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LEAGUE_TIERS, LeagueTier, getLeagueTimeRemaining, getWeeklyCohort, Competitor } from '@/lib/league';
 import { syncUserToLeaderboard, fetchRealLeaderboardMembers } from '@/lib/leagueSync';
 import { LeagueBattleModal } from '@/components/LeagueBattleModal';
+import { RealtimeBattleModal } from '@/components/RealtimeBattleModal';
 import { shareBattleInvite } from '@/lib/shareUtils';
 
 export default function LeaguePage() {
@@ -30,6 +32,9 @@ export default function LeaguePage() {
   const [realMembers, setRealMembers] = useState<Competitor[]>([]);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [isBattleOpen, setIsBattleOpen] = useState(false);
+  const [isRealtimeBattleOpen, setIsRealtimeBattleOpen] = useState(false);
+  const [realtimeRoomId, setRealtimeRoomId] = useState<string | null>(null);
+  const [isRealtimeHost, setIsRealtimeHost] = useState(true);
   const [inviteToast, setInviteToast] = useState<string | null>(null);
   const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
 
@@ -42,11 +47,24 @@ export default function LeaguePage() {
     }
   };
 
-  // Auto-launch battle modal if navigated via an invite link (?battle=invite)
+  const handleStartRealtimeBattle = () => {
+    setRealtimeRoomId(null);
+    setIsRealtimeHost(true);
+    setIsRealtimeBattleOpen(true);
+  };
+
+  // Auto-launch battle modal or realtime room if navigated via URL params
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('battle') === 'invite') {
+      const battleParam = params.get('battle');
+      const roomIdParam = params.get('roomId');
+
+      if (battleParam === 'room' && roomIdParam) {
+        setRealtimeRoomId(roomIdParam);
+        setIsRealtimeHost(false);
+        setIsRealtimeBattleOpen(true);
+      } else if (battleParam === 'invite') {
         setIsBattleOpen(true);
       }
     }
@@ -315,12 +333,12 @@ export default function LeaguePage() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={handleInviteFriend}
+              onClick={handleStartRealtimeBattle}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-amber-950 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
             >
-              <Share2 className="h-3.5 w-3.5 text-amber-700" />
-              <span className="hidden sm:inline">Invite Friend</span>
-              <span className="sm:hidden">Invite</span>
+              <Users className="h-3.5 w-3.5 text-amber-700" />
+              <span className="hidden sm:inline">Challenge Friend</span>
+              <span className="sm:hidden">1v1 Room</span>
             </button>
             <button
               type="button"
@@ -680,13 +698,29 @@ export default function LeaguePage() {
         </div>
       )}
 
-      {/* 5-Round 1v1 Battle Modal */}
+      {/* 5-Round 1v1 Battle Modal (Matchmaking / AI Speed Battle) */}
       <LeagueBattleModal
         isOpen={isBattleOpen}
         onClose={() => setIsBattleOpen(false)}
         activeTier={activeTierConfig.name}
         tier={activeTier}
         competitors={unifiedList}
+        onChallengeFriend={() => {
+          setIsBattleOpen(false);
+          handleStartRealtimeBattle();
+        }}
+      />
+
+      {/* Real-time 1v1 Battle Room Modal (Live Room Lobby & Synchronized Play) */}
+      <RealtimeBattleModal
+        isOpen={isRealtimeBattleOpen}
+        onClose={() => {
+          setIsRealtimeBattleOpen(false);
+          setRealtimeRoomId(null);
+        }}
+        tierName={activeTierConfig.name}
+        initialRoomId={realtimeRoomId}
+        isHostInitial={isRealtimeHost}
       />
 
       {/* Invite Toast Notification */}
