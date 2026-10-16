@@ -84,9 +84,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid join payload' }, { status: 400 });
       }
 
-      const room = serverRooms.get(roomId);
+      let room = serverRooms.get(roomId);
       if (!room) {
-        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+        room = {
+          id: roomId,
+          roomId,
+          status: 'ready',
+          host: { id: 'host_auto', name: 'Host', joined: true, score: 0, currentRound: 0 },
+          guest: null,
+          countdown: 3,
+          currentRound: 0,
+          tier: 'SIDABRINĖ LYGA',
+          createdAt: Date.now(),
+        };
       }
 
       // Real-time Battle Room Schema: update guest and flip status to 'ready'
@@ -94,7 +104,7 @@ export async function POST(request: NextRequest) {
         id: String(guestUser.id).slice(0, 50),
         name: String(guestUser.name || 'Player 2').slice(0, 30),
         joined: true,
-        score: 0,
+        score: Number(guestUser.score) || 0,
         currentRound: 0,
       };
 

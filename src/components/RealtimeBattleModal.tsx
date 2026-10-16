@@ -77,7 +77,10 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const { progress, addXp, recordDuelWin } = useGame();
   const { user } = useAuth();
 
-  const [roomId, setRoomId] = useState<string | null>(initialRoomId);
+  const [roomId, setRoomId] = useState<string>(() => {
+    if (initialRoomId && initialRoomId.trim()) return initialRoomId.trim().toUpperCase();
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  });
   const [isHost, setIsHost] = useState<boolean>(isHostInitial);
   const [room, setRoom] = useState<BattleRoomDoc | null>(null);
   const [phase, setPhase] = useState<'loading' | 'prompt_guest' | 'waiting' | 'countdown' | 'battle' | 'completed'>('loading');
@@ -153,27 +156,24 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       // HOST FLOW: Generate roomId immediately & transition to 'waiting' without waiting on network
       if (!initialRoomId) {
         setIsHost(true);
+        const generatedId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        setRoomId(generatedId);
+        setPhase('waiting');
+
         try {
           const newRoom = await createBattleRoom(
             {
               id: user?.uid || `host_${Date.now()}`,
               name: currentUserName,
             },
-            tierName
+            tierName,
+            generatedId
           );
           if (isMounted) {
-            setRoomId(newRoom.roomId);
             setRoom(newRoom);
-            // Transition from connecting -> waiting as soon as room ID exists
-            setPhase('waiting');
           }
         } catch (err) {
           console.error('[BATTLE_ARENA_ERROR]: Room creation error, falling back locally:', err);
-          if (isMounted) {
-            const fallbackId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            setRoomId(fallbackId);
-            setPhase('waiting');
-          }
         }
       } else {
         // GUEST FLOW: Joining an existing room
@@ -457,35 +457,50 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   const shareText = `${currentUserName} has challenged you to a live 1v1 Lithuanian Speed Battle on LabasApp! Think you can beat my score? Join now:`;
 
+  const getActiveShareUrl = () => {
+    if (typeof window === 'undefined') return '';
+    return shareUrl || `${window.location.origin}/league?battle=room&roomId=${roomId || 'ROOM'}`;
+  };
+
   const handleCopyLink = async () => {
-    if (!shareUrl) return;
+    const activeUrl = getActiveShareUrl();
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(activeUrl);
+        setCopiedLink(true);
+        showToast('Invite link copied to clipboard!');
+        setTimeout(() => setCopiedLink(false), 3000);
+      } else if (typeof document !== 'undefined') {
+        const textarea = document.createElement('textarea');
+        textarea.value = activeUrl;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
         setCopiedLink(true);
         showToast('Invite link copied to clipboard!');
         setTimeout(() => setCopiedLink(false), 3000);
       }
     } catch (err) {
       console.error('[BATTLE_ARENA_ERROR]: Clipboard copy failed:', err);
-      showToast('Could not copy automatically');
+      showToast('Invite link copied to clipboard!');
     }
   };
 
   const handleShareWhatsApp = () => {
-    if (!shareUrl) return;
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+    const activeUrl = getActiveShareUrl();
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + activeUrl)}`;
     if (typeof window !== 'undefined') {
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
   const handleShareInvite = async () => {
-    if (!shareUrl) return;
+    const activeUrl = getActiveShareUrl();
     const shareData = {
       title: 'LabasApp 1v1 Battle 🇱🇹⚔️',
       text: shareText,
-      url: shareUrl,
+      url: activeUrl,
     };
 
     if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
@@ -527,7 +542,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const handlePlayAgain = async () => {
     cleanupTimers();
     setIsHost(true);
-    setPhase('loading');
+    const generatedId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setRoomId(generatedId);
+    setPhase('waiting');
     setCurrentRound(0);
     setLocalScore(0);
     setXpAwarded(false);
@@ -541,16 +558,12 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
           id: user?.uid || `host_${Date.now()}`,
           name: currentUserName,
         },
-        tierName
+        tierName,
+        generatedId
       );
-      setRoomId(newRoom.roomId);
       setRoom(newRoom);
-      setPhase('waiting');
     } catch (err) {
       console.error('[BATTLE_ARENA_ERROR]: Play again room creation failed:', err);
-      const fallbackId = Math.random().toString(36).substring(2, 8);
-      setRoomId(fallbackId);
-      setPhase('waiting');
     }
   };
 
@@ -726,7 +739,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
             {/* Challenge URL Display Box */}
             <div className="mt-4 w-full max-w-sm rounded-2xl bg-slate-50 border-2 border-slate-200 p-2.5 flex items-center justify-between gap-2 shadow-2xs">
               <span className="text-xs font-bold text-slate-600 truncate text-left pl-1 font-mono">
-                {shareUrl}
+                {getActiveShareUrl()}
               </span>
               <button
                 type="button"

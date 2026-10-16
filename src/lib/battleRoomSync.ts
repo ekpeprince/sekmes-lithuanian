@@ -143,9 +143,10 @@ function getLocalRoom(roomId: string): BattleRoomDoc | null {
  */
 export async function createBattleRoom(
   hostUser: { id: string; name: string },
-  tier: string = 'SIDABRINĖ LYGA'
+  tier: string = 'SIDABRINĖ LYGA',
+  customRoomId?: string
 ): Promise<BattleRoomDoc> {
-  const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const roomId = (customRoomId || Math.random().toString(36).substring(2, 8)).toUpperCase();
   const questions = generateBattleRoomQuestions(5);
 
   const roomDoc: BattleRoomDoc = {
