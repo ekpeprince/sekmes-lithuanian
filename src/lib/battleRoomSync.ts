@@ -40,6 +40,16 @@ export interface BattleRoomDoc {
   countdownStartTime?: number | null;
 }
 
+// Timeout helper to guarantee promises never hang indefinitely
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 3500): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]);
+}
+
 // Generate 5 questions formatted to the required schema
 export function generateBattleRoomQuestions(count: number = 5): BattleRoomQuestion[] {
   const shuffled = [...BATTLE_QUESTIONS].sort(() => 0.5 - Math.random());
@@ -86,6 +96,7 @@ function getLocalRoom(roomId: string): BattleRoomDoc | null {
 
 /**
  * 1. Create a new Battle Room in battle_rooms/{roomId}
+ * Generates room data immediately so UI never hangs on loading spinner
  */
 export async function createBattleRoom(
   hostUser: { id: string; name: string },
@@ -109,39 +120,41 @@ export async function createBattleRoom(
     createdAt: Date.now(),
   };
 
+  // Immediate local cache
   saveLocalRoom(roomDoc);
 
+  // Sync to Firestore in background without blocking host UI
   if (db && isFirebaseConfigured) {
-    try {
-      const roomRef = doc(db, 'battle_rooms', roomId);
-      await setDoc(roomRef, {
+    withTimeout(
+      setDoc(doc(db, 'battle_rooms', roomId), {
         ...sanitizeForFirestore(roomDoc),
         createdAt: serverTimestamp(),
-      });
-    } catch (err) {
-      console.warn('Firestore create room notice (falling back to local/tab sync):', err);
-    }
+      }),
+      3500
+    ).catch((err) => {
+      console.error('[BATTLE_ARENA_ERROR]: Failed to create room in Firestore (local fallback active):', err);
+    });
   }
 
   return roomDoc;
 }
 
 /**
- * 2. Fetch a Battle Room by roomId
+ * 2. Fetch a Battle Room by roomId with 3.5s timeout
  */
 export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | null> {
   const cleanId = roomId.trim();
   if (db && isFirebaseConfigured) {
     try {
       const roomRef = doc(db, 'battle_rooms', cleanId);
-      const snap = await getDoc(roomRef);
+      const snap = await withTimeout(getDoc(roomRef), 3500);
       if (snap.exists()) {
         const data = snap.data() as BattleRoomDoc;
         saveLocalRoom(data);
         return data;
       }
     } catch (err) {
-      console.warn('Firestore get room warning:', err);
+      console.error('[BATTLE_ARENA_ERROR]: Failed to get battle room from Firestore:', err);
     }
   }
 
@@ -172,7 +185,7 @@ export async function joinBattleRoom(
       }
     : {
         roomId: cleanId,
-        host: { id: 'host_unknown', name: 'Host', score: 0, currentRound: 0 },
+        host: { id: 'host_fallback', name: 'Host', score: 0, currentRound: 0 },
         guest: guestData,
         status: 'ready',
         tier: 'SIDABRINĖ LYGA',
@@ -183,15 +196,15 @@ export async function joinBattleRoom(
   saveLocalRoom(updatedRoom);
 
   if (db && isFirebaseConfigured) {
-    try {
-      const roomRef = doc(db, 'battle_rooms', cleanId);
-      await updateDoc(roomRef, {
+    withTimeout(
+      updateDoc(doc(db, 'battle_rooms', cleanId), {
         guest: sanitizeForFirestore(guestData),
         status: 'ready',
-      });
-    } catch (err) {
-      console.warn('Firestore join room warning:', err);
-    }
+      }),
+      3500
+    ).catch((err) => {
+      console.error('[BATTLE_ARENA_ERROR]: Failed to join room in Firestore:', err);
+    });
   }
 
   return updatedRoom;
@@ -209,12 +222,12 @@ export async function startBattleRoomMatch(roomId: string): Promise<void> {
   }
 
   if (db && isFirebaseConfigured) {
-    try {
-      const roomRef = doc(db, 'battle_rooms', cleanId);
-      await updateDoc(roomRef, { status: 'in_progress' });
-    } catch (err) {
-      console.warn('Firestore start match warning:', err);
-    }
+    withTimeout(
+      updateDoc(doc(db, 'battle_rooms', cleanId), { status: 'in_progress' }),
+      3500
+    ).catch((err) => {
+      console.error('[BATTLE_ARENA_ERROR]: Failed to start match in Firestore:', err);
+    });
   }
 }
 
@@ -248,20 +261,20 @@ export async function updateBattlePlayerScore(
   }
 
   if (db && isFirebaseConfigured) {
-    try {
-      const roomRef = doc(db, 'battle_rooms', cleanId);
-      const fieldPrefix = isHost ? 'host' : 'guest';
-      const updates: Record<string, any> = {
-        [`${fieldPrefix}.score`]: newScore,
-        [`${fieldPrefix}.currentRound`]: newRound,
-      };
-      if (isCorrect !== undefined) {
-        updates[`${fieldPrefix}.lastAnswerCorrect`] = isCorrect;
-      }
-      await updateDoc(roomRef, updates);
-    } catch (err) {
-      console.warn('Firestore score update warning:', err);
+    const fieldPrefix = isHost ? 'host' : 'guest';
+    const updates: Record<string, any> = {
+      [`${fieldPrefix}.score`]: newScore,
+      [`${fieldPrefix}.currentRound`]: newRound,
+    };
+    if (isCorrect !== undefined) {
+      updates[`${fieldPrefix}.lastAnswerCorrect`] = isCorrect;
     }
+    withTimeout(
+      updateDoc(doc(db, 'battle_rooms', cleanId), updates),
+      3500
+    ).catch((err) => {
+      console.error('[BATTLE_ARENA_ERROR]: Failed to update score in Firestore:', err);
+    });
   }
 }
 
@@ -277,12 +290,12 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
   }
 
   if (db && isFirebaseConfigured) {
-    try {
-      const roomRef = doc(db, 'battle_rooms', cleanId);
-      await updateDoc(roomRef, { status: 'completed' });
-    } catch (err) {
-      console.warn('Firestore set completed warning:', err);
-    }
+    withTimeout(
+      updateDoc(doc(db, 'battle_rooms', cleanId), { status: 'completed' }),
+      3500
+    ).catch((err) => {
+      console.error('[BATTLE_ARENA_ERROR]: Failed to set room completed in Firestore:', err);
+    });
   }
 }
 
@@ -337,11 +350,11 @@ export function listenToBattleRoom(
           }
         },
         (err) => {
-          console.warn('Firestore snapshot listener notice:', err);
+          console.error('[BATTLE_ARENA_ERROR]: Firestore onSnapshot listener error:', err);
         }
       );
     } catch (err) {
-      console.warn('Firestore onSnapshot init notice:', err);
+      console.error('[BATTLE_ARENA_ERROR]: Firestore onSnapshot init error:', err);
     }
   }
 

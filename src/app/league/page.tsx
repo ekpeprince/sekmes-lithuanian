@@ -721,6 +721,10 @@ export default function LeaguePage() {
         tierName={activeTierConfig.name}
         initialRoomId={realtimeRoomId}
         isHostInitial={isRealtimeHost}
+        onPlayBot={() => {
+          setIsRealtimeBattleOpen(false);
+          setIsBattleOpen(true);
+        }}
       />
 
       {/* Invite Toast Notification */}

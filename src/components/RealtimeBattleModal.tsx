@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Zap,
@@ -11,7 +11,9 @@ import {
   Check,
   Users,
   Swords,
-  Sparkles,
+  Bot,
+  AlertCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { haptics } from '@/lib/haptics';
@@ -33,6 +35,7 @@ interface RealtimeBattleModalProps {
   tierName?: string;
   initialRoomId?: string | null;
   isHostInitial?: boolean;
+  onPlayBot?: () => void;
 }
 
 const TOTAL_ROUNDS = 5;
@@ -44,6 +47,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   tierName = 'SIDABRINĖ LYGA',
   initialRoomId = null,
   isHostInitial = true,
+  onPlayBot,
 }) => {
   const { progress, addXp, recordDuelWin } = useGame();
   const { user } = useAuth();
@@ -52,6 +56,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const [isHost, setIsHost] = useState<boolean>(isHostInitial);
   const [room, setRoom] = useState<BattleRoomDoc | null>(null);
   const [phase, setPhase] = useState<'loading' | 'prompt_guest' | 'waiting' | 'countdown' | 'battle' | 'completed'>('loading');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const [guestNameInput, setGuestNameInput] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -69,6 +74,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const roundTimerRef = useRef<NodeJS.Timeout | null>(null);
   const advanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentUserName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Ekpe PrinceEsor');
   const currentUserAvatar = user?.photoURL || undefined;
@@ -77,6 +83,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
   };
 
   const showToast = (msg: string) => {
@@ -98,59 +105,91 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     setRoundCompleted(false);
     setCurrentRound(0);
     setLocalScore(0);
+    setConnectionError(null);
+
+    // 4-Second Timeout Guard to prevent infinite "Connecting to battle arena..." hanging
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (isMounted) {
+        console.error('[BATTLE_ARENA_ERROR]: Connection timeout after 4 seconds. Forcing lobby resolution.');
+        setPhase((prev) => {
+          if (prev === 'loading') {
+            return 'waiting';
+          }
+          return prev;
+        });
+      }
+    }, 4000);
 
     const init = async () => {
-      // If no roomId passed, create a new room as Host
+      // HOST FLOW: Generate roomId immediately & transition to 'waiting' without waiting on network
       if (!initialRoomId) {
         setIsHost(true);
-        setPhase('loading');
-        const newRoom = await createBattleRoom(
-          {
-            id: user?.uid || `host_${Date.now()}`,
-            name: currentUserName,
-          },
-          tierName
-        );
-        if (isMounted) {
-          setRoomId(newRoom.roomId);
-          setRoom(newRoom);
-          setPhase('waiting');
-        }
-      } else {
-        // Guest joining an existing room
-        setRoomId(initialRoomId);
-        const existing = await getBattleRoom(initialRoomId);
-
-        // Check if current user is already the host of this room
-        if (existing && user?.uid && existing.host.id === user.uid) {
-          setIsHost(true);
-          setRoom(existing);
-          if (existing.status === 'ready') {
-            setPhase('countdown');
-          } else if (existing.status === 'in_progress') {
-            setPhase('battle');
-          } else {
+        try {
+          const newRoom = await createBattleRoom(
+            {
+              id: user?.uid || `host_${Date.now()}`,
+              name: currentUserName,
+            },
+            tierName
+          );
+          if (isMounted) {
+            setRoomId(newRoom.roomId);
+            setRoom(newRoom);
+            // Transition from connecting -> waiting as soon as room ID exists
             setPhase('waiting');
           }
-          return;
-        }
-
-        setIsHost(false);
-
-        // If user is not logged in and has no display name, prompt for guest name
-        if (!user?.displayName && !user?.email) {
-          const defaultGuestName = `Mokinys #${Math.floor(10 + Math.random() * 89)}`;
-          setGuestNameInput(defaultGuestName);
-          setPhase('prompt_guest');
-        } else {
-          // Auto-join with user credentials
-          const updated = await joinBattleRoom(initialRoomId, {
-            id: user.uid || `guest_${Date.now()}`,
-            name: currentUserName,
-          });
+        } catch (err) {
+          console.error('[BATTLE_ARENA_ERROR]: Room creation error, falling back locally:', err);
           if (isMounted) {
-            setRoom(updated);
-            setPhase('countdown');
+            const fallbackId = Math.random().toString(36).substring(2, 8);
+            setRoomId(fallbackId);
+            setPhase('waiting');
+          }
+        }
+      } else {
+        // GUEST FLOW: Joining an existing room
+        setRoomId(initialRoomId);
+        try {
+          const existing = await getBattleRoom(initialRoomId);
+
+          // Check if current user is already the host of this room
+          if (existing && user?.uid && existing.host.id === user.uid) {
+            if (isMounted) {
+              setIsHost(true);
+              setRoom(existing);
+              if (existing.status === 'ready') {
+                setPhase('countdown');
+              } else if (existing.status === 'in_progress') {
+                setPhase('battle');
+              } else {
+                setPhase('waiting');
+              }
+            }
+            return;
+          }
+
+          if (isMounted) {
+            setIsHost(false);
+
+            // If user is not logged in and has no display name, prompt for guest name
+            if (!user?.displayName && !user?.email) {
+              const defaultGuestName = `Mokinys #${Math.floor(10 + Math.random() * 89)}`;
+              setGuestNameInput(defaultGuestName);
+              setPhase('prompt_guest');
+            } else {
+              // Auto-join with user credentials
+              const updated = await joinBattleRoom(initialRoomId, {
+                id: user.uid || `guest_${Date.now()}`,
+                name: currentUserName,
+              });
+              setRoom(updated);
+              setPhase('countdown');
+            }
+          }
+        } catch (err) {
+          console.error('[BATTLE_ARENA_ERROR]: Failed to connect to room:', err);
+          if (isMounted) {
+            setConnectionError('Could not connect to the battle room. Please verify the link or try again.');
           }
         }
       }
@@ -173,7 +212,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       setRoom(updatedRoom);
 
       // Transition to Countdown when guest joins and status is ready
-      if (updatedRoom.status === 'ready' && phase === 'waiting') {
+      if (updatedRoom.status === 'ready' && (phase === 'waiting' || phase === 'loading')) {
         sounds.playClick();
         haptics.success();
         setPhase('countdown');
@@ -208,7 +247,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
           if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
           // When countdown hits 0, start match
           if (roomId) {
-            startBattleRoomMatch(roomId).catch(() => {});
+            startBattleRoomMatch(roomId).catch((err) => {
+              console.error('[BATTLE_ARENA_ERROR]: Error starting match:', err);
+            });
           }
           setPhase('battle');
           sounds.playSuccess();
@@ -228,13 +269,18 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   // 4. Guest Confirms Display Name to Join
   const handleConfirmGuestJoin = async () => {
     if (!roomId) return;
-    const finalName = guestNameInput.trim() || `Mokinys #${Math.floor(10 + Math.random() * 89)}`;
-    const updated = await joinBattleRoom(roomId, {
-      id: user?.uid || `guest_${Date.now()}`,
-      name: finalName,
-    });
-    setRoom(updated);
-    setPhase('countdown');
+    try {
+      const finalName = guestNameInput.trim() || `Mokinys #${Math.floor(10 + Math.random() * 89)}`;
+      const updated = await joinBattleRoom(roomId, {
+        id: user?.uid || `guest_${Date.now()}`,
+        name: finalName,
+      });
+      setRoom(updated);
+      setPhase('countdown');
+    } catch (err) {
+      console.error('[BATTLE_ARENA_ERROR]: Guest join error:', err);
+      setPhase('countdown');
+    }
   };
 
   // 5. Active Round Countdown & Answer Timing
@@ -268,7 +314,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     haptics.error();
 
     if (roomId) {
-      updateBattlePlayerScore(roomId, isHost, localScore, currentRound + 1, false);
+      updateBattlePlayerScore(roomId, isHost, localScore, currentRound + 1, false).catch((err) => {
+        console.error('[BATTLE_ARENA_ERROR]: Score update timeout error:', err);
+      });
     }
     scheduleAdvance(currentRound);
   };
@@ -297,7 +345,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     }
 
     if (roomId) {
-      updateBattlePlayerScore(roomId, isHost, nextScore, currentRound + 1, isCorrect);
+      updateBattlePlayerScore(roomId, isHost, nextScore, currentRound + 1, isCorrect).catch((err) => {
+        console.error('[BATTLE_ARENA_ERROR]: Score update answer error:', err);
+      });
     }
 
     scheduleAdvance(currentRound);
@@ -347,6 +397,8 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     ? `${window.location.origin}/league?battle=room&roomId=${roomId}`
     : '';
 
+  const shareText = `${currentUserName} has challenged you to a live 1v1 Lithuanian Speed Battle on LabasApp! Think you can beat my score? Join now:`;
+
   const handleCopyLink = async () => {
     if (!shareUrl) return;
     try {
@@ -356,8 +408,17 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         showToast('Invite link copied to clipboard!');
         setTimeout(() => setCopiedLink(false), 3000);
       }
-    } catch {
+    } catch (err) {
+      console.error('[BATTLE_ARENA_ERROR]: Clipboard copy failed:', err);
       showToast('Could not copy automatically');
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    if (!shareUrl) return;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+    if (typeof window !== 'undefined') {
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -365,7 +426,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     if (!shareUrl) return;
     const shareData = {
       title: 'LabasApp 1v1 Battle 🇱🇹⚔️',
-      text: `${currentUserName} has challenged you to a live 1v1 Lithuanian Speed Battle on LabasApp! Join now:`,
+      text: shareText,
       url: shareUrl,
     };
 
@@ -381,6 +442,29 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     handleCopyLink();
   };
 
+  // Play Against Bot instead
+  const handlePlayAgainstBot = async () => {
+    if (onPlayBot) {
+      onClose();
+      onPlayBot();
+      return;
+    }
+    // Fallback: simulate bot guest joining immediately
+    if (roomId) {
+      try {
+        const botGuest = {
+          id: 'bot_mantas',
+          name: 'Mantas (Bot) 🤖',
+        };
+        await joinBattleRoom(roomId, botGuest);
+        setPhase('countdown');
+      } catch (err) {
+        console.error('[BATTLE_ARENA_ERROR]: Bot join fallback error:', err);
+        setPhase('countdown');
+      }
+    }
+  };
+
   // Play Again: create new room
   const handlePlayAgain = async () => {
     cleanupTimers();
@@ -391,17 +475,25 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     setXpAwarded(false);
     setSelectedOptionIndex(null);
     setRoundCompleted(false);
+    setConnectionError(null);
 
-    const newRoom = await createBattleRoom(
-      {
-        id: user?.uid || `host_${Date.now()}`,
-        name: currentUserName,
-      },
-      tierName
-    );
-    setRoomId(newRoom.roomId);
-    setRoom(newRoom);
-    setPhase('waiting');
+    try {
+      const newRoom = await createBattleRoom(
+        {
+          id: user?.uid || `host_${Date.now()}`,
+          name: currentUserName,
+        },
+        tierName
+      );
+      setRoomId(newRoom.roomId);
+      setRoom(newRoom);
+      setPhase('waiting');
+    } catch (err) {
+      console.error('[BATTLE_ARENA_ERROR]: Play again room creation failed:', err);
+      const fallbackId = Math.random().toString(36).substring(2, 8);
+      setRoomId(fallbackId);
+      setPhase('waiting');
+    }
   };
 
   if (!isOpen) return null;
@@ -447,12 +539,57 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         </div>
 
         {/* ============================================================== */}
-        {/* 1. LOADING SCREEN */}
+        {/* 1. LOADING SCREEN (Protected with 4-second timeout & error fallback) */}
         {/* ============================================================== */}
-        {phase === 'loading' && (
-          <div className="p-12 text-center flex flex-col items-center justify-center min-h-[360px]">
+        {phase === 'loading' && !connectionError && (
+          <div className="p-8 sm:p-12 text-center flex flex-col items-center justify-center min-h-[360px]">
             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
             <p className="text-sm font-bold text-slate-700">Connecting to battle arena...</p>
+            <p className="text-xs text-slate-400 mt-1">Setting up live room sync</p>
+
+            <button
+              type="button"
+              onClick={() => setPhase('waiting')}
+              className="mt-6 text-xs text-amber-600 font-bold hover:underline cursor-pointer"
+            >
+              Continue to lobby now →
+            </button>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* CONNECTION ERROR SCREEN */}
+        {/* ============================================================== */}
+        {connectionError && (
+          <div className="p-8 text-center flex flex-col items-center justify-center min-h-[360px]">
+            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl mb-4 shadow-sm">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 mb-1">
+              Connection Notice
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mb-6 max-w-xs">
+              {connectionError}
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs">
+              <button
+                type="button"
+                onClick={handlePlayAgainstBot}
+                className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider transition cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <Bot className="w-4 h-4" />
+                <span>Play against Bot instead</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         )}
 
@@ -492,29 +629,37 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* 3. HOST WAITING LOBBY */}
+        {/* 3. HOST WAITING LOBBY (Resolved state with code, WhatsApp, and Bot option) */}
         {/* ============================================================== */}
         {phase === 'waiting' && (
           <div className="p-6 sm:p-8 text-center flex flex-col items-center justify-center min-h-[380px]">
-            {/* Animated Radar Pulse */}
-            <div className="relative flex items-center justify-center mb-5">
-              <span className="absolute inline-flex h-24 w-24 rounded-full bg-amber-400 opacity-25 animate-ping" />
-              <span className="absolute inline-flex h-32 w-32 rounded-full bg-amber-300 opacity-15 animate-pulse" />
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-3xl shadow-lg">
-                <Users className="w-8 h-8" />
+            {/* Animated Waiting Radar Pulse */}
+            <div className="relative flex items-center justify-center mb-4">
+              <span className="absolute inline-flex h-20 w-20 rounded-full bg-amber-400 opacity-25 animate-ping" />
+              <span className="absolute inline-flex h-28 w-28 rounded-full bg-amber-300 opacity-15 animate-pulse" />
+              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-2xl shadow-lg">
+                <Users className="w-7 h-7" />
               </div>
             </div>
 
             <h3 className="text-base sm:text-lg font-black text-slate-900">
-              Waiting for your friend to join...
+              Waiting for opponent to join...
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-1 max-w-xs">
-              Share the battle link below. As soon as your friend opens it, the match starts!
+            <p className="text-xs text-slate-500 font-medium mt-0.5 max-w-xs">
+              Share your room invite below. The match will start automatically once your friend joins!
             </p>
 
-            {/* Room Link Box */}
-            <div className="mt-5 w-full max-w-sm rounded-2xl bg-slate-50 border-2 border-slate-200 p-3 flex items-center justify-between gap-2">
-              <span className="text-xs font-bold text-slate-700 truncate text-left pl-1">
+            {/* Room Code Badge */}
+            {roomId && (
+              <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-xs font-black text-amber-900 tracking-wider uppercase">
+                <span>Room Code:</span>
+                <span className="text-amber-800 font-mono font-bold text-sm">#{roomId.toUpperCase()}</span>
+              </div>
+            )}
+
+            {/* Challenge URL Display Box */}
+            <div className="mt-4 w-full max-w-sm rounded-2xl bg-slate-50 border-2 border-slate-200 p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+              <span className="text-xs font-bold text-slate-600 truncate text-left pl-1 font-mono">
                 {shareUrl}
               </span>
               <button
@@ -527,15 +672,46 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
               </button>
             </div>
 
-            {/* Share CTA */}
-            <button
-              type="button"
-              onClick={handleShareInvite}
-              className="mt-3.5 w-full max-w-sm py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Share2 className="w-4 h-4" />
-              <span>Share Invite Link</span>
-            </button>
+            {/* Action Buttons: Copy Invite Link & Share on WhatsApp */}
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
+              <button
+                type="button"
+                onClick={handleShareInvite}
+                className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider transition active:scale-95 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Copy Invite Link</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleShareWhatsApp}
+                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition active:scale-95 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Share on WhatsApp</span>
+              </button>
+            </div>
+
+            {/* Fallback & Cancel Options */}
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 w-full max-w-sm">
+              <button
+                type="button"
+                onClick={handlePlayAgainstBot}
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Bot className="w-4 h-4 text-amber-600" />
+                <span>Play against Bot instead</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-xs font-bold text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
