@@ -1,4 +1,4 @@
-export type LeagueTier = 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras';
+export type LeagueTier = 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras' | 'Deimantas';
 
 export interface LeagueTierConfig {
   id: LeagueTier;
@@ -30,6 +30,7 @@ export interface Competitor {
   streak: number;
   xp: number;
   isUser?: boolean;
+  isCurrentUser?: boolean;
   rank: number;
   change?: 'up' | 'down' | 'same';
 }
@@ -37,7 +38,7 @@ export interface Competitor {
 export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
   Geležis: {
     id: 'Geležis',
-    name: 'Geležies Lyga',
+    name: 'GELEŽINĖ LYGA',
     englishName: 'Iron League',
     icon: '⚔️',
     color: 'slate',
@@ -51,7 +52,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
   },
   Bronza: {
     id: 'Bronza',
-    name: 'Bronzos Lyga',
+    name: 'BRONZINĖ LYGA',
     englishName: 'Bronze League',
     icon: '🥉',
     color: 'amber',
@@ -65,7 +66,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
   },
   Sidabras: {
     id: 'Sidabras',
-    name: 'Sidabro Lyga',
+    name: 'SIDABRINĖ LYGA',
     englishName: 'Silver League',
     icon: '🥈',
     color: 'zinc',
@@ -79,7 +80,7 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
   },
   Auksas: {
     id: 'Auksas',
-    name: 'Aukso Lyga',
+    name: 'AUKSINĖ LYGA',
     englishName: 'Gold League',
     icon: '🥇',
     color: 'yellow',
@@ -87,22 +88,36 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     badgeBg: 'bg-yellow-100',
     badgeText: 'text-yellow-950',
     minXp: 800,
-    description: 'Atkakli kova dėl patekimo į čempionų Gintaro Lygą. Tik 3 geriausi gauna bilietą!',
-    englishDescription: 'Competitive tier battling for qualification into the Amber League. Only the top 3 qualify!',
+    description: 'Atkakli kova dėl patekimo į čempionų Deimantinę Lygą. Tik 3 geriausi gauna bilietą!',
+    englishDescription: 'Competitive tier battling for qualification into the Diamond League. Only the top 3 qualify!',
     rewards: { first: 80, second: 50, third: 30 },
   },
   Gintaras: {
     id: 'Gintaras',
-    name: 'Gintaro Lyga',
-    englishName: 'Amber League (Champions)',
+    name: 'DEIMANTINĖ LYGA',
+    englishName: 'Diamond League',
     icon: '💎',
     color: 'amber',
     bgGradient: 'from-amber-500 via-orange-500 to-amber-600',
     badgeBg: 'bg-amber-50',
     badgeText: 'text-amber-950',
     minXp: 1500,
-    description: 'Aukščiausia Baltijos gintaro divizija. Čia varžosi atkakliausi kalbos entuziastai!',
-    englishDescription: 'The highest Baltic Amber division. The most dedicated language enthusiasts compete here!',
+    description: 'Aukščiausia deimantinė divizija. Čia varžosi atkakliausi kalbos entuziastai!',
+    englishDescription: 'The highest Diamond division. The most dedicated language enthusiasts compete here!',
+    rewards: { first: 100, second: 60, third: 40 },
+  },
+  Deimantas: {
+    id: 'Deimantas',
+    name: 'DEIMANTINĖ LYGA',
+    englishName: 'Diamond League',
+    icon: '💎',
+    color: 'sky',
+    bgGradient: 'from-cyan-500 via-sky-600 to-blue-700',
+    badgeBg: 'bg-sky-50',
+    badgeText: 'text-sky-950',
+    minXp: 1500,
+    description: 'Aukščiausia deimantinė divizija. Čia varžosi atkakliausi kalbos entuziastai!',
+    englishDescription: 'The highest Diamond division. The most dedicated language enthusiasts compete here!',
     rewards: { first: 100, second: 60, third: 40 },
   },
 };
@@ -226,6 +241,7 @@ export function getWeeklyCohort(
     Sidabras: { min: 350, max: 800, baseStreak: 9 },
     Auksas: { min: 700, max: 1450, baseStreak: 12 },
     Gintaras: { min: 1300, max: 2400, baseStreak: 16 },
+    Deimantas: { min: 1300, max: 2400, baseStreak: 16 },
   };
 
   const bracket = xpBrackets[tier] || xpBrackets.Bronza;
@@ -285,6 +301,7 @@ export function getWeeklyCohort(
     streak: Math.max(1, Math.round(userXp / 30) || 1),
     xp: userXp,
     isUser: true,
+    isCurrentUser: true,
     rank: 0,
   };
 

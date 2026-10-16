@@ -90,6 +90,15 @@ class SoundManager {
     }
   }
 
+  // Aliases for quiz/battle correctness
+  public playCorrect() {
+    this.playSuccess();
+  }
+
+  public playWrong() {
+    this.playError();
+  }
+
   // UI button pop/click sound
   public playClick() {
     haptics.tap();

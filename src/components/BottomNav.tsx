@@ -37,7 +37,7 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
     label: 'League',
     icon: Trophy,
     // Nest 1v1 Battles inside the League hub
-    matches: (pathname: string) => pathname.startsWith('/leaderboard') || pathname.startsWith('/battle'),
+    matches: (pathname: string) => pathname.startsWith('/leaderboard') || pathname.startsWith('/league') || pathname.startsWith('/battle'),
   },
   {
     href: '/profile',

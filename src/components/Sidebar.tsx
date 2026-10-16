@@ -30,7 +30,7 @@ const DESKTOP_NAV_ITEMS = [
     href: '/leaderboard',
     label: 'League',
     icon: Trophy,
-    matches: (pathname: string) => pathname.startsWith('/leaderboard') || pathname.startsWith('/battle'),
+    matches: (pathname: string) => pathname.startsWith('/leaderboard') || pathname.startsWith('/league') || pathname.startsWith('/battle'),
   },
   {
     href: '/profile',
