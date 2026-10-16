@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 // Server-side in-memory active battle rooms registry
 // Accessible across any devices/browsers playing together
-const serverRooms = new Map<string, BattleRoom>();
+const serverRooms = new Map<string, any>();
 
 const MAX_SERVER_ROOMS = 500;
 const ROOM_ID_REGEX = /^[A-Z0-9-]{3,16}$/;
@@ -14,7 +14,7 @@ const ROOM_ID_REGEX = /^[A-Z0-9-]{3,16}$/;
 function cleanupOldRooms() {
   const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
   for (const [id, r] of serverRooms.entries()) {
-    if (r.createdAt < twoHoursAgo) {
+    if (r.createdAt && r.createdAt < twoHoursAgo) {
       serverRooms.delete(id);
     }
   }
@@ -22,7 +22,7 @@ function cleanupOldRooms() {
   // If still exceeding capacity, prune oldest rooms
   if (serverRooms.size > MAX_SERVER_ROOMS) {
     const sorted = Array.from(serverRooms.entries()).sort(
-      (a, b) => a[1].createdAt - b[1].createdAt
+      (a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0)
     );
     const toRemove = sorted.slice(0, serverRooms.size - MAX_SERVER_ROOMS);
     for (const [id] of toRemove) {
@@ -60,18 +60,18 @@ export async function POST(request: NextRequest) {
 
     // 1. CREATE ROOM
     if (action === 'create') {
-      const room: BattleRoom = body.room;
-      if (!room || !room.id || !ROOM_ID_REGEX.test(room.id)) {
+      const room = body.room;
+      const cleanId = (room?.roomId || room?.id)?.trim().toUpperCase();
+      if (!room || !cleanId || !ROOM_ID_REGEX.test(cleanId)) {
         return NextResponse.json({ error: 'Invalid room payload or format' }, { status: 400 });
       }
 
-      // Sanitize room size & question limit
-      if (!Array.isArray(room.questions) || room.questions.length > 10) {
-        return NextResponse.json({ error: 'Invalid questions payload' }, { status: 400 });
-      }
+      room.id = cleanId;
+      room.roomId = cleanId;
+      if (!room.status) room.status = 'waiting';
 
       cleanupOldRooms();
-      serverRooms.set(room.id.toUpperCase(), room);
+      serverRooms.set(cleanId, room);
       return NextResponse.json(room);
     }
 
@@ -89,25 +89,34 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
       }
 
-      // Limit room to 2 players max for 1v1 duel
-      const currentPlayers = Object.keys(room.players || {});
-      if (currentPlayers.length >= 2 && !room.players[guestUser.id]) {
-        return NextResponse.json({ error: 'Room is already full' }, { status: 403 });
-      }
+      // Real-time Battle Room Schema: update guest and flip status to 'ready'
+      const guestData = {
+        id: String(guestUser.id).slice(0, 50),
+        name: String(guestUser.name || 'Player 2').slice(0, 30),
+        joined: true,
+        score: 0,
+        currentRound: 0,
+      };
 
-      if (!room.players[guestUser.id]) {
-        room.players[guestUser.id] = {
-          id: String(guestUser.id).slice(0, 50),
-          name: String(guestUser.name || 'Draugas').slice(0, 30),
-          avatar: String(guestUser.avatar || '🦁').slice(0, 5),
-          score: 0,
-          streak: 0,
-          maxStreak: 0,
-          answers: {},
-          isReady: true,
-          isHost: false,
-        };
+      room.guest = guestData;
+      room.status = 'ready';
+      room.countdown = 3;
+
+      // Backwards-compatible players map
+      if (!room.players) {
+        room.players = {};
       }
+      room.players[guestUser.id] = {
+        id: guestData.id,
+        name: guestData.name,
+        avatar: String(guestUser.avatar || '⚔️').slice(0, 5),
+        score: 0,
+        streak: 0,
+        maxStreak: 0,
+        answers: {},
+        isReady: true,
+        isHost: false,
+      };
 
       serverRooms.set(roomId, room);
       return NextResponse.json(room);
@@ -129,6 +138,55 @@ export async function POST(request: NextRequest) {
       room.currentRound = 0;
       room.roundStartTime = Date.now();
 
+      serverRooms.set(roomId, room);
+      return NextResponse.json(room);
+    }
+
+    // 4. UPDATE LIVE PLAYER SCORE (battleRoomSync)
+    if (action === 'score' || action === 'updateScore' || (action === 'answer' && body.isHost !== undefined)) {
+      const { roomId, isHost, newScore, newRound, isCorrect } = body;
+      const cleanRoomId = roomId?.trim().toUpperCase();
+
+      if (!cleanRoomId || !ROOM_ID_REGEX.test(cleanRoomId)) {
+        return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
+      }
+
+      const room = serverRooms.get(cleanRoomId);
+      if (!room) {
+        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+      }
+
+      if (isHost && room.host) {
+        room.host.score = newScore;
+        room.host.currentRound = newRound;
+        if (isCorrect !== undefined) room.host.lastAnswerCorrect = isCorrect;
+      } else if (room.guest) {
+        room.guest.score = newScore;
+        room.guest.currentRound = newRound;
+        if (isCorrect !== undefined) room.guest.lastAnswerCorrect = isCorrect;
+      }
+
+      if ((room.host?.currentRound ?? 0) >= 5 && (room.guest?.currentRound ?? 0) >= 5) {
+        room.status = 'completed';
+      }
+
+      serverRooms.set(cleanRoomId, room);
+      return NextResponse.json(room);
+    }
+
+    // 5. COMPLETE BATTLE
+    if (action === 'complete') {
+      const roomId = body.roomId?.trim().toUpperCase();
+      if (!roomId || !ROOM_ID_REGEX.test(roomId)) {
+        return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
+      }
+
+      const room = serverRooms.get(roomId);
+      if (!room) {
+        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+      }
+
+      room.status = 'completed';
       serverRooms.set(roomId, room);
       return NextResponse.json(room);
     }
@@ -208,9 +266,9 @@ export async function POST(request: NextRequest) {
       let winnerId: string | undefined = undefined;
 
       if (isFinished) {
-        const playerList = Object.values(room.players);
+        const playerList = Object.values(room.players || {}) as any[];
         if (playerList.length > 0) {
-          playerList.sort((a, b) => b.score - a.score);
+          playerList.sort((a, b) => (b.score || 0) - (a.score || 0));
           winnerId = playerList[0].id;
         }
       }
