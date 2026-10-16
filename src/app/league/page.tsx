@@ -37,7 +37,7 @@ export default function LeaguePage() {
     const userName = user?.displayName || 'Ekpe PrinceEsor';
     const res = await shareBattleInvite(userName);
     if (res.copied) {
-      setInviteToast('Nuoroda nukopijuota į iškarpinę!');
+      setInviteToast('Invite link copied to clipboard!');
       setTimeout(() => setInviteToast(null), 3000);
     }
   };

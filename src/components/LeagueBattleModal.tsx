@@ -310,7 +310,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   const handleInviteFriend = async () => {
     const res = await shareBattleInvite(currentUserName);
     if (res.copied) {
-      setToastMessage('Nuoroda nukopijuota į iškarpinę!');
+      setToastMessage('Invite link copied to clipboard!');
       setTimeout(() => setToastMessage(null), 3000);
     }
   };

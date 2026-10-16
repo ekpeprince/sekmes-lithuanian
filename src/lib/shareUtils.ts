@@ -1,8 +1,8 @@
 export async function shareBattleInvite(userName?: string): Promise<{ shared: boolean; copied: boolean }> {
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/league?battle=invite` : '';
   const shareData = {
-    title: 'LabasApp 1v1 Dvikova 🇱🇹⚔️',
-    text: `${userName || 'Tavo draugas'} kviečia tave į 1v1 lietuvių kalbos žodžių dvikovą LabasApp! Ar pavyks mane nugalėti?`,
+    title: 'LabasApp 1v1 Battle 🇱🇹⚔️',
+    text: `${userName || 'Your friend'} has challenged you to a 1v1 Lithuanian Speed Battle on LabasApp! Think you can beat my score?`,
     url: shareUrl,
   };
 
