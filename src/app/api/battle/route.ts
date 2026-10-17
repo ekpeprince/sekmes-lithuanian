@@ -104,6 +104,9 @@ export async function POST(request: NextRequest) {
       room.id = cleanId;
       room.roomId = cleanId;
       if (!room.status) room.status = 'waiting';
+      room.hostReady = Boolean(room.hostReady);
+      room.guestReady = false;
+      room.guest = null;
 
       cleanupOldRooms();
       await persistRoom(cleanId, room);
@@ -124,9 +127,11 @@ export async function POST(request: NextRequest) {
         room = {
           id: cleanId,
           roomId: cleanId,
-          status: 'ready',
-          host: { id: 'host_auto', name: 'Host', joined: true, score: 0, currentRound: 0 },
+          status: 'waiting',
+          host: { id: 'host_auto', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
           guest: null,
+          hostReady: false,
+          guestReady: false,
           countdown: 3,
           currentRound: 0,
           tier: 'SIDABRINĖ LYGA',
@@ -142,11 +147,13 @@ export async function POST(request: NextRequest) {
         name: String(guestUser.name || 'Player 2').slice(0, 30),
         joined: true,
         score: Number(guestUser.score) || 0,
+        ready: false,
         currentRound: 0,
       };
 
       room.guest = guestData;
-      room.status = 'ready';
+      room.guestReady = false;
+      room.status = 'waiting';
       room.countdown = 3;
 
       if (!room.players) {
@@ -160,9 +167,46 @@ export async function POST(request: NextRequest) {
         streak: 0,
         maxStreak: 0,
         answers: {},
-        isReady: true,
+        isReady: false,
         isHost: false,
       };
+
+      await persistRoom(cleanId, room);
+      return NextResponse.json(room);
+    }
+
+    // 2b. READY CHECK (HOST OR GUEST TOGGLES READY)
+    if (action === 'ready') {
+      const cleanId = sanitizeRoomId(body.roomId);
+      const isHost = Boolean(body.isHost);
+      const isReady = body.isReady !== undefined ? Boolean(body.isReady) : true;
+
+      if (!cleanId || !ROOM_ID_REGEX.test(cleanId)) {
+        return NextResponse.json({ error: 'Invalid ready payload' }, { status: 400 });
+      }
+
+      const room = await getPersistedRoom(cleanId);
+      if (!room) {
+        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+      }
+
+      if (isHost) {
+        room.hostReady = isReady;
+        if (room.host) room.host.ready = isReady;
+      } else {
+        room.guestReady = isReady;
+        if (room.guest) room.guest.ready = isReady;
+      }
+
+      const bothReady = Boolean(
+        room.guest &&
+        (room.hostReady ?? room.host?.ready) &&
+        (room.guestReady ?? room.guest?.ready)
+      );
+
+      if (bothReady) {
+        room.status = 'starting';
+      }
 
       await persistRoom(cleanId, room);
       return NextResponse.json(room);
