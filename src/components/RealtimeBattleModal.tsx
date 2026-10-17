@@ -132,6 +132,10 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const currentUserName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Ekpe PrinceEsor');
   const currentUserAvatar = user?.photoURL || undefined;
 
+  const roomQuestions = (room?.questions && room.questions.length > 0)
+    ? room.questions
+    : generateBattleRoomQuestions(5, roomId || 'DEFAULT');
+
   const cleanupTimers = () => {
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
@@ -267,7 +271,25 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
     const unsubscribe = listenToBattleRoom(roomId, (updatedRoom) => {
       if (!updatedRoom) return;
-      setRoom(updatedRoom);
+
+      setRoom((prev) => {
+        // If guest has already joined locally, don't let a stale poller response wipe out the guest or revert status
+        if (prev?.guest && !updatedRoom.guest) {
+          return {
+            ...updatedRoom,
+            guest: prev.guest,
+            status: updatedRoom.status === 'waiting' ? (prev.status || 'ready') : updatedRoom.status,
+          };
+        }
+        if (prev?.status === 'in_progress' && updatedRoom.status !== 'completed') {
+          return {
+            ...updatedRoom,
+            status: 'in_progress',
+            guest: updatedRoom.guest || prev.guest,
+          };
+        }
+        return updatedRoom;
+      });
 
       // On the Host device (isHost === true):
       // When updatedRoom.guest is non-null, immediately alert host & transition to countdown
@@ -354,13 +376,30 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     }
 
     // Transition state optimistically: call setIsHost(false) and setPhase('countdown') IMMEDIATELY on click
+    const guestId = user?.uid || `guest_${Date.now()}`;
+    setRoom((prev) => prev ? {
+      ...prev,
+      status: 'ready',
+      guest: { id: guestId, name: finalName, joined: true, score: 0, currentRound: 0 }
+    } : {
+      roomId: cleanId,
+      status: 'ready',
+      host: { id: 'host', name: 'Host', joined: true, score: 0, currentRound: 0 },
+      guest: { id: guestId, name: finalName, joined: true, score: 0, currentRound: 0 },
+      countdown: 3,
+      currentRound: 0,
+      tier: tierName,
+      questions: generateBattleRoomQuestions(5, cleanId),
+      createdAt: Date.now(),
+    });
+
     setIsHost(false);
     setPhase('countdown');
     sounds.playClick();
     haptics.success();
 
     joinBattleRoom(cleanId, {
-      id: user?.uid || `guest_${Date.now()}`,
+      id: guestId,
       name: finalName,
     })
       .then((updated) => {
@@ -441,13 +480,30 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
     const existingName = getStoredGuestName(user?.displayName, user?.email);
     if (existingName) {
+      const guestId = user?.uid || `guest_${Date.now()}`;
+      setRoom((prev) => prev ? {
+        ...prev,
+        status: 'ready',
+        guest: { id: guestId, name: existingName, joined: true, score: 0, currentRound: 0 }
+      } : {
+        roomId: cleanCode,
+        status: 'ready',
+        host: { id: 'host', name: 'Host', joined: true, score: 0, currentRound: 0 },
+        guest: { id: guestId, name: existingName, joined: true, score: 0, currentRound: 0 },
+        countdown: 3,
+        currentRound: 0,
+        tier: tierName,
+        questions: generateBattleRoomQuestions(5, cleanCode),
+        createdAt: Date.now(),
+      });
+
       // Joins directly if nickname exists
       setPhase('countdown');
       sounds.playClick();
       haptics.success();
 
       joinBattleRoom(cleanCode, {
-        id: user?.uid || `guest_${Date.now()}`,
+        id: guestId,
         name: existingName,
       })
         .then((updated) => setRoom(updated))
@@ -464,15 +520,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   // 5. Active Round Countdown & Answer Timing
   useEffect(() => {
-    // Step 2 Guard: DO NOT start Round 1 or trigger any question timers while status === 'waiting' or guest === null
-    if (
-      phase !== 'battle' ||
-      roundCompleted ||
-      !isOpen ||
-      !room ||
-      room.status === 'waiting' ||
-      !room.guest
-    ) {
+    if (phase !== 'battle' || roundCompleted || !isOpen) {
       return;
     }
 
@@ -493,7 +541,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return () => {
       if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     };
-  }, [phase, currentRound, roundCompleted, isOpen, room]);
+  }, [phase, currentRound, roundCompleted, isOpen]);
 
   // Handle Timeout
   const handleRoundTimeout = () => {
@@ -512,13 +560,13 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   // Handle Option Selection
   const handleSelectOption = (index: number) => {
-    if (roundCompleted || selectedOptionIndex !== null || !room) return;
+    if (roundCompleted || selectedOptionIndex !== null) return;
 
     if (roundTimerRef.current) clearInterval(roundTimerRef.current);
     setSelectedOptionIndex(index);
     setRoundCompleted(true);
 
-    const question = room.questions[currentRound];
+    const question = roomQuestions[currentRound];
     const isCorrect = question && index === question.answerIndex;
 
     let nextScore = localScore;
@@ -700,9 +748,6 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   if (!isOpen) return null;
 
-  const roomQuestions = (room?.questions && room.questions.length > 0)
-    ? room.questions
-    : generateBattleRoomQuestions(5, roomId || 'DEFAULT');
   const currentQ = roomQuestions[currentRound] || roomQuestions[0];
   const hostPlayer = room?.host;
   const guestPlayer = room?.guest;
