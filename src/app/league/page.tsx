@@ -32,7 +32,7 @@ function LeagueContent() {
   const roomIdParam = searchParams.get('roomId');
   const isGuestInvite = (battleParam === 'room' || !!roomIdParam) && !!roomIdParam;
 
-  const userAssignedTier: LeagueTier = progress.leagueTier || 'Bronza';
+  const userAssignedTier: LeagueTier = progress.leagueTier || 'Geležis';
   const [activeTier, setActiveTier] = useState<LeagueTier>(userAssignedTier);
   const [realMembers, setRealMembers] = useState<Competitor[]>([]);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
@@ -111,7 +111,7 @@ function LeagueContent() {
     };
   }, [activeTier]);
 
-  const activeTierConfig = LEAGUE_TIERS[activeTier] || LEAGUE_TIERS.Bronza;
+  const activeTierConfig = LEAGUE_TIERS[activeTier] || LEAGUE_TIERS.Geležis;
   const isViewingUserTier = activeTier === userAssignedTier;
 
   // Generate deterministic weekly cohort for the selected tier and merge into unified list
@@ -143,7 +143,9 @@ function LeagueContent() {
       const isCurrent =
         c.isCurrentUser ||
         c.isUser ||
-        (user?.displayName && c.name === user.displayName);
+        Boolean(user?.uid && c.id === `firestore_${user.uid}`) ||
+        Boolean(user?.displayName && c.name === user.displayName) ||
+        Boolean(user?.email && c.name === user.email.split('@')[0]);
       return isCurrent ? { ...c, isUser: true, isCurrentUser: true } : c;
     });
 
@@ -481,7 +483,9 @@ function LeagueContent() {
             const isUserRow =
               item.isCurrentUser ||
               item.isUser ||
-              (user?.displayName && item.name === user.displayName);
+              Boolean(user?.uid && item.id === `firestore_${user.uid}`) ||
+              Boolean(user?.displayName && item.name === user.displayName) ||
+              Boolean(user?.email && item.name === user.email.split('@')[0]);
             const isDemotion = activeTier !== 'Geležis' && item.rank >= 26;
 
             return (

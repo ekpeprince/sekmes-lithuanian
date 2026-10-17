@@ -33,6 +33,7 @@ import {
   listenToBattleRoom,
   sanitizeRoomId,
   generateBattleRoomQuestions,
+  requestBattleRoomRematch,
 } from '@/lib/battleRoomSync';
 
 interface RealtimeBattleModalProps {
@@ -333,6 +334,19 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       // If status changed to completed
       if (updatedRoom.status === 'completed' && phaseRef.current === 'battle') {
         setPhase('completed');
+      }
+
+      // If room was reset for a rematch while player was on completed screen
+      if (updatedRoom.status === 'waiting' && phaseRef.current === 'completed') {
+        cleanupTimers();
+        setPhase('waiting');
+        setCurrentRound(0);
+        setLocalScore(0);
+        setXpAwarded(false);
+        setSelectedOptionIndex(null);
+        setRoundCompleted(false);
+        setOpponentTimeoutReached(false);
+        setHostJoinBanner('🎉 Rematch started! Both players must tap Ready.');
       }
     });
 
@@ -692,11 +706,12 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
     const myScore = Math.max(localScore, isHost ? room.host.score : (room.guest?.score ?? 0));
     const opponentScore = isHost ? (room.guest?.score ?? 0) : room.host.score;
-    const isVictory = myScore >= opponentScore;
-    const earnedXp = isVictory ? 25 : 10;
+    const isWin = myScore > opponentScore;
+    const isTie = myScore === opponentScore;
+    const earnedXp = isWin ? 25 : isTie ? 15 : 10;
 
     addXp(earnedXp);
-    if (isVictory) {
+    if (isWin) {
       recordDuelWin();
       sounds.playSuccess();
       haptics.victory();
@@ -706,6 +721,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         origin: { y: 0.6 },
         colors: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'],
       });
+    } else if (isTie) {
+      sounds.playLevelComplete();
+      haptics.success();
     } else {
       sounds.playError();
       haptics.error();
@@ -804,13 +822,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     }
   };
 
-  // Play Again: create new room
+  // Play Again: rematch existing room or create new room
   const handlePlayAgain = async () => {
     cleanupTimers();
-    setIsHost(true);
-    const generatedId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setRoomId(generatedId);
-    setPhase('waiting');
     setCurrentRound(0);
     setLocalScore(0);
     setXpAwarded(false);
@@ -818,6 +832,27 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     setRoundCompleted(false);
     setConnectionError(null);
     setHostJoinBanner(null);
+
+    // If both players are in an active room, request a synchronized rematch
+    if (roomId && room?.guest) {
+      setPhase('waiting');
+      try {
+        const rematched = await requestBattleRoomRematch(roomId);
+        if (rematched) {
+          setRoom(rematched);
+          showToast('Rematch started! Both players must tap READY.');
+          return;
+        }
+      } catch (err) {
+        console.error('[BATTLE_ARENA_ERROR]: Rematch failed, creating new room:', err);
+      }
+    }
+
+    // Fallback: create fresh new room
+    setIsHost(true);
+    const generatedId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setRoomId(generatedId);
+    setPhase('waiting');
     prevGuestRef.current = null;
 
     try {
@@ -1623,7 +1658,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                   <span>Opponent Score: <strong className="text-amber-600">{opponentScore} pts</strong></span>
                 </div>
               </div>
-            ) : localScore >= opponentScore ? (
+            ) : localScore > opponentScore ? (
               <>
                 <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-3 shadow-md animate-bounce">
                   🏆
@@ -1633,6 +1668,18 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                 </h2>
                 <p className="text-xs text-slate-500 font-medium mt-1">
                   You outscored {opponentName} in 5 synchronized rounds!
+                </p>
+              </>
+            ) : localScore === opponentScore ? (
+              <>
+                <div className="w-16 h-16 rounded-3xl bg-blue-100 text-blue-600 flex items-center justify-center text-3xl mb-3 shadow-md">
+                  🤝
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                  Lygiosios! 🤝
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  Atkakli kova! Abu žaidėjai surinko po {localScore} taškų.
                 </p>
               </>
             ) : (
@@ -1653,7 +1700,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
             <div className="w-full max-w-sm grid grid-cols-2 gap-3 my-5">
               {/* You */}
               <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
-                localScore >= opponentScore
+                localScore > opponentScore
                   ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
                   : 'bg-white border-slate-200'
               }`}>
@@ -1661,7 +1708,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                   <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-sm flex items-center justify-center ring-2 ring-emerald-400 shadow-xs">
                     Tu
                   </div>
-                  {localScore >= opponentScore && (
+                  {localScore > opponentScore && (
                     <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
                   )}
                 </div>
@@ -1705,7 +1752,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                 <div className="text-left">
                   <span className="text-xs font-semibold text-amber-100 block">Lygos apdovanojimas</span>
                   <span className="text-sm font-black">
-                    {localScore >= opponentScore ? '+25 Lygos XP' : '+10 Lygos XP'}
+                    {localScore > opponentScore ? '+25 Lygos XP' : localScore === opponentScore ? '+15 Lygos XP' : '+10 Lygos XP'}
                   </span>
                 </div>
               </div>

@@ -9,8 +9,8 @@ import { LeagueBattleModal } from '@/components/LeagueBattleModal';
 export default function LeagueBattlePage() {
   const router = useRouter();
   const { progress } = useGame();
-  const userAssignedTier: LeagueTier = progress.leagueTier || 'Sidabras';
-  const tierConfig = LEAGUE_TIERS[userAssignedTier] || LEAGUE_TIERS.Sidabras;
+  const userAssignedTier: LeagueTier = progress.leagueTier || 'Geležis';
+  const tierConfig = LEAGUE_TIERS[userAssignedTier] || LEAGUE_TIERS.Geležis;
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">

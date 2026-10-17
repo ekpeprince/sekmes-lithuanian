@@ -283,23 +283,27 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   useEffect(() => {
     if (status !== 'completed' || xpAwarded) return;
 
-    const isVictory = userScore >= opponentScore;
-    const earnedXp = isVictory ? 25 : 10;
+    const isWin = userScore > opponentScore;
+    const isTie = userScore === opponentScore;
+    const earnedXp = isWin ? 25 : isTie ? 15 : 10;
 
     // Persist XP reward to the user's total league XP in storage/context
     addXp(earnedXp);
-    if (isVictory) {
+    if (isWin) {
       recordDuelWin();
       sounds.playSuccess();
       haptics.victory();
       // Confetti Trigger:
-      // Only fire confetti particle effect once the Victory screen mounts AND userScore >= opponentScore
+      // Only fire confetti particle effect once the Victory screen mounts AND userScore > opponentScore
       confetti({
         particleCount: 90,
         spread: 70,
         origin: { y: 0.6 },
         colors: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'],
       });
+    } else if (isTie) {
+      sounds.playLevelComplete();
+      haptics.success();
     } else {
       sounds.playError();
       haptics.error();
@@ -527,7 +531,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
         {status === 'completed' && (
           <div className="p-6 sm:p-8 text-center flex flex-col items-center">
             {/* Result Header */}
-            {userScore >= opponentScore ? (
+            {userScore > opponentScore ? (
               <>
                 <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-3 shadow-md animate-bounce">
                   🏆
@@ -537,6 +541,18 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
                 </h2>
                 <p className="text-xs text-slate-500 font-medium mt-1">
                   Puikiai pasirodei 5 greitų raundų kovoje!
+                </p>
+              </>
+            ) : userScore === opponentScore ? (
+              <>
+                <div className="w-16 h-16 rounded-3xl bg-blue-100 text-blue-600 flex items-center justify-center text-3xl mb-3 shadow-md">
+                  🤝
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                  Lygiosios! 🤝
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  Atkakli kova! Abu žaidėjai surinko po {userScore} taškų.
                 </p>
               </>
             ) : (
@@ -557,7 +573,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
             <div className="w-full max-w-sm grid grid-cols-2 gap-3 my-5">
               {/* Player Card */}
               <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
-                userScore >= opponentScore
+                userScore > opponentScore
                   ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
                   : 'bg-white border-slate-200'
               }`}>
@@ -570,7 +586,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
                       Tu
                     </div>
                   )}
-                  {userScore >= opponentScore && (
+                  {userScore > opponentScore && (
                     <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
                   )}
                 </div>
@@ -619,7 +635,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
                 <div className="text-left">
                   <span className="text-xs font-semibold text-amber-100 block">Lygos apdovanojimas</span>
                   <span className="text-sm font-black">
-                    {userScore >= opponentScore ? '+25 Lygos XP' : '+10 Lygos XP'}
+                    {userScore > opponentScore ? '+25 Lygos XP' : userScore === opponentScore ? '+15 Lygos XP' : '+10 Lygos XP'}
                   </span>
                 </div>
               </div>

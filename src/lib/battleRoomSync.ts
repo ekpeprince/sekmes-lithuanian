@@ -333,6 +333,8 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
       }
     } else if (ev.action === 'complete' && room) {
       room.status = 'completed';
+    } else if (ev.action === 'rematch' && ev.room) {
+      room = mapServerRoomToDoc(ev.room);
     }
   }
 
@@ -669,6 +671,54 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
     roomId: cleanId,
     room: existing ? { ...existing, status: 'completed' } : undefined,
   });
+}
+
+/**
+ * 7b. Request Rematch within the same room (resets scores and generates fresh questions)
+ */
+export async function requestBattleRoomRematch(roomId: string): Promise<BattleRoomDoc | null> {
+  const cleanId = sanitizeRoomId(roomId);
+  let existing = getLocalRoom(cleanId);
+  if (!existing) {
+    existing = await getBattleRoom(cleanId);
+  }
+  if (!existing) return null;
+
+  const newQuestions = generateBattleRoomQuestions(5, `${cleanId}_${Date.now()}`);
+
+  const updatedRoom: BattleRoomDoc = {
+    ...existing,
+    status: 'waiting',
+    hostReady: false,
+    guestReady: false,
+    countdown: 3,
+    currentRound: 0,
+    questions: newQuestions,
+    host: {
+      ...existing.host,
+      score: 0,
+      ready: false,
+      currentRound: 0,
+    },
+    guest: existing.guest
+      ? {
+          ...existing.guest,
+          score: 0,
+          ready: false,
+          currentRound: 0,
+        }
+      : null,
+  };
+
+  saveLocalRoom(updatedRoom);
+
+  await broadcastRoomEvent(cleanId, {
+    action: 'rematch',
+    roomId: cleanId,
+    room: updatedRoom,
+  });
+
+  return updatedRoom;
 }
 
 /**

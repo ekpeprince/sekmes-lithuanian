@@ -258,6 +258,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(room);
     }
 
+    // 5b. REMATCH BATTLE
+    if (action === 'rematch') {
+      const roomId = sanitizeRoomId(body.roomId);
+      if (!roomId || !ROOM_ID_REGEX.test(roomId)) {
+        return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
+      }
+
+      if (body.room) {
+        await persistRoom(roomId, body.room);
+        return NextResponse.json(body.room);
+      }
+
+      const room = await getOrCreateRoom(roomId);
+      room.status = 'waiting';
+      room.hostReady = false;
+      room.guestReady = false;
+      if (room.host) { room.host.score = 0; room.host.ready = false; room.host.currentRound = 0; }
+      if (room.guest) { room.guest.score = 0; room.guest.ready = false; room.guest.currentRound = 0; }
+      await persistRoom(roomId, room);
+      return NextResponse.json(room);
+    }
+
     // 6. SUBMIT ANSWER
     if (action === 'answer') {
       const { roomId, playerId, roundIndex, selected, correctAnswer, timeMs } = body;
