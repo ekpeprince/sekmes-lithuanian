@@ -85,7 +85,7 @@ async function getOrCreateRoom(cleanId: string): Promise<any> {
       guestReady: false,
       countdown: 3,
       currentRound: 0,
-      tier: 'SIDABRINĖ LYGA',
+      tier: 'GELEŽINĖ LYGA',
       questions: generateBattleRoomQuestions(5, cleanId),
       createdAt: Date.now(),
     };

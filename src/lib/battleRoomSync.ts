@@ -132,7 +132,7 @@ export function mapServerRoomToDoc(data: any): BattleRoomDoc {
     guestReady,
     countdown: typeof data.countdown === 'number' ? data.countdown : 3,
     currentRound: typeof data.currentRound === 'number' ? data.currentRound : 0,
-    tier: data.tier || 'SIDABRINĖ LYGA',
+    tier: data.tier || 'GELEŽINĖ LYGA',
     questions,
     createdAt: data.createdAt || Date.now(),
     countdownStartTime: data.countdownStartTime ?? null,
@@ -243,7 +243,7 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
         guestReady: false,
         countdown: 3,
         currentRound: 0,
-        tier: 'SIDABRINĖ LYGA',
+        tier: 'GELEŽINĖ LYGA',
         questions: generateBattleRoomQuestions(5, roomId),
         createdAt: Date.now(),
       };
@@ -278,7 +278,7 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
             guestReady: false,
             countdown: 3,
             currentRound: 0,
-            tier: 'SIDABRINĖ LYGA',
+            tier: 'GELEŽINĖ LYGA',
             questions: generateBattleRoomQuestions(5, roomId),
             createdAt: Date.now(),
           };
@@ -396,7 +396,7 @@ export async function broadcastRoomEvent(roomId: string, eventData: any): Promis
  */
 export async function createBattleRoom(
   hostUser: { id: string; name: string },
-  tier: string = 'SIDABRINĖ LYGA',
+  tier: string = 'GELEŽINĖ LYGA',
   customRoomId?: string
 ): Promise<BattleRoomDoc> {
   const cleanId = customRoomId ? sanitizeRoomId(customRoomId) : Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -527,7 +527,7 @@ export async function joinBattleRoom(
         guestReady: false,
         countdown: 3,
         currentRound: 0,
-        tier: 'SIDABRINĖ LYGA',
+        tier: 'GELEŽINĖ LYGA',
         questions: generateBattleRoomQuestions(5, cleanId),
         createdAt: Date.now(),
       };

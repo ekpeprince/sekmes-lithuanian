@@ -10,12 +10,10 @@ import {
   Copy,
   Check,
   Users,
-  Swords,
   Bot,
   AlertCircle,
   MessageCircle,
   ArrowRight,
-  Clipboard,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { haptics } from '@/lib/haptics';
@@ -76,7 +74,7 @@ function getStoredGuestName(currentUserDisplayName?: string | null, currentUserE
 export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   isOpen,
   onClose,
-  tierName = 'SIDABRINĖ LYGA',
+  tierName = 'GELEŽINĖ LYGA',
   initialRoomId = null,
   isHostInitial = true,
   onPlayBot,
