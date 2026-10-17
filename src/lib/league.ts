@@ -1,5 +1,7 @@
 export type LeagueTier = 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras' | 'Deimantas';
 
+export { getLeagueTierByXp } from './storage';
+
 export interface LeagueTierConfig {
   id: LeagueTier;
   name: string;
@@ -88,22 +90,22 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     badgeBg: 'bg-yellow-100',
     badgeText: 'text-yellow-950',
     minXp: 800,
-    description: 'Atkakli kova dėl patekimo į čempionų Deimantinę Lygą. Tik 3 geriausi gauna bilietą!',
-    englishDescription: 'Competitive tier battling for qualification into the Diamond League. Only the top 3 qualify!',
+    description: 'Atkakli kova dėl patekimo į prestižinę Gintarinę Lygą. Tik 3 geriausi gauna bilietą!',
+    englishDescription: 'Competitive tier battling for qualification into the Amber League. Only the top 3 qualify!',
     rewards: { first: 80, second: 50, third: 30 },
   },
   Gintaras: {
     id: 'Gintaras',
-    name: 'DEIMANTINĖ LYGA',
-    englishName: 'Diamond League',
-    icon: '💎',
+    name: 'GINTARINĖ LYGA',
+    englishName: 'Amber League',
+    icon: '🔶',
     color: 'amber',
     bgGradient: 'from-amber-500 via-orange-500 to-amber-600',
     badgeBg: 'bg-amber-50',
     badgeText: 'text-amber-950',
     minXp: 1500,
-    description: 'Aukščiausia deimantinė divizija. Čia varžosi atkakliausi kalbos entuziastai!',
-    englishDescription: 'The highest Diamond division. The most dedicated language enthusiasts compete here!',
+    description: 'Prestižinė gintarinė divizija. Atkakli kova dėl patekimo į čempionų Deimantinę Lygą!',
+    englishDescription: 'Prestigious Amber division. Fierce battle for qualification into the Diamond League!',
     rewards: { first: 100, second: 60, third: 40 },
   },
   Deimantas: {
@@ -115,10 +117,10 @@ export const LEAGUE_TIERS: Record<LeagueTier, LeagueTierConfig> = {
     bgGradient: 'from-cyan-500 via-sky-600 to-blue-700',
     badgeBg: 'bg-sky-50',
     badgeText: 'text-sky-950',
-    minXp: 1500,
-    description: 'Aukščiausia deimantinė divizija. Čia varžosi atkakliausi kalbos entuziastai!',
-    englishDescription: 'The highest Diamond division. The most dedicated language enthusiasts compete here!',
-    rewards: { first: 100, second: 60, third: 40 },
+    minXp: 2500,
+    description: 'Aukščiausia deimantinė divizija. Čia varžosi stipriausi kalbos meistrai ir čempionai!',
+    englishDescription: 'The pinnacle Diamond division. Master linguists and champions battle here!',
+    rewards: { first: 150, second: 90, third: 60 },
   },
 };
 
@@ -228,7 +230,7 @@ function pseudoRandom(seed: number): number {
 export function getWeeklyCohort(
   tier: LeagueTier,
   userXp: number,
-  userInfo?: { name?: string; avatar?: string; photoURL?: string }
+  userInfo?: { name?: string; avatar?: string; photoURL?: string; streak?: number }
 ): Competitor[] {
   const { weekNumber } = getLeagueTimeRemaining();
   const now = new Date();
@@ -240,8 +242,8 @@ export function getWeeklyCohort(
     Bronza: { min: 140, max: 420, baseStreak: 6 },
     Sidabras: { min: 350, max: 800, baseStreak: 9 },
     Auksas: { min: 700, max: 1450, baseStreak: 12 },
-    Gintaras: { min: 1300, max: 2400, baseStreak: 16 },
-    Deimantas: { min: 1300, max: 2400, baseStreak: 16 },
+    Gintaras: { min: 1400, max: 2400, baseStreak: 16 },
+    Deimantas: { min: 2400, max: 4000, baseStreak: 21 },
   };
 
   const bracket = xpBrackets[tier] || xpBrackets.Bronza;
@@ -298,7 +300,7 @@ export function getWeeklyCohort(
     avatarColor: 'from-amber-400 to-orange-500',
     initials: userInitials,
     photoURL: userInfo?.photoURL,
-    streak: Math.max(1, Math.round(userXp / 30) || 1),
+    streak: Math.max(1, userInfo?.streak || 1),
     xp: userXp,
     isUser: true,
     isCurrentUser: true,

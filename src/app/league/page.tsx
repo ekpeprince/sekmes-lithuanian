@@ -62,8 +62,10 @@ function LeagueContent() {
   useEffect(() => {
     if (battleParam === 'invite') {
       setIsBattleOpen(true);
+    } else if (battleParam === 'room' && !roomIdParam) {
+      setIsRealtimeBattleOpen(true);
     }
-  }, [battleParam]);
+  }, [battleParam, roomIdParam]);
 
   useEffect(() => {
     if (isGuestInvite && roomIdParam) {
@@ -118,6 +120,7 @@ function LeagueContent() {
     const cohort = getWeeklyCohort(activeTier, isViewingUserTier ? progress.xp : -1, {
       name: userName,
       photoURL: user?.photoURL || undefined,
+      streak: progress.streak,
     });
 
     let list: Competitor[];

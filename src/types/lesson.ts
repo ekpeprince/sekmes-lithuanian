@@ -140,6 +140,8 @@ export interface MistakeItem {
   timestamp: number;
 }
 
+export type LeagueTier = 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras' | 'Deimantas';
+
 export interface UserProgress {
   xp: number;
   hearts: number;
@@ -152,7 +154,7 @@ export interface UserProgress {
   voiceGender?: 'female' | 'male';
   mistakesBank?: MistakeItem[];
   quests?: Quest[];
-  leagueTier?: 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras';
+  leagueTier?: LeagueTier;
   leagueRank?: number;
   speedDrillHighScore?: number;
   streakFreezes?: number;

@@ -47,6 +47,7 @@ export const AmberLeagueCard: React.FC = () => {
   const leaderboard: Competitor[] = getWeeklyCohort(currentTier, progress.xp, {
     name: userName,
     photoURL: user?.photoURL || undefined,
+    streak: progress.streak,
   });
 
   const userComp = leaderboard.find((l) => l.isUser);

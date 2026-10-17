@@ -17,6 +17,8 @@ import {
   recordDuelWin as recordDuelWinStorage,
   formatTimeLearned,
   DEFAULT_PROGRESS,
+  DEFAULT_QUESTS,
+  getLeagueTierByXp,
 } from '@/lib/storage';
 import { getAllLessons } from '@/data/curriculum';
 import { sounds } from '@/lib/audio';
@@ -222,11 +224,25 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addXp = (amount: number) => {
     const today = new Date().toISOString().split('T')[0];
     const currentDailyXp = progress.dailyXpDate === today ? (progress.dailyXp || 0) : 0;
+    const nextXp = progress.xp + amount;
+    const nextDailyXp = currentDailyXp + amount;
+
+    // Advance daily quest for XP
+    const updatedQuests = (progress.quests || DEFAULT_QUESTS).map((q) => {
+      if (q.id === 'quest-xp') {
+        const nextCurr = Math.min(q.target, q.current + amount);
+        return { ...q, current: nextCurr, completed: nextCurr >= q.target };
+      }
+      return q;
+    });
+
     const updated: UserProgress = {
       ...progress,
-      xp: progress.xp + amount,
-      dailyXp: currentDailyXp + amount,
+      xp: nextXp,
+      dailyXp: nextDailyXp,
       dailyXpDate: today,
+      quests: updatedQuests,
+      leagueTier: getLeagueTierByXp(nextXp),
     };
     saveProgress(updated);
     setProgress(updated);

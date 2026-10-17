@@ -1,4 +1,4 @@
-import { UserProgress, MistakeItem, Quest } from '@/types/lesson';
+import { UserProgress, MistakeItem, Quest, LeagueTier } from '@/types/lesson';
 
 const STORAGE_KEY = 'sekmes_user_progress_v1';
 
@@ -175,11 +175,12 @@ export function refillHearts(): UserProgress {
   return updated;
 }
 
-export function getLeagueTierByXp(xp: number): 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras' {
-  if (xp >= 500) return 'Gintaras';
-  if (xp >= 300) return 'Auksas';
-  if (xp >= 150) return 'Sidabras';
-  if (xp >= 50) return 'Bronza';
+export function getLeagueTierByXp(xp: number): LeagueTier {
+  if (xp >= 2500) return 'Deimantas';
+  if (xp >= 1500) return 'Gintaras';
+  if (xp >= 800) return 'Auksas';
+  if (xp >= 400) return 'Sidabras';
+  if (xp >= 150) return 'Bronza';
   return 'Geležis';
 }
 
