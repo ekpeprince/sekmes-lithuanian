@@ -8,6 +8,7 @@ import { Heart, RotateCcw, Sparkles, BellRing, ChevronRight, Settings, X } from 
 import { sounds } from '@/lib/audio';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { NotificationModal } from '@/components/NotificationModal';
+import { LEAGUE_TIERS, LeagueTier, getLeagueTierByXp } from '@/lib/league';
 
 export default function ProfilePage() {
   const {
@@ -30,6 +31,11 @@ export default function ProfilePage() {
 
   const level = Math.floor(progress.xp / 50) + 1;
   const displayName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Lithuanian Learner');
+
+  const userTier = (progress.leagueTier && LEAGUE_TIERS[progress.leagueTier as LeagueTier])
+    ? (progress.leagueTier as LeagueTier)
+    : getLeagueTierByXp(progress.xp);
+  const tierConfig = LEAGUE_TIERS[userTier] || LEAGUE_TIERS['Geležis'];
 
   const achievements = [
     {
@@ -192,14 +198,14 @@ export default function ProfilePage() {
           {/* Left: Bronze League Card */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 h-full">
             <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-lg sm:text-xl">
-              💎
+              {tierConfig.icon}
             </div>
             <div className="min-w-0">
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block truncate">
                 Current League
               </span>
               <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                Rank #{progress.leagueRank || 4} • {progress.leagueTier || 'Bronze'} Tier
+                Rank #{progress.leagueRank || 4} • {tierConfig.englishName}
               </p>
             </div>
           </div>

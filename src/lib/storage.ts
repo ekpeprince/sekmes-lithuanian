@@ -84,6 +84,7 @@ export const DEFAULT_PROGRESS: UserProgress = {
   activeMinutesDate: new Date().toISOString().split('T')[0],
   dailyXp: 0,
   dailyXpDate: new Date().toISOString().split('T')[0],
+  lastQuestResetDate: new Date().toISOString().split('T')[0],
   duelsWonCount: 0,
   wordsMasteredCount: 0,
 };
@@ -100,7 +101,8 @@ export function getStoredProgress(): UserProgress {
     }
     const parsed = JSON.parse(raw) as Partial<UserProgress>;
     const today = new Date().toISOString().split('T')[0];
-    const isNewDay = Boolean(parsed.lastActiveDate && parsed.lastActiveDate !== today);
+    const lastQuestDate = parsed.lastQuestResetDate || parsed.lastActiveDate;
+    const isNewDay = Boolean(lastQuestDate && lastQuestDate !== today);
 
     // Reset daily quests if a new calendar day has arrived
     const questsToUse = isNewDay
@@ -130,6 +132,7 @@ export function getStoredProgress(): UserProgress {
       activeMinutesDate: today,
       dailyXp,
       dailyXpDate: today,
+      lastQuestResetDate: today,
       duelsWonCount: parsed.duelsWonCount || 0,
       wordsMasteredCount: parsed.wordsMasteredCount || 0,
     };
@@ -275,11 +278,20 @@ export function recordMistake(mistake: Omit<MistakeItem, 'timestamp'>): UserProg
 export function resolveMistake(id: string): UserProgress {
   const current = getStoredProgress();
   const updatedBank = (current.mistakesBank || []).filter(m => m.id !== id);
+  const today = new Date().toISOString().split('T')[0];
+  const earnedXp = 5;
+  const nextXp = current.xp + earnedXp;
+  const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
+  const nextDailyXp = currentDailyXp + earnedXp;
 
-  // Update mistake quest
+  // Update mistake quest and XP quest
   const updatedQuests = (current.quests || DEFAULT_QUESTS).map(q => {
     if (q.id === 'quest-mistakes') {
       const nextCurr = Math.min(q.target, q.current + 1);
+      return { ...q, current: nextCurr, completed: nextCurr >= q.target };
+    }
+    if (q.id === 'quest-xp') {
+      const nextCurr = Math.min(q.target, q.current + earnedXp);
       return { ...q, current: nextCurr, completed: nextCurr >= q.target };
     }
     return q;
@@ -289,7 +301,10 @@ export function resolveMistake(id: string): UserProgress {
     ...current,
     mistakesBank: updatedBank,
     quests: updatedQuests,
-    xp: current.xp + 5, // Bonus XP for correcting mistake
+    xp: nextXp,
+    dailyXp: nextDailyXp,
+    dailyXpDate: today,
+    leagueTier: getLeagueTierByXp(nextXp),
   };
 
   saveProgress(updated);
@@ -299,11 +314,20 @@ export function resolveMistake(id: string): UserProgress {
 // Record speed drill high score
 export function recordSpeedDrillScore(score: number): UserProgress {
   const current = getStoredProgress();
+  const today = new Date().toISOString().split('T')[0];
   const nextHigh = Math.max(current.speedDrillHighScore || 0, score);
+  const earnedXp = Math.round(score / 2);
+  const nextXp = current.xp + earnedXp;
+  const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
+  const nextDailyXp = currentDailyXp + earnedXp;
 
   const updatedQuests = (current.quests || DEFAULT_QUESTS).map(q => {
     if (q.id === 'quest-drill') {
       const nextCurr = Math.min(q.target, q.current + 1);
+      return { ...q, current: nextCurr, completed: nextCurr >= q.target };
+    }
+    if (q.id === 'quest-xp') {
+      const nextCurr = Math.min(q.target, q.current + earnedXp);
       return { ...q, current: nextCurr, completed: nextCurr >= q.target };
     }
     return q;
@@ -313,7 +337,10 @@ export function recordSpeedDrillScore(score: number): UserProgress {
     ...current,
     speedDrillHighScore: nextHigh,
     quests: updatedQuests,
-    xp: current.xp + Math.round(score / 2),
+    xp: nextXp,
+    dailyXp: nextDailyXp,
+    dailyXpDate: today,
+    leagueTier: getLeagueTierByXp(nextXp),
   };
 
   saveProgress(updated);

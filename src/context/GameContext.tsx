@@ -188,12 +188,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updatedProg = resolveMistake(id);
     setProgress(updatedProg);
     sounds.playSuccess();
+    syncToCloudIfUser(updatedProg);
   };
 
   const claimQuestRewardById = (questId: string) => {
     const updatedProg = claimQuestReward(questId);
     setProgress(updatedProg);
     sounds.playLevelComplete();
+    syncToCloudIfUser(updatedProg);
   };
 
   const claimMysteryChestReward = () => {
@@ -207,6 +209,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const saveSpeedDrillScoreVal = (score: number) => {
     const updatedProg = recordSpeedDrillScore(score);
     setProgress(updatedProg);
+    syncToCloudIfUser(updatedProg);
   };
 
   const addActivePracticeTime = (seconds: number) => {

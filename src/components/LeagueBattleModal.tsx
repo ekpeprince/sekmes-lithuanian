@@ -135,7 +135,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     const currentComps = competitorsRef.current;
     const currentUser = userRef.current;
     const eligibleOpponents = currentComps.filter(
-      (c) => !c.isUser && !c.isCurrentUser && c.name !== 'Ekpe PrinceEsor' && c.name !== currentUser?.displayName
+      (c) => !c.isUser && !c.isCurrentUser && (!currentUser?.displayName || c.name !== currentUser.displayName)
     );
 
     let chosenOpponent: OpponentProfile;

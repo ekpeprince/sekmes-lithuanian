@@ -307,8 +307,8 @@ export function getWeeklyCohort(
     rank: 0,
   };
 
-  // Combine user into cohort and rank by XP descending
-  const allParticipants = [...cohortCompetitors, userCompetitor];
+  // Combine user into cohort if participating (userXp >= 0) and rank by XP descending
+  const allParticipants = userXp >= 0 ? [...cohortCompetitors, userCompetitor] : [...cohortCompetitors];
   allParticipants.sort((a, b) => b.xp - a.xp);
 
   return allParticipants.map((comp, idx) => ({

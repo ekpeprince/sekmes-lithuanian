@@ -44,7 +44,7 @@ function LeagueContent() {
   const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
 
   const handleInviteFriend = async () => {
-    const userName = user?.displayName || 'Ekpe PrinceEsor';
+    const userName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Tu (You)');
     const res = await shareBattleInvite(userName);
     if (res.copied) {
       setInviteToast('Invite link copied to clipboard!');
@@ -116,7 +116,7 @@ function LeagueContent() {
 
   // Generate deterministic weekly cohort for the selected tier and merge into unified list
   const unifiedList = useMemo(() => {
-    const userName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Ekpe PrinceEsor');
+    const userName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Tu (You)');
     const cohort = getWeeklyCohort(activeTier, isViewingUserTier ? progress.xp : -1, {
       name: userName,
       photoURL: user?.photoURL || undefined,
@@ -143,7 +143,6 @@ function LeagueContent() {
       const isCurrent =
         c.isCurrentUser ||
         c.isUser ||
-        c.name === 'Ekpe PrinceEsor' ||
         (user?.displayName && c.name === user.displayName);
       return isCurrent ? { ...c, isUser: true, isCurrentUser: true } : c;
     });
@@ -152,17 +151,17 @@ function LeagueContent() {
     list.sort((a, b) => b.xp - a.xp);
 
     return list.slice(0, 30).map((c, idx) => ({ ...c, rank: idx + 1 }));
-  }, [activeTier, isViewingUserTier, progress.xp, user, realMembers]);
+  }, [activeTier, isViewingUserTier, progress.xp, progress.streak, user, realMembers]);
 
   // Calculate userRank dynamically
-  const userRank = unifiedList.findIndex((p) => p.isCurrentUser || p.name === 'Ekpe PrinceEsor') + 1 || 4;
-  const currentUser = unifiedList.find((p) => p.isCurrentUser || p.name === 'Ekpe PrinceEsor') || {
+  const userRank = unifiedList.findIndex((p) => p.isCurrentUser) + 1 || 4;
+  const currentUser = unifiedList.find((p) => p.isCurrentUser) || {
     id: 'user_active',
-    name: user?.displayName || 'Ekpe PrinceEsor',
+    name: user?.displayName || (user?.email ? user.email.split('@')[0] : 'Tu (You)'),
     city: 'Lietuva',
     flag: '🇱🇹',
     avatarColor: 'from-amber-400 to-orange-500',
-    initials: 'EP',
+    initials: 'TU',
     streak: Math.max(1, progress.streak || 1),
     xp: progress.xp,
     isUser: true,
@@ -170,8 +169,9 @@ function LeagueContent() {
     rank: userRank,
   };
 
+  const isUserInTop3 = isViewingUserTier && userRank <= 3;
   const thirdPlacePlayer = unifiedList[2];
-  const xpToTop3 = Math.max(0, (thirdPlacePlayer?.xp || 0) - currentUser.xp + 1);
+  const xpToTop3 = isUserInTop3 ? 0 : Math.max(0, (thirdPlacePlayer?.xp || 0) - currentUser.xp + 1);
 
   const top3 = unifiedList.slice(0, 3);
   // Start the list directly from Rank 4 so Top 3 are NOT duplicated in the list
@@ -313,7 +313,11 @@ function LeagueContent() {
             <div className="flex items-center gap-2 self-stretch sm:self-center justify-between sm:justify-end">
               <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 shrink-0">
                 <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                <span>{xpToTop3 > 0 ? `⚡ ${xpToTop3} XP to reach Top 3` : '⚡ Top 3 Promotion Zone'}</span>
+                <span>
+                  {activeTier === 'Deimantas'
+                    ? (isUserInTop3 ? '🏆 Diamond Championship Zone' : `⚡ ${xpToTop3} XP to reach Podium`)
+                    : (isUserInTop3 ? '⚡ Top 3 Promotion Zone' : `⚡ ${xpToTop3} XP to reach Top 3`)}
+                </span>
               </div>
             </div>
           </div>
@@ -463,11 +467,11 @@ function LeagueContent() {
         <div className="flex items-center justify-between text-xs font-bold bg-white border border-slate-200 rounded-xl px-3.5 py-2 mb-3 shadow-2xs">
           <div className="flex items-center gap-1 text-emerald-700">
             <ChevronUp className="h-4 w-4" />
-            <span>Top 3 Promoted</span>
+            <span>{activeTier === 'Deimantas' ? 'Top 3 Champions' : 'Top 3 Promoted'}</span>
           </div>
           <div className="flex items-center gap-1 text-rose-500">
             <ChevronDown className="h-4 w-4" />
-            <span>Bottom 5 Demoted</span>
+            <span>{activeTier === 'Geležis' ? 'Starter Division' : 'Bottom 5 Demoted'}</span>
           </div>
         </div>
 
@@ -477,9 +481,8 @@ function LeagueContent() {
             const isUserRow =
               item.isCurrentUser ||
               item.isUser ||
-              item.name === 'Ekpe PrinceEsor' ||
               (user?.displayName && item.name === user.displayName);
-            const isDemotion = item.rank >= 26;
+            const isDemotion = activeTier !== 'Geležis' && item.rank >= 26;
 
             return (
               <div

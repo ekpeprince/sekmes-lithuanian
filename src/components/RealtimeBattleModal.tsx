@@ -142,7 +142,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     phaseRef.current = phase;
   }, [phase]);
 
-  const currentUserName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Ekpe PrinceEsor');
+  const currentUserName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Tu (You)');
   const currentUserAvatar = user?.photoURL || undefined;
 
   const roomQuestions = (room?.questions && room.questions.length > 0)

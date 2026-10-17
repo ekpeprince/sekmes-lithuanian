@@ -1,4 +1,6 @@
 import mqtt, { MqttClient } from 'mqtt';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { BATTLE_QUESTIONS } from '@/data/battleQuestions';
 
 export interface BattleRoomPlayer {
@@ -220,17 +222,12 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
     if (ev.room) {
       const existingGuest = room?.guest;
       const existingGuestReady = room?.guestReady;
-      const existingHostReady = room?.hostReady;
 
       room = mapServerRoomToDoc(ev.room);
 
       if (existingGuest && !room.guest) {
         room.guest = existingGuest;
         room.guestReady = existingGuestReady ?? false;
-      }
-      if (existingHostReady && !room.hostReady) {
-        room.hostReady = true;
-        if (room.host) room.host.ready = true;
       }
       continue;
     }
@@ -316,6 +313,8 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
       const guestIsReady = Boolean(room.guestReady ?? room.guest?.ready);
       if (room.guest && hostIsReady && guestIsReady) {
         room.status = 'starting';
+      } else if (room.status === 'starting') {
+        room.status = 'waiting';
       }
     } else if (ev.action === 'start' && room) {
       room.status = 'in_progress';
@@ -352,6 +351,17 @@ export async function broadcastRoomEvent(roomId: string, eventData: any): Promis
     timestamp: Date.now(),
   };
   const payloadStr = JSON.stringify(payload);
+
+  // 0. Cloud Firestore Real-Time Sync (Cross-device, persistent across serverless instances)
+  if (db && isFirebaseConfigured) {
+    try {
+      const roomRef = doc(db, 'battle_rooms', cleanId);
+      const roomPayload = eventData.room ? { ...eventData.room } : { roomId: cleanId, ...eventData };
+      setDoc(roomRef, JSON.parse(JSON.stringify(roomPayload)), { merge: true }).catch(() => {});
+    } catch (e) {
+      console.warn('[BATTLE_FIRESTORE_BROADCAST_WARN]:', e);
+    }
+  }
 
   // 1. MQTT Broker with retain: true (guarantees cross-device state delivery even to late joiners)
   try {
@@ -438,7 +448,22 @@ export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | nul
   const local = getLocalRoom(cleanId);
   if (local) return local;
 
-  // Fallback to Server API Route /api/battle
+  // 1. Firestore Lookup (Source of Truth)
+  if (db && isFirebaseConfigured) {
+    try {
+      const roomRef = doc(db, 'battle_rooms', cleanId);
+      const snap = await getDoc(roomRef);
+      if (snap.exists()) {
+        const mapped = mapServerRoomToDoc(snap.data());
+        if (mapped) {
+          saveLocalRoom(mapped);
+          return mapped;
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Fallback to Server API Route /api/battle
   try {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeout = controller ? setTimeout(() => controller.abort(), 1500) : null;
@@ -692,6 +717,36 @@ export function listenToBattleRoom(
   const topic = getRoomTopic(cleanId);
   subscribedTopics.add(topic);
 
+  // 0. Firestore Real-Time Listener (Resilient cross-device WebSocket sync)
+  let unsubscribeFirestore: (() => void) | null = null;
+  if (db && isFirebaseConfigured) {
+    try {
+      const roomRef = doc(db, 'battle_rooms', cleanId);
+      unsubscribeFirestore = onSnapshot(
+        roomRef,
+        (snapshot) => {
+          if (isCancelled || !snapshot.exists()) return;
+          const firestoreData = snapshot.data();
+          const mapped = mapServerRoomToDoc(firestoreData);
+          if (mapped) {
+            if (currentRoom?.guest && !mapped.guest) {
+              mapped.guest = currentRoom.guest;
+              mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
+            }
+            currentRoom = mapped;
+            saveLocalRoom(mapped);
+            onUpdate(mapped);
+          }
+        },
+        (err) => {
+          console.warn('[BATTLE_FIRESTORE_SNAPSHOT_WARN]:', err);
+        }
+      );
+    } catch (e) {
+      console.warn('[BATTLE_FIRESTORE_SUB_ERR]:', e);
+    }
+  }
+
   // 1. MQTT Real-Time WebSocket Connection
   const client = getOrCreateMqttClient();
 
@@ -707,14 +762,6 @@ export function listenToBattleRoom(
             if (currentRoom?.guest && !mapped.guest) {
               mapped.guest = currentRoom.guest;
               mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
-            }
-            if (currentRoom?.hostReady && !mapped.hostReady) {
-              mapped.hostReady = true;
-              if (mapped.host) mapped.host.ready = true;
-            }
-            if (currentRoom?.guestReady && !mapped.guestReady) {
-              mapped.guestReady = true;
-              if (mapped.guest) mapped.guest.ready = true;
             }
             currentRoom = mapped;
             saveLocalRoom(mapped);
@@ -763,14 +810,6 @@ export function listenToBattleRoom(
             mapped.guest = currentRoom.guest;
             mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
           }
-          if (currentRoom?.hostReady && !mapped.hostReady) {
-            mapped.hostReady = true;
-            if (mapped.host) mapped.host.ready = true;
-          }
-          if (currentRoom?.guestReady && !mapped.guestReady) {
-            mapped.guestReady = true;
-            if (mapped.guest) mapped.guest.ready = true;
-          }
           currentRoom = mapped;
           saveLocalRoom(mapped);
           onUpdate(mapped);
@@ -786,6 +825,10 @@ export function listenToBattleRoom(
     isCancelled = true;
     clearInterval(pollInterval);
     subscribedTopics.delete(topic);
+
+    if (unsubscribeFirestore) {
+      unsubscribeFirestore();
+    }
 
     if (client) {
       client.off('message', handleMqttMessage);

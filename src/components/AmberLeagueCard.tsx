@@ -52,8 +52,8 @@ export const AmberLeagueCard: React.FC = () => {
 
   const userComp = leaderboard.find((l) => l.isUser);
   const userRank = userComp?.rank || 4;
-  const isPromoting = userRank <= 3;
-  const isDemoting = userRank >= 26;
+  const isPromoting = currentTier !== 'Deimantas' && userRank <= 3;
+  const isDemoting = currentTier !== 'Geležis' && userRank >= 26;
 
   return (
     <>
@@ -90,7 +90,11 @@ export const AmberLeagueCard: React.FC = () => {
                 {tierConfig.englishName}
               </span>
               <p className="text-[11px] text-white/90 font-medium mt-0.5 truncate">
-                {isPromoting ? (
+                {currentTier === 'Deimantas' && userRank <= 3 ? (
+                  <span className="text-amber-200 font-bold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 shrink-0" /> #{userRank} vieta • Čempionų zona
+                  </span>
+                ) : isPromoting ? (
                   <span className="text-emerald-200 font-bold flex items-center gap-1">
                     <ArrowUp className="w-3 h-3 shrink-0" /> #{userRank} vieta • Pakilimas
                   </span>

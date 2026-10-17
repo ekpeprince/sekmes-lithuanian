@@ -165,6 +165,7 @@ export interface UserProgress {
   activeMinutesDate?: string;
   dailyXp?: number;
   dailyXpDate?: string;
+  lastQuestResetDate?: string;
   duelsWonCount?: number;
   wordsMasteredCount?: number;
 }
