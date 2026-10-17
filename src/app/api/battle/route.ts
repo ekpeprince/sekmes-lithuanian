@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BattleRoom, BattlePlayer, BattleAnswer, calculateAnswerPoints } from '@/lib/battleSync';
 import { generateBattleRoomQuestions } from '@/lib/battleRoomSync';
-import { db, isFirebaseConfigured } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export const runtime = 'nodejs';
 
@@ -38,32 +36,13 @@ function cleanupOldRooms() {
   }
 }
 
-// Persistent Firestore helpers to eliminate serverless instance isolation
+// Server-side fast in-memory room store
 async function getPersistedRoom(roomId: string): Promise<any | null> {
-  if (db && isFirebaseConfigured) {
-    try {
-      const snap = await getDoc(doc(db, 'battle_rooms', roomId));
-      if (snap.exists()) {
-        const data = snap.data();
-        serverRooms.set(roomId, data);
-        return data;
-      }
-    } catch (err) {
-      console.warn('[API_BATTLE_FIRESTORE_GET_WARN]:', err);
-    }
-  }
   return serverRooms.get(roomId) || null;
 }
 
 async function persistRoom(roomId: string, room: any): Promise<void> {
   serverRooms.set(roomId, room);
-  if (db && isFirebaseConfigured) {
-    try {
-      await setDoc(doc(db, 'battle_rooms', roomId), room, { merge: true });
-    } catch (err) {
-      console.warn('[API_BATTLE_FIRESTORE_SET_WARN]:', err);
-    }
-  }
 }
 
 // GET /api/battle?roomId=ABC-123

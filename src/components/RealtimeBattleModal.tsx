@@ -129,6 +129,11 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const advanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const phaseRef = useRef(phase);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const currentUserName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Ekpe PrinceEsor');
   const currentUserAvatar = user?.photoURL || undefined;
@@ -300,22 +305,22 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       const bothReady = Boolean(updatedRoom.guest && hostReady && guestReady);
 
       if (bothReady || updatedRoom.status === 'starting') {
-        if (phase !== 'countdown' && phase !== 'battle' && phase !== 'completed') {
+        if (phaseRef.current !== 'countdown' && phaseRef.current !== 'battle' && phaseRef.current !== 'completed') {
           setPhase('countdown');
         }
       } else {
-        if (phase === 'loading') {
+        if (phaseRef.current === 'loading') {
           setPhase('waiting');
         }
       }
 
       // If status changed to in_progress from another device
-      if (updatedRoom.status === 'in_progress' && phase === 'countdown') {
+      if (updatedRoom.status === 'in_progress' && phaseRef.current === 'countdown') {
         setPhase('battle');
       }
 
       // If status changed to completed
-      if (updatedRoom.status === 'completed' && phase === 'battle') {
+      if (updatedRoom.status === 'completed' && phaseRef.current === 'battle') {
         setPhase('completed');
       }
     });
@@ -323,7 +328,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return () => {
       unsubscribe();
     };
-  }, [isOpen, roomId, phase, isHost]);
+  }, [isOpen, roomId, isHost]);
 
   // 3. Handle 3-Second Synchronized Countdown
   useEffect(() => {
