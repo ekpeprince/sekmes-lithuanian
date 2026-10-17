@@ -292,7 +292,6 @@ function LeagueContent() {
                 </div>
                 <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
                   Rank #{userRank} • {currentUser.xp} XP
-                  {userRank <= 3 ? ' • In Promotion Zone' : ` • ${xpToTop3} XP to Top 3`}
                 </p>
               </div>
             </div>
@@ -301,10 +300,7 @@ function LeagueContent() {
             <div className="flex items-center gap-2 self-stretch sm:self-center justify-between sm:justify-end">
               <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 shrink-0">
                 <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                <span>Rank #{userRank} • {currentUser.xp} XP</span>
-                {xpToTop3 > 0 && (
-                  <span className="text-[11px] font-semibold text-amber-700/80">({xpToTop3} to Top 3)</span>
-                )}
+                <span>{xpToTop3 > 0 ? `⚡ ${xpToTop3} XP to reach Top 3` : '⚡ Top 3 Promotion Zone'}</span>
               </div>
             </div>
           </div>
@@ -318,10 +314,10 @@ function LeagueContent() {
             </div>
             <div className="min-w-0">
               <h4 className="text-xs sm:text-sm font-black text-amber-950 leading-tight truncate">
-                1v1 Battle
+                1v1 Speed Battle
               </h4>
               <p className="text-[11px] text-amber-900/80 font-medium truncate hidden sm:block">
-                Challenge competitors to 5-round speed battles in {activeTierConfig.name}
+                Live multiplayer &amp; friend challenges
               </p>
             </div>
           </div>
@@ -329,18 +325,9 @@ function LeagueContent() {
             <button
               type="button"
               onClick={handleStartRealtimeBattle}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-amber-950 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+              className="btn-tactile btn-tactile-amber px-4 py-1.5 text-xs font-bold rounded-xl shadow-2xs uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
             >
-              <Users className="h-3.5 w-3.5 text-amber-700" />
-              <span className="hidden sm:inline">Challenge Friend</span>
-              <span className="sm:hidden">1v1 Room</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsBattleOpen(true)}
-              className="btn-tactile btn-tactile-amber px-3.5 py-1.5 text-xs font-bold rounded-xl shadow-2xs uppercase tracking-wider cursor-pointer"
-            >
-              Play
+              <span>PLAY ⚔️</span>
             </button>
           </div>
         </div>
@@ -598,13 +585,7 @@ function LeagueContent() {
             )}
 
             <div className="min-w-0 flex items-center gap-1.5 truncate">
-              <span className="font-bold text-white truncate">Rank #{userRank} You</span>
-              <span className="text-slate-400">•</span>
-              <span className="text-amber-400 font-bold shrink-0">{currentUser.xp} XP</span>
-              <span className="text-slate-400 hidden sm:inline">|</span>
-              <span className="text-slate-300 font-medium truncate hidden sm:inline">
-                {xpToTop3 > 0 ? `${xpToTop3} XP to Top 3` : 'Promoting!'}
-              </span>
+              <span className="font-bold text-white truncate">You • {currentUser.xp} XP</span>
             </div>
           </div>
 
@@ -702,7 +683,8 @@ function LeagueContent() {
         competitors={unifiedList}
         onChallengeFriend={() => {
           setIsBattleOpen(false);
-          handleStartRealtimeBattle();
+          setRealtimeRoomId(null);
+          setIsRealtimeBattleOpen(true);
         }}
       />
 
@@ -716,6 +698,10 @@ function LeagueContent() {
         tierName={activeTierConfig.name}
         initialRoomId={roomIdParam || realtimeRoomId}
         isHostInitial={!isGuestInvite && isRealtimeHost}
+        onPlayQuickMatch={() => {
+          setIsRealtimeBattleOpen(false);
+          setIsBattleOpen(true);
+        }}
         onPlayBot={() => {
           setIsRealtimeBattleOpen(false);
           setIsBattleOpen(true);

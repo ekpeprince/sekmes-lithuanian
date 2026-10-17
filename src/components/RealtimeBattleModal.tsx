@@ -14,6 +14,8 @@ import {
   Bot,
   AlertCircle,
   MessageCircle,
+  ArrowRight,
+  Clipboard,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { haptics } from '@/lib/haptics';
@@ -38,6 +40,7 @@ interface RealtimeBattleModalProps {
   initialRoomId?: string | null;
   isHostInitial?: boolean;
   onPlayBot?: () => void;
+  onPlayQuickMatch?: () => void;
 }
 
 const TOTAL_ROUNDS = 5;
@@ -74,6 +77,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   initialRoomId = null,
   isHostInitial = true,
   onPlayBot,
+  onPlayQuickMatch,
 }) => {
   const { progress, addXp, recordDuelWin } = useGame();
   const { user } = useAuth();
@@ -91,8 +95,18 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return isHostInitial;
   });
   const [room, setRoom] = useState<BattleRoomDoc | null>(null);
-  const [phase, setPhase] = useState<'loading' | 'prompt_guest' | 'waiting' | 'countdown' | 'battle' | 'completed'>('loading');
+  const [phase, setPhase] = useState<
+    'select_mode' | 'mode_select' | 'loading' | 'prompt_guest' | 'waiting' | 'countdown' | 'battle' | 'completed'
+  >(() => {
+    if (initialQueryRoomId && initialQueryRoomId.trim()) return 'loading';
+    return 'select_mode';
+  });
   const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  // Manual Room Code input state
+  const [manualCodeInput, setManualCodeInput] = useState<string>('');
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [isJoiningWithCode, setIsJoiningWithCode] = useState(false);
 
   const [guestNameInput, setGuestNameInput] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -147,13 +161,32 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     setHostJoinBanner(null);
     prevGuestRef.current = null;
 
+    const activeUrlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const queryRoomId = initialRoomId || activeUrlParams?.get('roomId');
+
+    // 1. DEFAULT FLOW: If no specific roomId was passed, show Battle Mode Selector
+    if (!queryRoomId) {
+      setIsHost(true);
+      setPhase('select_mode');
+      setManualCodeInput('');
+      setCodeError(null);
+      setIsJoiningWithCode(false);
+      return;
+    }
+
+    // 2. DIRECT GUEST FLOW (URL Parameter Failsafe: drop directly into room join flow)
+    const cleanInitialId = sanitizeRoomId(queryRoomId);
+    setRoomId(cleanInitialId);
+    setIsHost(false); // Force guest role
+    setPhase('loading');
+
     // 4-Second Timeout Guard to prevent infinite "Connecting to battle arena..." hanging
     connectionTimeoutRef.current = setTimeout(() => {
       if (isMounted) {
         console.error('[BATTLE_ARENA_ERROR]: Connection timeout after 4 seconds. Forcing lobby resolution.');
         setPhase((prev) => {
           if (prev === 'loading') {
-            return isHost ? 'waiting' : 'prompt_guest';
+            return 'prompt_guest';
           }
           return prev;
         });
@@ -161,91 +194,59 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     }, 4000);
 
     const init = async () => {
-      const activeUrlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const queryRoomId = initialRoomId || activeUrlParams?.get('roomId');
+      try {
+        const existing = await getBattleRoom(cleanInitialId);
 
-      // HOST FLOW: When there is no queryRoomId (opened directly via Host button)
-      if (!queryRoomId) {
-        setIsHost(true);
-        const generatedId = Math.random().toString(36).substring(2, 8).toUpperCase();
-        setRoomId(generatedId);
-        setPhase('waiting');
-
-        try {
-          const newRoom = await createBattleRoom(
-            {
-              id: user?.uid || `host_${Date.now()}`,
-              name: currentUserName,
-            },
-            tierName,
-            generatedId
-          );
+        // Check if current user is actually the host of this room
+        if (existing && user?.uid && existing.host.id === user.uid) {
           if (isMounted) {
-            setRoom(newRoom);
+            setIsHost(true);
+            setRoom(existing);
+            if (existing.status === 'ready' || existing.status === 'starting') {
+              setPhase('countdown');
+            } else if (existing.status === 'in_progress') {
+              setPhase('battle');
+            } else {
+              setPhase('waiting');
+            }
           }
-        } catch (err) {
-          console.error('[BATTLE_ARENA_ERROR]: Room creation error, falling back locally:', err);
+          return;
         }
-      } else {
-        // GUEST FLOW: A queryRoomId exists!
-        const cleanInitialId = sanitizeRoomId(queryRoomId);
-        setRoomId(cleanInitialId);
-        setIsHost(false); // Force guest role
 
-        try {
-          const existing = await getBattleRoom(cleanInitialId);
+        if (isMounted) {
+          setIsHost(false);
+          const existingName = getStoredGuestName(user?.displayName, user?.email);
 
-          // Check if current user is actually the host of this room
-          if (existing && user?.uid && existing.host.id === user.uid) {
-            if (isMounted) {
-              setIsHost(true);
-              setRoom(existing);
-              if (existing.status === 'ready' || existing.status === 'starting') {
-                setPhase('countdown');
-              } else if (existing.status === 'in_progress') {
-                setPhase('battle');
-              } else {
-                setPhase('waiting');
-              }
-            }
-            return;
+          // Step 4: If they have an existing username/profile in localStorage, join immediately
+          if (existingName) {
+            const updated = await joinBattleRoom(cleanInitialId, {
+              id: user?.uid || `guest_${Date.now()}`,
+              name: existingName,
+            });
+            setRoom(updated);
+            setPhase('countdown');
+          } else {
+            // New visitor: prompt with quick input: "Enter your nickname"
+            const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
+            setGuestNameInput(randomDefault);
+            setPhase('prompt_guest');
           }
-
-          if (isMounted) {
-            setIsHost(false);
-            const existingName = getStoredGuestName(user?.displayName, user?.email);
-
-            // Step 4: If they have an existing username/profile in localStorage, join immediately
-            if (existingName) {
-              const updated = await joinBattleRoom(cleanInitialId, {
-                id: user?.uid || `guest_${Date.now()}`,
-                name: existingName,
-              });
-              setRoom(updated);
-              setPhase('countdown');
-            } else {
-              // New visitor: prompt with quick input: "Enter your nickname"
-              const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
-              setGuestNameInput(randomDefault);
-              setPhase('prompt_guest');
-            }
-          }
-        } catch (err) {
-          console.error('[BATTLE_ARENA_ERROR]: Failed to connect to room:', err);
-          if (isMounted) {
-            setIsHost(false);
-            const existingName = getStoredGuestName(user?.displayName, user?.email);
-            if (existingName) {
-              joinBattleRoom(cleanInitialId, {
-                id: user?.uid || `guest_${Date.now()}`,
-                name: existingName,
-              }).catch(() => {});
-              setPhase('countdown');
-            } else {
-              const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
-              setGuestNameInput(randomDefault);
-              setPhase('prompt_guest');
-            }
+        }
+      } catch (err) {
+        console.error('[BATTLE_ARENA_ERROR]: Failed to connect to room:', err);
+        if (isMounted) {
+          setIsHost(false);
+          const existingName = getStoredGuestName(user?.displayName, user?.email);
+          if (existingName) {
+            joinBattleRoom(cleanInitialId, {
+              id: user?.uid || `guest_${Date.now()}`,
+              name: existingName,
+            }).catch(() => {});
+            setPhase('countdown');
+          } else {
+            const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
+            setGuestNameInput(randomDefault);
+            setPhase('prompt_guest');
           }
         }
       }
@@ -276,7 +277,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
           haptics.success();
         }
         setHostJoinBanner(`🎉 ${updatedRoom.guest.name} has joined!`);
-        if (phase === 'waiting' || phase === 'loading') {
+        if (phase === 'waiting' || phase === 'loading' || phase === 'select_mode' || phase === 'mode_select') {
           setPhase('countdown');
         }
       } else if (
@@ -340,8 +341,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   }, [phase, isOpen, roomId, isHost]);
 
   // 4. Guest Confirms Display Name to Join (Step 4)
-  const handleConfirmGuestJoin = async () => {
+  const handleConfirmGuestJoin = () => {
     if (!roomId) return;
+    const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
     const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
     const finalName = guestNameInput.trim() || randomDefault;
 
@@ -349,20 +351,112 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       try { localStorage.setItem('sekmes_user_name', finalName); } catch {}
     }
 
+    // Transition state optimistically: call setIsHost(false) and setPhase('countdown') IMMEDIATELY on click
     setIsHost(false);
-    // Advance UI immediately so button never feels unresponsive
     setPhase('countdown');
     sounds.playClick();
     haptics.success();
 
-    try {
-      const updated = await joinBattleRoom(roomId, {
-        id: user?.uid || `guest_${Date.now()}`,
-        name: finalName,
+    joinBattleRoom(cleanId, {
+      id: user?.uid || `guest_${Date.now()}`,
+      name: finalName,
+    })
+      .then((updated) => {
+        setRoom(updated);
+      })
+      .catch((err) => {
+        console.error('[BATTLE_ARENA_ERROR]: Join sync error:', err);
       });
-      setRoom(updated);
-    } catch (err) {
-      console.error('[BATTLE_ARENA_ERROR]: Join sync error:', err);
+  };
+
+  // 4a. Mode Select: Quick Match
+  const handleSelectQuickMatch = () => {
+    sounds.playClick();
+    haptics.success();
+    if (onPlayBot) {
+      onPlayBot();
+    } else if (onPlayQuickMatch) {
+      onPlayQuickMatch();
+    }
+  };
+
+  // 4b. Mode Select: Challenge a Friend (Create Room)
+  const handleCreateRoom = () => {
+    sounds.playClick();
+    haptics.success();
+    setIsHost(true);
+    const generatedId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setRoomId(generatedId);
+    setPhase('waiting');
+
+    createBattleRoom(
+      {
+        id: user?.uid || `host_${Date.now()}`,
+        name: currentUserName,
+      },
+      tierName,
+      generatedId
+    )
+      .then((newRoom) => {
+        setRoom(newRoom);
+      })
+      .catch((err) => {
+        console.error('[BATTLE_ARENA_ERROR]: Room creation error:', err);
+      });
+  };
+
+  // 4c. Mode Select: Paste from Clipboard
+  const handlePasteCode = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          const clean = text.trim().replace(/^#+/, '').replace(/\s+/g, '').toUpperCase();
+          setManualCodeInput(clean.slice(0, 16));
+          setCodeError(null);
+          sounds.playClick();
+          haptics.success();
+        }
+      }
+    } catch {
+      // Clipboard read may not be permitted in all browsers
+    }
+  };
+
+  // 4d. Mode Select: Join Friend's Room
+  const handleJoinWithCode = () => {
+    const cleanCode = manualCodeInput.trim().replace(/^#+/, '').replace(/\s+/g, '').toUpperCase();
+    if (!cleanCode) {
+      setCodeError('Enter a valid 6-character room code (e.g. TFYS5I)');
+      sounds.playError?.();
+      haptics.error();
+      return;
+    }
+
+    setCodeError(null);
+    setRoomId(cleanCode);
+    setIsHost(false);
+
+    const existingName = getStoredGuestName(user?.displayName, user?.email);
+    if (existingName) {
+      // Joins directly if nickname exists
+      setPhase('countdown');
+      sounds.playClick();
+      haptics.success();
+
+      joinBattleRoom(cleanCode, {
+        id: user?.uid || `guest_${Date.now()}`,
+        name: existingName,
+      })
+        .then((updated) => setRoom(updated))
+        .catch((err) => console.error('[BATTLE_ARENA_ERROR]: Join with code error:', err));
+    } else {
+      // Transitions to prompt_guest
+      const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
+      setGuestNameInput(randomDefault);
+      setPhase('prompt_guest');
+      sounds.playClick();
+      haptics.success();
     }
   };
 
@@ -630,7 +724,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
               ⚔️
             </span>
             <span className="text-xs font-black uppercase tracking-wider text-slate-800">
-              1V1 LIVE BATTLE ROOM {roomId ? `• #${roomId.toUpperCase()}` : ''}
+              {phase === 'select_mode' || phase === 'mode_select'
+                ? `1V1 BATTLE ARENA • ${tierName}`
+                : `1V1 LIVE BATTLE ROOM ${roomId ? `• #${roomId.toUpperCase()}` : ''}`}
             </span>
           </div>
 
@@ -648,6 +744,136 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         {hostJoinBanner && (
           <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 text-xs font-black flex items-center justify-center gap-2 shadow-sm animate-in slide-in-from-top duration-200">
             <span>{hostJoinBanner}</span>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* 0. BATTLE MODE SELECTOR (Battle Launcher Modal) */}
+        {/* ============================================================== */}
+        {(phase === 'select_mode' || phase === 'mode_select') && (
+          <div className="p-5 sm:p-6 flex flex-col gap-4">
+            <div className="text-center mb-1">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900">
+                Choose Battle Mode
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                5 rapid rounds of Lithuanian vocabulary. Answer fast for maximum XP!
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {/* CARD 1: ⚡ Quick Match */}
+              <div
+                onClick={handleSelectQuickMatch}
+                className="group rounded-2xl border-2 border-slate-200 hover:border-amber-400 bg-white hover:bg-amber-50/30 p-3.5 sm:p-4 transition-all duration-150 hover:shadow-md cursor-pointer flex items-center justify-between gap-3 text-left"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-sm text-xl group-hover:scale-105 transition-transform">
+                    ⚡
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-black text-slate-800 group-hover:text-amber-600 transition-colors">
+                        Quick Match
+                      </h4>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                        Instant
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Instant matchmaking with a league competitor in your current division.
+                    </p>
+                  </div>
+                </div>
+                <div className="h-8 w-8 rounded-xl bg-slate-100 group-hover:bg-amber-500 group-hover:text-white text-slate-400 flex items-center justify-center shrink-0 transition-colors">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+
+              {/* CARD 2: ➕ Challenge a Friend (Create Room) */}
+              <div
+                onClick={handleCreateRoom}
+                className="group rounded-2xl border-2 border-slate-200 hover:border-emerald-400 bg-white hover:bg-emerald-50/30 p-3.5 sm:p-4 transition-all duration-150 hover:shadow-md cursor-pointer flex items-center justify-between gap-3 text-left"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm text-xl group-hover:scale-105 transition-transform">
+                    ➕
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-black text-slate-800 group-hover:text-emerald-700 transition-colors">
+                        Challenge a Friend
+                      </h4>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                        Create Room
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Generate a private room ID, share invite on WhatsApp, and wait for your friend.
+                    </p>
+                  </div>
+                </div>
+                <div className="h-8 w-8 rounded-xl bg-slate-100 group-hover:bg-emerald-500 group-hover:text-white text-slate-400 flex items-center justify-center shrink-0 transition-colors">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+
+              {/* CARD 3: 🔑 Join Friend's Room */}
+              <div className="rounded-2xl border-2 border-slate-200 bg-slate-50/80 p-3.5 sm:p-4 text-left shadow-2xs">
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-rose-600 text-white shadow-sm text-xl">
+                    🔑
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-black text-slate-800">
+                        Join Friend&apos;s Room
+                      </h4>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
+                        Direct
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Have a friend&apos;s 6-character room code? Enter it below.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mt-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={manualCodeInput}
+                      onChange={(e) => {
+                        setManualCodeInput(e.target.value.replace(/^#+/, '').replace(/\s+/g, '').toUpperCase());
+                        setCodeError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleJoinWithCode();
+                      }}
+                      placeholder="ENTER CODE (e.g. TFYS5I)"
+                      maxLength={12}
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-amber-500 focus:outline-hidden text-xs sm:text-sm font-mono font-black text-slate-800 uppercase tracking-wider placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 bg-white shadow-2xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleJoinWithCode}
+                      disabled={!manualCodeInput.trim()}
+                      className="py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white font-black text-xs uppercase tracking-wider transition shadow-sm cursor-pointer shrink-0"
+                    >
+                      JOIN
+                    </button>
+                  </div>
+
+                  {codeError && (
+                    <p className="text-xs text-rose-600 font-bold flex items-center gap-1 animate-in fade-in">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{codeError}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -820,10 +1046,10 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => setPhase('select_mode')}
                 className="text-xs font-bold text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
-                Cancel
+                ← Back to Modes
               </button>
             </div>
           </div>

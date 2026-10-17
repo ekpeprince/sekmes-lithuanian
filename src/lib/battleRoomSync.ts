@@ -152,7 +152,8 @@ export async function createBattleRoom(
   tier: string = 'SIDABRINĖ LYGA',
   customRoomId?: string
 ): Promise<BattleRoomDoc> {
-  const roomId = sanitizeRoomId(customRoomId) || Math.random().toString(36).substring(2, 8).toUpperCase();
+  const cleanId = customRoomId ? customRoomId.trim().replace(/^#+/, '').toUpperCase() : Math.random().toString(36).substring(2, 8).toUpperCase();
+  const roomId = cleanId;
   const questions = generateBattleRoomQuestions(5);
 
   const roomDoc: BattleRoomDoc = {
@@ -224,7 +225,7 @@ export async function createBattleRoom(
  * 2. Fetch Battle Room by roomId (Firestore + Server API Route)
  */
 export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | null> {
-  const cleanId = sanitizeRoomId(roomId);
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   if (!cleanId) return null;
 
   // Try Firestore first with 2.5s timeout race
@@ -272,7 +273,7 @@ export async function joinBattleRoom(
   roomId: string,
   guestUser: { id: string; name: string }
 ): Promise<BattleRoomDoc> {
-  const cleanId = sanitizeRoomId(roomId);
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   const guestData: BattleRoomPlayer = {
     id: guestUser.id,
     name: guestUser.name || 'Player 2',
@@ -281,21 +282,19 @@ export async function joinBattleRoom(
     currentRound: 0,
   };
 
-  // Fire Firestore update non-blockingly in background
+  // DO NOT await updateDoc synchronously. Fire Firestore updateDoc non-blockingly with .catch(() => {})
   if (db && isFirebaseConfigured && cleanId) {
     const roomRef = doc(db, 'battle_rooms', cleanId);
     updateDoc(roomRef, {
       guest: sanitizeForFirestore(guestData),
       status: 'ready',
       countdown: 3,
-    }).catch((err) => {
-      console.warn('[BATTLE_SYNC_FIRESTORE_WARN]: Background sync warning:', err);
-    });
+    }).catch(() => {});
   }
 
-  // Prioritize the /api/battle POST with a 3-second timeout
+  // Send POST /api/battle with { action: 'join', roomId: cleanId, guestUser: guestData } wrapped in a 2500ms timeout
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timeoutId = controller ? setTimeout(() => controller.abort(), 3000) : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 2500) : null;
   try {
     const res = await fetch('/api/battle', {
       method: 'POST',
@@ -349,7 +348,7 @@ export async function joinBattleRoom(
  * 4. Start Match: POST /api/battle with action: 'start' and update Firestore
  */
 export async function startBattleRoomMatch(roomId: string): Promise<void> {
-  const cleanId = sanitizeRoomId(roomId);
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   const existing = getLocalRoom(cleanId);
   if (existing) {
     existing.status = 'in_progress';
@@ -384,7 +383,7 @@ export async function updateBattlePlayerScore(
   newRound: number,
   isCorrect?: boolean
 ): Promise<void> {
-  const cleanId = sanitizeRoomId(roomId);
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   const existing = getLocalRoom(cleanId);
 
   if (existing) {
@@ -437,7 +436,7 @@ export async function updateBattlePlayerScore(
  * 6. Set room completed: updates Firestore and /api/battle
  */
 export async function setBattleRoomCompleted(roomId: string): Promise<void> {
-  const cleanId = sanitizeRoomId(roomId);
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   const existing = getLocalRoom(cleanId);
   if (existing) {
     existing.status = 'completed';
@@ -469,7 +468,7 @@ export function listenToBattleRoom(
   roomId: string,
   onUpdate: (room: BattleRoomDoc | null) => void
 ): () => void {
-  const cleanId = sanitizeRoomId(roomId);
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   let unsubFirestore: Unsubscribe | null = null;
 
   // Initial local state

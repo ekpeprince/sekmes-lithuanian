@@ -82,18 +82,18 @@ export async function POST(request: NextRequest) {
 
     // 2. JOIN ROOM
     if (action === 'join') {
-      const roomId = sanitizeRoomId(body.roomId);
+      const cleanId = sanitizeRoomId(body.roomId);
       const guestUser = body.guestUser;
 
-      if (!roomId || !ROOM_ID_REGEX.test(roomId) || !guestUser?.id) {
+      if (!cleanId || !ROOM_ID_REGEX.test(cleanId) || !guestUser?.id) {
         return NextResponse.json({ error: 'Invalid join payload' }, { status: 400 });
       }
 
-      let room = serverRooms.get(roomId);
+      let room = serverRooms.get(cleanId);
       if (!room) {
         room = {
-          id: roomId,
-          roomId,
+          id: cleanId,
+          roomId: cleanId,
           status: 'ready',
           host: { id: 'host_auto', name: 'Host', joined: true, score: 0, currentRound: 0 },
           guest: null,
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         isHost: false,
       };
 
-      serverRooms.set(roomId, room);
+      serverRooms.set(cleanId, room);
       return NextResponse.json(room);
     }
 
