@@ -641,7 +641,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     if (isCorrect) {
       sounds.playCorrect();
       haptics.success();
-      const points = 100 + timeLeft * 6;
+      const points = 20;
       nextScore = localScore + points;
       setLocalScore(nextScore);
     } else {
@@ -690,7 +690,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       return; // Wait for opponent to finish playing
     }
 
-    const myScore = isHost ? room.host.score : (room.guest?.score ?? localScore);
+    const myScore = Math.max(localScore, isHost ? room.host.score : (room.guest?.score ?? 0));
     const opponentScore = isHost ? (room.guest?.score ?? 0) : room.host.score;
     const isVictory = myScore >= opponentScore;
     const earnedXp = isVictory ? 25 : 10;

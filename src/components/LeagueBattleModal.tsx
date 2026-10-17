@@ -211,7 +211,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
       setOpponentAnswered(true);
       const isOpponentCorrect = Math.random() < 0.75;
       if (isOpponentCorrect) {
-        setOpponentScore((prev) => prev + 100);
+        setOpponentScore((prev) => prev + 20);
       }
     }, opponentDelayMs);
 
@@ -269,7 +269,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     if (isCorrect) {
       sounds.playCorrect();
       haptics.success();
-      const points = 100 + timeLeft * 6;
+      const points = 20;
       setUserScore((prev) => prev + points);
     } else {
       sounds.playWrong();
