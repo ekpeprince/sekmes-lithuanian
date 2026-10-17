@@ -304,7 +304,11 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       const guestReady = Boolean(updatedRoom.guestReady ?? updatedRoom.guest?.ready);
       const bothReady = Boolean(updatedRoom.guest && hostReady && guestReady);
 
-      if (bothReady || updatedRoom.status === 'starting') {
+      if (updatedRoom.status === 'in_progress') {
+        if (phaseRef.current !== 'battle' && phaseRef.current !== 'completed') {
+          setPhase('battle');
+        }
+      } else if (bothReady || updatedRoom.status === 'starting') {
         if (phaseRef.current !== 'countdown' && phaseRef.current !== 'battle' && phaseRef.current !== 'completed') {
           setPhase('countdown');
         }
@@ -312,11 +316,6 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         if (phaseRef.current === 'loading') {
           setPhase('waiting');
         }
-      }
-
-      // If status changed to in_progress from another device
-      if (updatedRoom.status === 'in_progress' && phaseRef.current === 'countdown') {
-        setPhase('battle');
       }
 
       // If status changed to completed

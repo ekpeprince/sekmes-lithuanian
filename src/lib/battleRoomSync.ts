@@ -650,15 +650,42 @@ export function listenToBattleRoom(
     }
   }
 
-  // 2. Active Polling Fallback (Polls ntfy.sh since=all on start, then /api/battle & ntfy)
-  let initialPollDone = false;
+  // 2. Active Polling (Prioritize /api/battle with cache-busting timestamp + ntfy.sh parallel)
   const pollHistory = async () => {
     if (isCancelled) return;
+
+    // 1. PRIMARY: Query server /api/battle with cache-busting and no-store
     try {
-      const url = initialPollDone
-        ? `https://ntfy.sh/${topic}/json?poll=1&since=all`
-        : `https://ntfy.sh/${topic}/json?poll=1&since=all`;
-      const res = await fetch(url);
+      const res = await fetch(`/api/battle?roomId=${cleanId}&_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+      });
+      if (res.ok) {
+        const serverData = await res.json();
+        const mapped = mapServerRoomToDoc(serverData);
+        if (mapped) {
+          if (currentRoom?.guest && !mapped.guest) {
+            mapped.guest = currentRoom.guest;
+            mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
+          }
+          if (currentRoom?.hostReady && !mapped.hostReady) {
+            mapped.hostReady = true;
+            if (mapped.host) mapped.host.ready = true;
+          }
+          if (currentRoom?.guestReady && !mapped.guestReady) {
+            mapped.guestReady = true;
+            if (mapped.guest) mapped.guest.ready = true;
+          }
+          currentRoom = mapped;
+          saveLocalRoom(mapped);
+          onUpdate(mapped);
+        }
+      }
+    } catch {}
+
+    // 2. PARALLEL: Query ntfy.sh public pub/sub relay
+    try {
+      const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1&since=all`);
       if (res.ok) {
         const text = await res.text();
         const lines = text.split('\n').filter((l) => l.trim().length > 0);
@@ -681,40 +708,11 @@ export function listenToBattleRoom(
           }
         }
       }
-      initialPollDone = true;
-    } catch {}
-
-    // Fallback poll /api/battle (never overwrite a known guest or downgrade ready status)
-    try {
-      const res = await fetch(`/api/battle?roomId=${cleanId}`);
-      if (res.ok) {
-        const serverData = await res.json();
-        const mapped = mapServerRoomToDoc(serverData);
-        if (mapped) {
-          if (currentRoom?.guest && !mapped.guest) {
-            mapped.guest = currentRoom.guest;
-            mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
-          }
-          if (currentRoom?.hostReady && !mapped.hostReady) {
-            mapped.hostReady = true;
-            if (mapped.host) mapped.host.ready = true;
-          }
-          if (currentRoom?.guestReady && !mapped.guestReady) {
-            mapped.guestReady = true;
-            if (mapped.guest) mapped.guest.ready = true;
-          }
-          if (mapped.guest || mapped.status !== 'waiting') {
-            currentRoom = mapped;
-            saveLocalRoom(mapped);
-            onUpdate(mapped);
-          }
-        }
-      }
     } catch {}
   };
 
   pollHistory();
-  const pollInterval = setInterval(pollHistory, 1200);
+  const pollInterval = setInterval(pollHistory, 750);
 
   return () => {
     isCancelled = true;

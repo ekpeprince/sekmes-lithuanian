@@ -58,10 +58,23 @@ export async function GET(request: NextRequest) {
 
   const room = await getPersistedRoom(roomId);
   if (!room) {
-    return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Room not found' }, {
+      status: 404,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   }
 
-  return NextResponse.json(room);
+  return NextResponse.json(room, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  });
 }
 
 // Helper to get or safely initialize room state across serverless instances
