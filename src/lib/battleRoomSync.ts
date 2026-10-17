@@ -239,8 +239,31 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
   for (const ev of events) {
     if (!ev || !ev.action) continue;
 
+    if (!room && ev.roomId) {
+      const roomId = sanitizeRoomId(ev.roomId);
+      room = {
+        roomId,
+        status: 'waiting',
+        host: { id: 'host', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
+        guest: null,
+        hostReady: false,
+        guestReady: false,
+        countdown: 3,
+        currentRound: 0,
+        tier: 'SIDABRINĖ LYGA',
+        questions: generateBattleRoomQuestions(5, roomId),
+        createdAt: Date.now(),
+      };
+    }
+
     if (ev.action === 'create' && ev.room) {
+      const existingGuest = room?.guest;
+      const existingGuestReady = room?.guestReady;
       room = mapServerRoomToDoc(ev.room);
+      if (existingGuest && !room.guest) {
+        room.guest = existingGuest;
+        room.guestReady = existingGuestReady ?? false;
+      }
     } else if (ev.action === 'join') {
       const guestData = ev.guest || ev.guestUser;
       if (guestData) {
@@ -398,7 +421,10 @@ export async function joinBattleRoom(
     currentRound: 0,
   };
 
-  const existing = getLocalRoom(cleanId);
+  let existing = getLocalRoom(cleanId);
+  if (!existing) {
+    existing = await getBattleRoom(cleanId);
+  }
   const updatedRoom: BattleRoomDoc = existing
     ? {
         ...existing,
@@ -658,16 +684,30 @@ export function listenToBattleRoom(
       initialPollDone = true;
     } catch {}
 
-    // Fallback poll /api/battle
+    // Fallback poll /api/battle (never overwrite a known guest or downgrade ready status)
     try {
       const res = await fetch(`/api/battle?roomId=${cleanId}`);
       if (res.ok) {
         const serverData = await res.json();
         const mapped = mapServerRoomToDoc(serverData);
-        if (mapped && (mapped.guest || mapped.status !== 'waiting')) {
-          currentRoom = mapped;
-          saveLocalRoom(mapped);
-          onUpdate(mapped);
+        if (mapped) {
+          if (currentRoom?.guest && !mapped.guest) {
+            mapped.guest = currentRoom.guest;
+            mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
+          }
+          if (currentRoom?.hostReady && !mapped.hostReady) {
+            mapped.hostReady = true;
+            if (mapped.host) mapped.host.ready = true;
+          }
+          if (currentRoom?.guestReady && !mapped.guestReady) {
+            mapped.guestReady = true;
+            if (mapped.guest) mapped.guest.ready = true;
+          }
+          if (mapped.guest || mapped.status !== 'waiting') {
+            currentRoom = mapped;
+            saveLocalRoom(mapped);
+            onUpdate(mapped);
+          }
         }
       }
     } catch {}

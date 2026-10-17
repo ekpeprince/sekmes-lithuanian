@@ -64,6 +64,30 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(room);
 }
 
+// Helper to get or safely initialize room state across serverless instances
+async function getOrCreateRoom(cleanId: string): Promise<any> {
+  let room = await getPersistedRoom(cleanId);
+  if (!room) {
+    room = {
+      id: cleanId,
+      roomId: cleanId,
+      status: 'waiting',
+      host: { id: 'host_auto', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
+      guest: null,
+      hostReady: false,
+      guestReady: false,
+      countdown: 3,
+      currentRound: 0,
+      tier: 'SIDABRINĖ LYGA',
+      questions: generateBattleRoomQuestions(5, cleanId),
+      createdAt: Date.now(),
+    };
+  } else if (!room.questions || !Array.isArray(room.questions) || room.questions.length === 0) {
+    room.questions = generateBattleRoomQuestions(5, cleanId);
+  }
+  return room;
+}
+
 // POST /api/battle
 export async function POST(request: NextRequest) {
   cleanupOldRooms();
@@ -101,26 +125,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid join payload' }, { status: 400 });
       }
 
-      let room = await getPersistedRoom(cleanId);
-      if (!room) {
-        room = {
-          id: cleanId,
-          roomId: cleanId,
-          status: 'waiting',
-          host: { id: 'host_auto', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
-          guest: null,
-          hostReady: false,
-          guestReady: false,
-          countdown: 3,
-          currentRound: 0,
-          tier: 'SIDABRINĖ LYGA',
-          questions: generateBattleRoomQuestions(5, cleanId),
-          createdAt: Date.now(),
-        };
-      } else if (!room.questions || !Array.isArray(room.questions) || room.questions.length === 0) {
-        room.questions = generateBattleRoomQuestions(5, cleanId);
-      }
-
+      const room = await getOrCreateRoom(cleanId);
       const guestData = {
         id: String(guestUser.id).slice(0, 50),
         name: String(guestUser.name || 'Player 2').slice(0, 30),
@@ -164,10 +169,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid ready payload' }, { status: 400 });
       }
 
-      const room = await getPersistedRoom(cleanId);
-      if (!room) {
-        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-      }
+      const room = await getOrCreateRoom(cleanId);
 
       if (isHost) {
         room.hostReady = isReady;
@@ -198,11 +200,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
       }
 
-      const room = await getPersistedRoom(roomId);
-      if (!room) {
-        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-      }
-
+      const room = await getOrCreateRoom(roomId);
       room.status = 'in_progress';
       room.currentRound = 0;
       room.roundStartTime = Date.now();
@@ -220,10 +218,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
       }
 
-      const room = await getPersistedRoom(cleanRoomId);
-      if (!room) {
-        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-      }
+      const room = await getOrCreateRoom(cleanRoomId);
 
       if (isHost && room.host) {
         room.host.score = newScore;
@@ -250,11 +245,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
       }
 
-      const room = await getPersistedRoom(roomId);
-      if (!room) {
-        return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-      }
-
+      const room = await getOrCreateRoom(roomId);
       room.status = 'completed';
       await persistRoom(roomId, room);
       return NextResponse.json(room);

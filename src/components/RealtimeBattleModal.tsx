@@ -538,17 +538,27 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
     setRoom((prev) => {
       if (!prev) return prev;
+      const updatedHostReady = isHost ? newReady : Boolean(prev.hostReady ?? prev.host?.ready);
+      const updatedGuestReady = !isHost ? newReady : Boolean(prev.guestReady ?? prev.guest?.ready);
+      const bothReady = Boolean(prev.guest && updatedHostReady && updatedGuestReady);
+
+      if (bothReady) {
+        setPhase('countdown');
+      }
+
       if (isHost) {
         return {
           ...prev,
           hostReady: newReady,
           host: prev.host ? { ...prev.host, ready: newReady } : { id: 'host', name: currentUserName, joined: true, score: 0, ready: newReady, currentRound: 0 },
+          status: bothReady ? 'starting' : prev.status,
         };
       } else {
         return {
           ...prev,
           guestReady: newReady,
           guest: prev.guest ? { ...prev.guest, ready: newReady } : null,
+          status: bothReady ? 'starting' : prev.status,
         };
       }
     });
@@ -772,6 +782,8 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     setSelectedOptionIndex(null);
     setRoundCompleted(false);
     setConnectionError(null);
+    setHostJoinBanner(null);
+    prevGuestRef.current = null;
 
     try {
       const newRoom = await createBattleRoom(
