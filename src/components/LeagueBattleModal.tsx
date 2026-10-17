@@ -89,9 +89,9 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   const { user } = useAuth();
 
   // Dynamic Tier Resolution
-  const userAssignedTier: LeagueTier = progress.leagueTier || 'Sidabras';
+  const userAssignedTier: LeagueTier = progress.leagueTier || 'Geležis';
   const effectiveTier: LeagueTier = tier || userAssignedTier;
-  const tierConfig = LEAGUE_TIERS[effectiveTier] || LEAGUE_TIERS.Sidabras;
+  const tierConfig = LEAGUE_TIERS[effectiveTier] || LEAGUE_TIERS.Geležis;
   const currentActiveTier = activeTier || tierConfig.name;
 
   const [status, setStatus] = useState<'searching' | 'battle' | 'completed'>('searching');

@@ -13,8 +13,8 @@ export const AmberLeagueCard: React.FC = () => {
   const { user } = useAuth();
   const [showRewardsModal, setShowRewardsModal] = useState(false);
 
-  const currentTier: LeagueTier = progress.leagueTier || 'Bronza';
-  const tierConfig = LEAGUE_TIERS[currentTier] || LEAGUE_TIERS.Bronza;
+  const currentTier: LeagueTier = progress.leagueTier || 'Geležis';
+  const tierConfig = LEAGUE_TIERS[currentTier] || LEAGUE_TIERS.Geležis;
 
   const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
 
