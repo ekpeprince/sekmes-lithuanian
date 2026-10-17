@@ -25,6 +25,7 @@ export interface BattleRoomPlayer {
   name: string;
   joined: boolean;
   score: number;
+  ready?: boolean;
   currentRound?: number;
   lastAnswerCorrect?: boolean;
 }
@@ -45,6 +46,8 @@ export interface BattleRoomDoc {
   status: BattleRoomStatus;
   host: BattleRoomPlayer;
   guest: BattleRoomPlayer | null;
+  hostReady?: boolean;
+  guestReady?: boolean;
   countdown: number; // 3, 2, 1
   currentRound: number;
   tier: string;
@@ -110,6 +113,7 @@ export function mapServerRoomToDoc(data: any): BattleRoomDoc {
         name: hostPlayer.name || 'Host',
         joined: true,
         score: hostPlayer.score || 0,
+        ready: Boolean(hostPlayer.ready ?? data.hostReady),
         currentRound: hostPlayer.currentRound || 0,
       };
     }
@@ -124,10 +128,14 @@ export function mapServerRoomToDoc(data: any): BattleRoomDoc {
         name: guestPlayer.name || 'Player 2',
         joined: true,
         score: guestPlayer.score || 0,
+        ready: Boolean(guestPlayer.ready ?? data.guestReady),
         currentRound: guestPlayer.currentRound || 0,
       };
     }
   }
+
+  const hostReady = Boolean(data.hostReady ?? host?.ready);
+  const guestReady = Boolean(data.guestReady ?? guest?.ready);
 
   // If questions are missing or empty, automatically populate deterministically by roomId
   const questions = Array.isArray(data.questions) && data.questions.length > 0
@@ -137,8 +145,10 @@ export function mapServerRoomToDoc(data: any): BattleRoomDoc {
   return {
     roomId,
     status: (data.status === 'finished' ? 'completed' : data.status) || 'waiting',
-    host: host || { id: 'unknown_host', name: 'Host', joined: true, score: 0, currentRound: 0 },
-    guest,
+    host: host ? { ...host, ready: hostReady } : { id: 'unknown_host', name: 'Host', joined: true, score: 0, ready: hostReady, currentRound: 0 },
+    guest: guest ? { ...guest, ready: guestReady } : null,
+    hostReady,
+    guestReady,
     countdown: typeof data.countdown === 'number' ? data.countdown : 3,
     currentRound: typeof data.currentRound === 'number' ? data.currentRound : 0,
     tier: data.tier || 'SIDABRINĖ LYGA',
@@ -193,9 +203,12 @@ export async function createBattleRoom(
       name: hostUser.name || 'Host',
       joined: true,
       score: 0,
+      ready: false,
       currentRound: 0,
     },
     guest: null,
+    hostReady: false,
+    guestReady: false,
     countdown: 3,
     currentRound: 0,
     tier,
@@ -212,6 +225,8 @@ export async function createBattleRoom(
       id: roomId,
       ...sanitizeForFirestore(roomDoc),
       status: 'waiting',
+      hostReady: false,
+      guestReady: false,
       guest: null,
       createdAt: Date.now(),
     };
@@ -253,7 +268,8 @@ export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | nul
 }
 
 /**
- * 3. Guest Join: Updates Firestore battle_rooms/{roomId} with guest and status: 'ready'
+ * 3. Guest Join: Updates Firestore battle_rooms/{roomId} with guest in lobby
+ * Notice: status remains 'waiting' until BOTH players toggle ready!
  */
 export async function joinBattleRoom(
   roomId: string,
@@ -267,6 +283,7 @@ export async function joinBattleRoom(
     name: guestUser.name || 'Player 2',
     joined: true,
     score: 0,
+    ready: false,
     currentRound: 0,
   };
 
@@ -274,7 +291,8 @@ export async function joinBattleRoom(
   if (db && isFirebaseConfigured && cleanId) {
     const joinPayload = {
       guest: sanitizeForFirestore(guestData),
-      status: 'ready',
+      guestReady: false,
+      status: 'waiting',
       countdown: 3,
     };
     setDoc(doc(db, 'battle_rooms', cleanId), joinPayload, { merge: true }).catch((err) => {
@@ -282,20 +300,23 @@ export async function joinBattleRoom(
     });
   }
 
-  // Update local cache & return immediately so guest UI transitions without delay
+  // Update local cache & return immediately so guest UI transitions to lobby without delay
   const existing = getLocalRoom(cleanId);
   const updatedRoom: BattleRoomDoc = existing
     ? {
         ...existing,
         guest: guestData,
-        status: 'ready',
+        guestReady: false,
+        status: 'waiting',
         countdown: 3,
       }
     : {
         roomId: cleanId,
-        status: 'ready',
-        host: { id: 'host_fallback', name: 'Host', joined: true, score: 0, currentRound: 0 },
+        status: 'waiting',
+        host: { id: 'host_fallback', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
         guest: guestData,
+        hostReady: false,
+        guestReady: false,
         countdown: 3,
         currentRound: 0,
         tier: 'SIDABRINĖ LYGA',
@@ -308,7 +329,53 @@ export async function joinBattleRoom(
 }
 
 /**
- * 4. Start Match: Updates status: 'in_progress' in Firestore
+ * 4. Toggle Player Ready (Both Host and Guest must be ready before match countdown begins)
+ */
+export async function setBattlePlayerReady(
+  roomId: string,
+  isHost: boolean,
+  isReady: boolean = true
+): Promise<void> {
+  const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
+  const existing = getLocalRoom(cleanId);
+  let bothReady = false;
+
+  if (existing) {
+    if (isHost) {
+      existing.hostReady = isReady;
+      if (existing.host) existing.host.ready = isReady;
+    } else {
+      existing.guestReady = isReady;
+      if (existing.guest) existing.guest.ready = isReady;
+    }
+    bothReady = Boolean(
+      existing.guest &&
+      (existing.hostReady ?? existing.host?.ready) &&
+      (existing.guestReady ?? existing.guest?.ready)
+    );
+    if (bothReady) {
+      existing.status = 'starting';
+    }
+    saveLocalRoom(existing);
+  }
+
+  if (db && isFirebaseConfigured && cleanId) {
+    const updates: Record<string, any> = isHost
+      ? { hostReady: isReady, 'host.ready': isReady }
+      : { guestReady: isReady, 'guest.ready': isReady };
+
+    if (bothReady) {
+      updates.status = 'starting';
+    }
+
+    setDoc(doc(db, 'battle_rooms', cleanId), updates, { merge: true }).catch((err) => {
+      console.warn('[BATTLE_SYNC_WARN]: Set ready error:', err);
+    });
+  }
+}
+
+/**
+ * 5. Start Match: Updates status: 'in_progress' in Firestore
  */
 export async function startBattleRoomMatch(roomId: string): Promise<void> {
   const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
@@ -326,7 +393,7 @@ export async function startBattleRoomMatch(roomId: string): Promise<void> {
 }
 
 /**
- * 5. Update live player score in Firestore
+ * 6. Update live player score in Firestore
  */
 export async function updateBattlePlayerScore(
   roomId: string,
@@ -370,7 +437,7 @@ export async function updateBattlePlayerScore(
 }
 
 /**
- * 6. Set room completed in Firestore
+ * 7. Set room completed in Firestore
  */
 export async function setBattleRoomCompleted(roomId: string): Promise<void> {
   const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
@@ -388,7 +455,7 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
 }
 
 /**
- * 7. Live Firestore onSnapshot Real-Time Listener (sub-50ms WebSocket push)
+ * 8. Live Firestore onSnapshot Real-Time Listener (sub-50ms WebSocket push)
  * No polling overhead or serverless memory volatility!
  */
 export function listenToBattleRoom(

@@ -27,6 +27,7 @@ import {
   createBattleRoom,
   getBattleRoom,
   joinBattleRoom,
+  setBattlePlayerReady,
   startBattleRoomMatch,
   updateBattlePlayerScore,
   listenToBattleRoom,
@@ -207,7 +208,12 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
           if (isMounted) {
             setIsHost(true);
             setRoom(existing);
-            if (existing.status === 'ready' || existing.status === 'starting') {
+            const bothReady = Boolean(
+              existing.guest &&
+              (existing.hostReady ?? existing.host?.ready) &&
+              (existing.guestReady ?? existing.guest?.ready)
+            );
+            if (bothReady || existing.status === 'starting') {
               setPhase('countdown');
             } else if (existing.status === 'in_progress') {
               setPhase('battle');
@@ -229,7 +235,12 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
               name: existingName,
             });
             setRoom(updated);
-            setPhase('countdown');
+            const bothReady = Boolean(
+              updated.guest &&
+              (updated.hostReady ?? updated.host?.ready) &&
+              (updated.guestReady ?? updated.guest?.ready)
+            );
+            setPhase(bothReady || updated.status === 'starting' ? 'countdown' : 'waiting');
           } else {
             // New visitor: prompt with quick input: "Enter your nickname"
             const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
@@ -247,7 +258,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
               id: user?.uid || `guest_${Date.now()}`,
               name: existingName,
             }).catch(() => {});
-            setPhase('countdown');
+            setPhase('waiting');
           } else {
             const randomDefault = LITHUANIAN_GUEST_NAMES[Math.floor(Math.random() * LITHUANIAN_GUEST_NAMES.length)];
             setGuestNameInput(randomDefault);
@@ -275,25 +286,27 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       setRoom(updatedRoom);
 
       // On the Host device (isHost === true):
-      // When updatedRoom.guest is non-null, immediately alert host & transition to countdown
-      if (isHost && updatedRoom.guest) {
-        if (!prevGuestRef.current) {
-          prevGuestRef.current = updatedRoom.guest;
-          sounds.playSuccess();
-          haptics.success();
-        }
-        setHostJoinBanner(`🎉 ${updatedRoom.guest.name} has joined!`);
-        if (phase === 'waiting' || phase === 'loading' || phase === 'select_mode' || phase === 'mode_select') {
+      // When updatedRoom.guest is non-null, alert host
+      if (isHost && updatedRoom.guest && !prevGuestRef.current) {
+        prevGuestRef.current = updatedRoom.guest;
+        sounds.playSuccess();
+        haptics.success();
+        setHostJoinBanner(`🎉 ${updatedRoom.guest.name} has joined! Both players must be ready.`);
+      }
+
+      // Check if both players are ready
+      const hostReady = Boolean(updatedRoom.hostReady ?? updatedRoom.host?.ready);
+      const guestReady = Boolean(updatedRoom.guestReady ?? updatedRoom.guest?.ready);
+      const bothReady = Boolean(updatedRoom.guest && hostReady && guestReady);
+
+      if (bothReady || updatedRoom.status === 'starting') {
+        if (phase !== 'countdown' && phase !== 'battle' && phase !== 'completed') {
           setPhase('countdown');
         }
-      } else if (
-        !isHost &&
-        (updatedRoom.status === 'ready' || updatedRoom.status === 'starting' || updatedRoom.guest) &&
-        (phase === 'waiting' || phase === 'loading')
-      ) {
-        sounds.playClick();
-        haptics.success();
-        setPhase('countdown');
+      } else {
+        if (phase === 'loading') {
+          setPhase('waiting');
+        }
       }
 
       // If status changed to in_progress from another device
@@ -358,17 +371,20 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       try { localStorage.setItem('sekmes_user_name', finalName); } catch {}
     }
 
-    // Transition state optimistically: call setIsHost(false) and setPhase('countdown') IMMEDIATELY on click
+    // Transition state optimistically: join in waiting phase so both players must ready up
     const guestId = user?.uid || `guest_${Date.now()}`;
     setRoom((prev) => prev ? {
       ...prev,
-      status: 'ready',
-      guest: { id: guestId, name: finalName, joined: true, score: 0, currentRound: 0 }
+      status: 'waiting',
+      guestReady: false,
+      guest: { id: guestId, name: finalName, joined: true, score: 0, ready: false, currentRound: 0 }
     } : {
       roomId: cleanId,
-      status: 'ready',
-      host: { id: 'host', name: 'Host', joined: true, score: 0, currentRound: 0 },
-      guest: { id: guestId, name: finalName, joined: true, score: 0, currentRound: 0 },
+      status: 'waiting',
+      host: { id: 'host', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
+      guest: { id: guestId, name: finalName, joined: true, score: 0, ready: false, currentRound: 0 },
+      hostReady: false,
+      guestReady: false,
       countdown: 3,
       currentRound: 0,
       tier: tierName,
@@ -377,7 +393,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     });
 
     setIsHost(false);
-    setPhase('countdown');
+    setPhase('waiting');
     sounds.playClick();
     haptics.success();
 
@@ -466,13 +482,16 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       const guestId = user?.uid || `guest_${Date.now()}`;
       setRoom((prev) => prev ? {
         ...prev,
-        status: 'ready',
-        guest: { id: guestId, name: existingName, joined: true, score: 0, currentRound: 0 }
+        status: 'waiting',
+        guestReady: false,
+        guest: { id: guestId, name: existingName, joined: true, score: 0, ready: false, currentRound: 0 }
       } : {
         roomId: cleanCode,
-        status: 'ready',
-        host: { id: 'host', name: 'Host', joined: true, score: 0, currentRound: 0 },
-        guest: { id: guestId, name: existingName, joined: true, score: 0, currentRound: 0 },
+        status: 'waiting',
+        host: { id: 'host', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
+        guest: { id: guestId, name: existingName, joined: true, score: 0, ready: false, currentRound: 0 },
+        hostReady: false,
+        guestReady: false,
         countdown: 3,
         currentRound: 0,
         tier: tierName,
@@ -480,8 +499,8 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         createdAt: Date.now(),
       });
 
-      // Joins directly if nickname exists
-      setPhase('countdown');
+      // Joins directly into waiting lobby
+      setPhase('waiting');
       sounds.playClick();
       haptics.success();
 
@@ -499,6 +518,39 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       sounds.playClick();
       haptics.success();
     }
+  };
+
+  // 4e. Toggle Ready State
+  const handleToggleReady = () => {
+    if (!roomId) return;
+    const isCurrentReady = isHost
+      ? Boolean(room?.hostReady ?? room?.host?.ready)
+      : Boolean(room?.guestReady ?? room?.guest?.ready);
+    const newReady = !isCurrentReady;
+
+    sounds.playClick();
+    if (newReady) haptics.success();
+
+    setRoom((prev) => {
+      if (!prev) return prev;
+      if (isHost) {
+        return {
+          ...prev,
+          hostReady: newReady,
+          host: prev.host ? { ...prev.host, ready: newReady } : { id: 'host', name: currentUserName, joined: true, score: 0, ready: newReady, currentRound: 0 },
+        };
+      } else {
+        return {
+          ...prev,
+          guestReady: newReady,
+          guest: prev.guest ? { ...prev.guest, ready: newReady } : null,
+        };
+      }
+    });
+
+    setBattlePlayerReady(roomId, isHost, newReady).catch((err) => {
+      console.error('[BATTLE_ARENA_ERROR]: Failed to set ready:', err);
+    });
   };
 
   // 5. Active Round Countdown & Answer Timing
@@ -684,7 +736,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       onPlayBot();
       return;
     }
-    // Fallback: simulate bot guest joining immediately
+    // Fallback: simulate bot guest joining immediately and auto-readying
     if (roomId) {
       try {
         const botGuest = {
@@ -692,6 +744,8 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
           name: 'Mantas (Bot) 🤖',
         };
         await joinBattleRoom(roomId, botGuest);
+        await setBattlePlayerReady(roomId, true, true);
+        await setBattlePlayerReady(roomId, false, true);
         setPhase('countdown');
       } catch (err) {
         console.error('[BATTLE_ARENA_ERROR]: Bot join fallback error:', err);
@@ -738,6 +792,11 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const opponentPlayer = isHost ? guestPlayer : hostPlayer;
   const opponentName = opponentPlayer?.name || (isHost ? 'Waiting for Friend...' : 'Host');
   const opponentScore = opponentPlayer?.score || 0;
+
+  const isHostReady = Boolean(room?.hostReady ?? room?.host?.ready);
+  const isGuestReady = Boolean(room?.guestReady ?? room?.guest?.ready);
+  const isMyReady = isHost ? isHostReady : isGuestReady;
+  const isOpponentReady = isHost ? isGuestReady : isHostReady;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
@@ -1002,89 +1061,286 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* 3. HOST WAITING LOBBY (Resolved state with code, WhatsApp, and Bot option) */}
+        {/* 3. LOBBY / WAITING ROOM (Pre-match & Both Players Ready Check) */}
         {/* ============================================================== */}
         {phase === 'waiting' && (
           <div className="p-6 sm:p-8 text-center flex flex-col items-center justify-center min-h-[380px]">
-            {/* Animated Waiting Radar Pulse */}
-            <div className="relative flex items-center justify-center mb-4">
-              <span className="absolute inline-flex h-20 w-20 rounded-full bg-amber-400 opacity-25 animate-ping" />
-              <span className="absolute inline-flex h-28 w-28 rounded-full bg-amber-300 opacity-15 animate-pulse" />
-              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-2xl shadow-lg">
-                <Users className="w-7 h-7" />
-              </div>
-            </div>
+            {!guestPlayer ? (
+              /* Case A: Waiting for Opponent to Join via Link or Code */
+              <>
+                {/* Animated Waiting Radar Pulse */}
+                <div className="relative flex items-center justify-center mb-4">
+                  <span className="absolute inline-flex h-20 w-20 rounded-full bg-amber-400 opacity-25 animate-ping" />
+                  <span className="absolute inline-flex h-28 w-28 rounded-full bg-amber-300 opacity-15 animate-pulse" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-2xl shadow-lg">
+                    <Users className="w-7 h-7" />
+                  </div>
+                </div>
 
-            <h3 className="text-base sm:text-lg font-black text-slate-900">
-              Waiting for opponent to join...
-            </h3>
-            <p className="text-xs text-slate-500 font-medium mt-0.5 max-w-xs">
-              Share your room invite below. The match will start automatically once your friend joins!
-            </p>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  Waiting for opponent to join...
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5 max-w-xs">
+                  Share your room invite below. Once your friend joins, both players tap Ready to start the battle!
+                </p>
 
-            {/* Room Code Badge */}
-            {roomId && (
-              <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-xs font-black text-amber-900 tracking-wider uppercase">
-                <span>Room Code:</span>
-                <span className="text-amber-800 font-mono font-bold text-sm">#{roomId.toUpperCase()}</span>
-              </div>
+                {/* Room Code Badge */}
+                {roomId && (
+                  <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-xs font-black text-amber-900 tracking-wider uppercase">
+                    <span>Room Code:</span>
+                    <span className="text-amber-800 font-mono font-bold text-sm">#{roomId.toUpperCase()}</span>
+                  </div>
+                )}
+
+                {/* Challenge URL Display Box */}
+                <div className="mt-4 w-full max-w-sm rounded-2xl bg-slate-50 border-2 border-slate-200 p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+                  <span className="text-xs font-bold text-slate-600 truncate text-left pl-1 font-mono">
+                    {getActiveShareUrl()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs flex items-center gap-1.5 shrink-0 transition cursor-pointer"
+                  >
+                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedLink ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+
+                {/* Action Buttons: Copy Invite Link & Share on WhatsApp */}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
+                  <button
+                    type="button"
+                    onClick={handleShareInvite}
+                    className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider transition active:scale-95 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>Copy Invite Link</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleShareWhatsApp}
+                    className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition active:scale-95 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Share on WhatsApp</span>
+                  </button>
+                </div>
+
+                {/* Optional Ready-in-advance Toggle */}
+                <div className="mt-4 w-full max-w-sm p-3 rounded-2xl bg-amber-50/70 border border-amber-200 flex items-center justify-between gap-3">
+                  <div className="text-left">
+                    <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                      <span>Your Status:</span>
+                      {isHostReady ? (
+                        <span className="text-emerald-700 font-bold">Ready ✓</span>
+                      ) : (
+                        <span className="text-slate-500 font-normal">Waiting</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-amber-800/80">Tap to get ready in advance</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleReady}
+                    className={`px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-xs ${
+                      isHostReady
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-amber-500 hover:bg-amber-600 text-white'
+                    }`}
+                  >
+                    {isHostReady ? '✓ Ready' : 'Ready Up ⚔️'}
+                  </button>
+                </div>
+
+                {/* Fallback & Cancel Options */}
+                <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 w-full max-w-sm">
+                  <button
+                    type="button"
+                    onClick={handlePlayAgainstBot}
+                    className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Bot className="w-4 h-4 text-amber-600" />
+                    <span>Play against Bot instead</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPhase('select_mode')}
+                    className="text-xs font-bold text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  >
+                    ← Back to Modes
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* Case B: Both Players in Room - Ready Check Lobby */
+              <>
+                {/* Header Banner */}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 border border-emerald-300 rounded-full text-xs font-black text-emerald-900 tracking-wider uppercase mb-2 animate-bounce">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                  <span>Opponent Connected!</span>
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
+                  1v1 Arena Matchup
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  Both players must tap "Ready" before the battle starts!
+                </p>
+
+                {/* Matchup Versus Card with Ready Indicators */}
+                <div className="w-full max-w-sm rounded-3xl bg-slate-900 text-white p-4 sm:p-5 shadow-2xl border-2 border-slate-800 my-4 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-emerald-500/10 pointer-events-none" />
+
+                  <div className="flex items-center justify-between gap-3 relative z-10">
+                    {/* Host Player Card */}
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <div className="relative mb-2">
+                        <div
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-lg ring-4 transition-all duration-300 ${
+                            isHostReady
+                              ? 'ring-emerald-400 ring-offset-2 ring-offset-slate-900'
+                              : 'ring-amber-400/40'
+                          }`}
+                        >
+                          {hostPlayer?.name ? hostPlayer.name.slice(0, 2).toUpperCase() : 'H'}
+                        </div>
+                        <span className="absolute -top-1.5 -right-1.5 text-sm">👑</span>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black text-white truncate max-w-full text-center">
+                        {hostPlayer?.name || 'Host'} {isHost && <span className="text-amber-300 text-[10px]">(You)</span>}
+                      </span>
+                      <div className="mt-1.5">
+                        {isHostReady ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400 text-emerald-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                            <span>✓ READY</span>
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span>⏳ WAITING</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* VS Swords Center Badge */}
+                    <div className="flex flex-col items-center justify-center shrink-0 px-2">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs sm:text-sm shadow-xl ring-4 ring-amber-300/30">
+                        VS
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400 mt-1 uppercase font-bold tracking-wider">
+                        1v1
+                      </span>
+                    </div>
+
+                    {/* Guest Player Card */}
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <div className="relative mb-2">
+                        <div
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-lg ring-4 transition-all duration-300 ${
+                            isGuestReady
+                              ? 'ring-emerald-400 ring-offset-2 ring-offset-slate-900'
+                              : 'ring-emerald-400/40'
+                          }`}
+                        >
+                          {guestPlayer?.name ? guestPlayer.name.slice(0, 2).toUpperCase() : 'G'}
+                        </div>
+                        <span className="absolute -top-1.5 -right-1.5 text-sm">⚔️</span>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black text-white truncate max-w-full text-center">
+                        {guestPlayer?.name || 'Guest'} {!isHost && <span className="text-emerald-300 text-[10px]">(You)</span>}
+                      </span>
+                      <div className="mt-1.5">
+                        {isGuestReady ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400 text-emerald-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                            <span>✓ READY</span>
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span>⏳ WAITING</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Big Interactive Ready Action Button */}
+                <div className="w-full max-w-sm space-y-2.5 mt-1">
+                  {!isMyReady ? (
+                    <button
+                      type="button"
+                      onClick={handleToggleReady}
+                      className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-sm uppercase tracking-wider transition transform active:scale-95 shadow-xl shadow-emerald-500/30 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-5 h-5 stroke-[3]" />
+                      <span>I'M READY ⚔️</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleToggleReady}
+                      className="w-full py-3.5 px-6 rounded-2xl bg-emerald-50 border-2 border-emerald-500 text-emerald-800 hover:bg-emerald-100 font-black text-sm uppercase tracking-wider transition transform active:scale-95 shadow-md cursor-pointer flex flex-col items-center justify-center gap-0.5"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                        <span>✓ YOU ARE READY!</span>
+                      </div>
+                      <span className="text-[11px] text-emerald-600 font-semibold normal-case">
+                        {isOpponentReady ? 'Both ready! Starting countdown...' : 'Waiting for opponent to tap Ready... (Tap to Cancel)'}
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Status Indicator Text */}
+                  <p className="text-[11px] font-bold text-slate-500 text-center">
+                    {isMyReady && !isOpponentReady && (
+                      <span className="text-amber-600">⏳ Waiting for {opponentName} to tap Ready...</span>
+                    )}
+                    {!isMyReady && isOpponentReady && (
+                      <span className="text-emerald-600 animate-pulse">⚡ {opponentName} is READY! Tap I'M READY to start!</span>
+                    )}
+                    {!isMyReady && !isOpponentReady && (
+                      <span>Both players must tap Ready to trigger the 3-second countdown!</span>
+                    )}
+                    {isMyReady && isOpponentReady && (
+                      <span className="text-emerald-700 font-black animate-pulse">🚀 Both ready! Starting battle...</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Footer Controls */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3 w-full max-w-sm">
+                  {isHost ? (
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+                    </button>
+                  ) : (
+                    <span className="text-xs font-mono font-bold text-slate-400">
+                      Room: #{roomId}
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhase('select_mode');
+                      setRoom(null);
+                    }}
+                    className="text-xs font-bold text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  >
+                    Leave Room
+                  </button>
+                </div>
+              </>
             )}
-
-            {/* Challenge URL Display Box */}
-            <div className="mt-4 w-full max-w-sm rounded-2xl bg-slate-50 border-2 border-slate-200 p-2.5 flex items-center justify-between gap-2 shadow-2xs">
-              <span className="text-xs font-bold text-slate-600 truncate text-left pl-1 font-mono">
-                {getActiveShareUrl()}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs flex items-center gap-1.5 shrink-0 transition cursor-pointer"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedLink ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-
-            {/* Action Buttons: Copy Invite Link & Share on WhatsApp */}
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
-              <button
-                type="button"
-                onClick={handleShareInvite}
-                className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider transition active:scale-95 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Copy Invite Link</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleShareWhatsApp}
-                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition active:scale-95 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Share on WhatsApp</span>
-              </button>
-            </div>
-
-            {/* Fallback & Cancel Options */}
-            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 w-full max-w-sm">
-              <button
-                type="button"
-                onClick={handlePlayAgainstBot}
-                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <Bot className="w-4 h-4 text-amber-600" />
-                <span>Play against Bot instead</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPhase('select_mode')}
-                className="text-xs font-bold text-slate-400 hover:text-slate-600 transition cursor-pointer"
-              >
-                ← Back to Modes
-              </button>
-            </div>
           </div>
         )}
 
