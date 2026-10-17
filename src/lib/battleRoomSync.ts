@@ -54,10 +54,22 @@ export function sanitizeRoomId(roomId?: any): string {
   return roomId.trim().replace(/^#+/, '').toUpperCase();
 }
 
-// Generate 5 questions formatted to the required schema
-export function generateBattleRoomQuestions(count: number = 5): BattleRoomQuestion[] {
-  const shuffled = [...BATTLE_QUESTIONS].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count).map((q) => {
+// Generate 5 questions formatted to the required schema deterministically by seedStr
+export function generateBattleRoomQuestions(count: number = 5, seedStr: string = 'DEFAULT'): BattleRoomQuestion[] {
+  let seed = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+  }
+  const seededRandom = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const copy = [...BATTLE_QUESTIONS];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, count).map((q) => {
     const answerIdx = q.options.findIndex((opt) => opt.lt === q.correctAnswer);
     return {
       id: q.id,
@@ -107,6 +119,11 @@ export function mapServerRoomToDoc(data: any): BattleRoomDoc {
     }
   }
 
+  // If questions are missing or empty, automatically populate deterministically by roomId
+  const questions = Array.isArray(data.questions) && data.questions.length > 0
+    ? data.questions
+    : generateBattleRoomQuestions(5, roomId);
+
   return {
     roomId,
     status: (data.status === 'finished' ? 'completed' : data.status) || 'waiting',
@@ -115,7 +132,7 @@ export function mapServerRoomToDoc(data: any): BattleRoomDoc {
     countdown: typeof data.countdown === 'number' ? data.countdown : 3,
     currentRound: typeof data.currentRound === 'number' ? data.currentRound : 0,
     tier: data.tier || 'SIDABRINĖ LYGA',
-    questions: Array.isArray(data.questions) ? data.questions : [],
+    questions,
     createdAt: data.createdAt || Date.now(),
     countdownStartTime: data.countdownStartTime ?? null,
   };
@@ -154,7 +171,7 @@ export async function createBattleRoom(
 ): Promise<BattleRoomDoc> {
   const cleanId = customRoomId ? customRoomId.trim().replace(/^#+/, '').toUpperCase() : Math.random().toString(36).substring(2, 8).toUpperCase();
   const roomId = cleanId;
-  const questions = generateBattleRoomQuestions(5);
+  const questions = generateBattleRoomQuestions(5, roomId);
 
   const roomDoc: BattleRoomDoc = {
     roomId,
@@ -179,15 +196,14 @@ export async function createBattleRoom(
 
   // Firestore sync: fire non-blockingly so room creation is never stalled
   if (db && isFirebaseConfigured) {
-    const roomRef = doc(db, 'battle_rooms', roomId);
-    setDoc(roomRef, {
+    const payload = {
       ...sanitizeForFirestore(roomDoc),
       status: 'waiting',
       guest: null,
       createdAt: serverTimestamp(),
-    }).catch((err) => {
-      console.warn('[BATTLE_SYNC_FIRESTORE_WARN]: Background room create warning:', err);
-    });
+    };
+    setDoc(doc(db, 'battle_rooms', roomId), payload).catch(() => {});
+    setDoc(doc(db, 'battles', roomId), payload).catch(() => {});
   }
 
   // Also sync to server API route /api/battle with a 3-second timeout
@@ -233,7 +249,11 @@ export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | nul
     try {
       const snapPromise = getDoc(doc(db, 'battle_rooms', cleanId));
       const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500));
-      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+      let snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+      if (!snap || !snap.exists || !snap.exists()) {
+        const snapPromise2 = getDoc(doc(db, 'battles', cleanId));
+        snap = (await Promise.race([snapPromise2, timeoutPromise])) as any;
+      }
       if (snap && snap.exists && snap.exists()) {
         const mapped = mapServerRoomToDoc({ id: snap.id, ...snap.data() });
         saveLocalRoom(mapped);
@@ -284,12 +304,13 @@ export async function joinBattleRoom(
 
   // DO NOT await updateDoc synchronously. Fire Firestore updateDoc non-blockingly with .catch(() => {})
   if (db && isFirebaseConfigured && cleanId) {
-    const roomRef = doc(db, 'battle_rooms', cleanId);
-    updateDoc(roomRef, {
+    const joinPayload = {
       guest: sanitizeForFirestore(guestData),
       status: 'ready',
       countdown: 3,
-    }).catch(() => {});
+    };
+    updateDoc(doc(db, 'battle_rooms', cleanId), joinPayload).catch(() => {});
+    updateDoc(doc(db, 'battles', cleanId), joinPayload).catch(() => {});
   }
 
   // Send POST /api/battle with { action: 'join', roomId: cleanId, guestUser: guestData } wrapped in a 2500ms timeout
@@ -336,7 +357,7 @@ export async function joinBattleRoom(
         countdown: 3,
         currentRound: 0,
         tier: 'SIDABRINĖ LYGA',
-        questions: generateBattleRoomQuestions(5),
+        questions: generateBattleRoomQuestions(5, cleanId),
         createdAt: Date.now(),
       };
 
@@ -357,6 +378,7 @@ export async function startBattleRoomMatch(roomId: string): Promise<void> {
 
   if (db && isFirebaseConfigured) {
     updateDoc(doc(db, 'battle_rooms', cleanId), { status: 'in_progress' }).catch(() => {});
+    updateDoc(doc(db, 'battles', cleanId), { status: 'in_progress' }).catch(() => {});
   }
 
   try {
@@ -412,6 +434,7 @@ export async function updateBattlePlayerScore(
       updates[`${fieldPrefix}.lastAnswerCorrect`] = isCorrect;
     }
     updateDoc(doc(db, 'battle_rooms', cleanId), updates).catch(() => {});
+    updateDoc(doc(db, 'battles', cleanId), updates).catch(() => {});
   }
 
   try {
@@ -445,6 +468,7 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
 
   if (db && isFirebaseConfigured) {
     updateDoc(doc(db, 'battle_rooms', cleanId), { status: 'completed' }).catch(() => {});
+    updateDoc(doc(db, 'battles', cleanId), { status: 'completed' }).catch(() => {});
   }
 
   try {
@@ -500,9 +524,10 @@ export function listenToBattleRoom(
 
   // 1. Live Firestore onSnapshot Listener
   if (db && isFirebaseConfigured) {
+    const firestoreDb = db;
     try {
       unsubFirestore = onSnapshot(
-        doc(db, 'battle_rooms', cleanId),
+        doc(firestoreDb, 'battle_rooms', cleanId),
         (snap) => {
           if (snap.exists()) {
             const data = snap.data();
@@ -511,12 +536,26 @@ export function listenToBattleRoom(
             onUpdate(mapped);
           }
         },
-        (err) => {
-          console.error('[BATTLE_SYNC_FIRESTORE_SNAPSHOT_ERROR]:', err);
+        () => {
+          // Fallback listener on 'battles' collection
+          try {
+            unsubFirestore = onSnapshot(
+              doc(firestoreDb, 'battles', cleanId),
+              (snap2) => {
+                if (snap2.exists()) {
+                  const data2 = snap2.data();
+                  const mapped2 = mapServerRoomToDoc({ id: snap2.id, ...data2 });
+                  saveLocalRoom(mapped2);
+                  onUpdate(mapped2);
+                }
+              },
+              () => {}
+            );
+          } catch {}
         }
       );
     } catch (err) {
-      console.error('[BATTLE_SYNC_FIRESTORE_INIT_ERROR]:', err);
+      console.warn('[BATTLE_SYNC_FIRESTORE_INIT_WARN]:', err);
     }
   }
 

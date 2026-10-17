@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BattleRoom, BattlePlayer, BattleAnswer, calculateAnswerPoints } from '@/lib/battleSync';
+import { generateBattleRoomQuestions } from '@/lib/battleRoomSync';
 
 export const runtime = 'nodejs';
 
 // Server-side in-memory active battle rooms registry
 // Accessible across any devices/browsers playing together
-const serverRooms = new Map<string, any>();
+const serverRooms: Map<string, any> = (globalThis as any).__labasServerRooms || new Map<string, any>();
+(globalThis as any).__labasServerRooms = serverRooms;
 
 const MAX_SERVER_ROOMS = 500;
 const ROOM_ID_REGEX = /^[A-Z0-9-]{3,16}$/;
@@ -100,8 +102,11 @@ export async function POST(request: NextRequest) {
           countdown: 3,
           currentRound: 0,
           tier: 'SIDABRINĖ LYGA',
+          questions: generateBattleRoomQuestions(5, cleanId),
           createdAt: Date.now(),
         };
+      } else if (!room.questions || !Array.isArray(room.questions) || room.questions.length === 0) {
+        room.questions = generateBattleRoomQuestions(5, cleanId);
       }
 
       // Real-time Battle Room Schema: update guest and flip status to 'ready'

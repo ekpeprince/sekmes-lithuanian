@@ -31,6 +31,7 @@ import {
   updateBattlePlayerScore,
   listenToBattleRoom,
   sanitizeRoomId,
+  generateBattleRoomQuestions,
 } from '@/lib/battleRoomSync';
 
 interface RealtimeBattleModalProps {
@@ -317,11 +318,12 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       setCountdown((prev) => {
         if (prev <= 1) {
           if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-          // Only after the 3-second countdown reaches 0 does the room switch to status = 'in_progress'
-          if (roomId && isHost) {
+          // When the countdown reaches 0, BOTH Host and Guest should call startBattleRoomMatch(roomId) AND locally update status to 'in_progress'
+          if (roomId) {
             startBattleRoomMatch(roomId).catch((err) => {
               console.error('[BATTLE_ARENA_ERROR]: Error starting match:', err);
             });
+            setRoom((prevRoom) => (prevRoom ? { ...prevRoom, status: 'in_progress' } : prevRoom));
           }
           sounds.playSuccess();
           haptics.victory();
@@ -698,7 +700,10 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentQ = room?.questions && room.questions[currentRound];
+  const roomQuestions = (room?.questions && room.questions.length > 0)
+    ? room.questions
+    : generateBattleRoomQuestions(5, roomId || 'DEFAULT');
+  const currentQ = roomQuestions[currentRound] || roomQuestions[0];
   const hostPlayer = room?.host;
   const guestPlayer = room?.guest;
 
@@ -1138,9 +1143,9 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* 5. ACTIVE SYNCHRONIZED 5-ROUND RAPID BATTLE (Guarded: in_progress & guest present) */}
+        {/* 5. ACTIVE SYNCHRONIZED 5-ROUND RAPID BATTLE */}
         {/* ============================================================== */}
-        {phase === 'battle' && room && room.status === 'in_progress' && room.guest && currentQ && (
+        {phase === 'battle' && currentQ && (
           <div className="p-4 sm:p-6 flex flex-col">
             {/* Split View Scoreboard */}
             <div className="grid grid-cols-3 items-center bg-slate-900 text-white rounded-2xl p-3.5 shadow-md mb-4 border border-slate-800">

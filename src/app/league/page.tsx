@@ -65,6 +65,14 @@ function LeagueContent() {
     }
   }, [battleParam]);
 
+  useEffect(() => {
+    if (isGuestInvite && roomIdParam) {
+      setRealtimeRoomId(roomIdParam);
+      setIsRealtimeHost(false);
+      setIsRealtimeBattleOpen(true);
+    }
+  }, [isGuestInvite, roomIdParam]);
+
   // Periodically refresh countdown
   useEffect(() => {
     const interval = setInterval(() => {
@@ -690,14 +698,17 @@ function LeagueContent() {
 
       {/* Real-time 1v1 Battle Room Modal (Live Room Lobby & Synchronized Play) */}
       <RealtimeBattleModal
-        isOpen={isRealtimeBattleOpen || isGuestInvite}
+        isOpen={isRealtimeBattleOpen}
         onClose={() => {
           setIsRealtimeBattleOpen(false);
           setRealtimeRoomId(null);
+          if (typeof window !== 'undefined' && window.location.search) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
         }}
         tierName={activeTierConfig.name}
-        initialRoomId={roomIdParam || realtimeRoomId}
-        isHostInitial={!isGuestInvite && isRealtimeHost}
+        initialRoomId={realtimeRoomId || roomIdParam}
+        isHostInitial={isRealtimeHost}
         onPlayQuickMatch={() => {
           setIsRealtimeBattleOpen(false);
           setIsBattleOpen(true);
