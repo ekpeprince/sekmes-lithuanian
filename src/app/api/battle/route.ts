@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BattleRoom, BattlePlayer, BattleAnswer, calculateAnswerPoints } from '@/lib/battleSync';
 import { generateBattleRoomQuestions } from '@/lib/battleRoomSync';
+import { db, isFirebaseConfigured } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export const runtime = 'nodejs';
 
-// Server-side in-memory active battle rooms registry
-// Accessible across any devices/browsers playing together
+// Server-side local memory cache
 const serverRooms: Map<string, any> = (globalThis as any).__labasServerRooms || new Map<string, any>();
 (globalThis as any).__labasServerRooms = serverRooms;
 
 const MAX_SERVER_ROOMS = 500;
 const ROOM_ID_REGEX = /^[A-Z0-9-]{3,16}$/;
 
-// Clean up rooms older than 2 hours periodically or enforce maximum capacity
+function sanitizeRoomId(id?: any): string {
+  if (!id || typeof id !== 'string') return '';
+  return id.trim().replace(/^#+/, '').toUpperCase();
+}
+
+// Clean up rooms older than 2 hours periodically
 function cleanupOldRooms() {
   const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
   for (const [id, r] of serverRooms.entries()) {
@@ -21,7 +27,6 @@ function cleanupOldRooms() {
     }
   }
 
-  // If still exceeding capacity, prune oldest rooms
   if (serverRooms.size > MAX_SERVER_ROOMS) {
     const sorted = Array.from(serverRooms.entries()).sort(
       (a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0)
@@ -33,9 +38,32 @@ function cleanupOldRooms() {
   }
 }
 
-function sanitizeRoomId(id?: any): string {
-  if (!id || typeof id !== 'string') return '';
-  return id.trim().replace(/^#+/, '').toUpperCase();
+// Persistent Firestore helpers to eliminate serverless instance isolation
+async function getPersistedRoom(roomId: string): Promise<any | null> {
+  if (db && isFirebaseConfigured) {
+    try {
+      const snap = await getDoc(doc(db, 'battle_rooms', roomId));
+      if (snap.exists()) {
+        const data = snap.data();
+        serverRooms.set(roomId, data);
+        return data;
+      }
+    } catch (err) {
+      console.warn('[API_BATTLE_FIRESTORE_GET_WARN]:', err);
+    }
+  }
+  return serverRooms.get(roomId) || null;
+}
+
+async function persistRoom(roomId: string, room: any): Promise<void> {
+  serverRooms.set(roomId, room);
+  if (db && isFirebaseConfigured) {
+    try {
+      await setDoc(doc(db, 'battle_rooms', roomId), room, { merge: true });
+    } catch (err) {
+      console.warn('[API_BATTLE_FIRESTORE_SET_WARN]:', err);
+    }
+  }
 }
 
 // GET /api/battle?roomId=ABC-123
@@ -49,7 +77,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid or missing roomId parameter' }, { status: 400 });
   }
 
-  const room = serverRooms.get(roomId);
+  const room = await getPersistedRoom(roomId);
   if (!room) {
     return NextResponse.json({ error: 'Room not found' }, { status: 404 });
   }
@@ -78,7 +106,7 @@ export async function POST(request: NextRequest) {
       if (!room.status) room.status = 'waiting';
 
       cleanupOldRooms();
-      serverRooms.set(cleanId, room);
+      await persistRoom(cleanId, room);
       return NextResponse.json(room);
     }
 
@@ -91,7 +119,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid join payload' }, { status: 400 });
       }
 
-      let room = serverRooms.get(cleanId);
+      let room = await getPersistedRoom(cleanId);
       if (!room) {
         room = {
           id: cleanId,
@@ -109,7 +137,6 @@ export async function POST(request: NextRequest) {
         room.questions = generateBattleRoomQuestions(5, cleanId);
       }
 
-      // Real-time Battle Room Schema: update guest and flip status to 'ready'
       const guestData = {
         id: String(guestUser.id).slice(0, 50),
         name: String(guestUser.name || 'Player 2').slice(0, 30),
@@ -122,7 +149,6 @@ export async function POST(request: NextRequest) {
       room.status = 'ready';
       room.countdown = 3;
 
-      // Backwards-compatible players map
       if (!room.players) {
         room.players = {};
       }
@@ -138,7 +164,7 @@ export async function POST(request: NextRequest) {
         isHost: false,
       };
 
-      serverRooms.set(cleanId, room);
+      await persistRoom(cleanId, room);
       return NextResponse.json(room);
     }
 
@@ -149,7 +175,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
       }
 
-      const room = serverRooms.get(roomId);
+      const room = await getPersistedRoom(roomId);
       if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
       }
@@ -158,11 +184,11 @@ export async function POST(request: NextRequest) {
       room.currentRound = 0;
       room.roundStartTime = Date.now();
 
-      serverRooms.set(roomId, room);
+      await persistRoom(roomId, room);
       return NextResponse.json(room);
     }
 
-    // 4. UPDATE LIVE PLAYER SCORE (battleRoomSync)
+    // 4. UPDATE LIVE PLAYER SCORE
     if (action === 'score' || action === 'updateScore' || (action === 'answer' && body.isHost !== undefined)) {
       const { roomId, isHost, newScore, newRound, isCorrect } = body;
       const cleanRoomId = sanitizeRoomId(roomId);
@@ -171,7 +197,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
       }
 
-      const room = serverRooms.get(cleanRoomId);
+      const room = await getPersistedRoom(cleanRoomId);
       if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
       }
@@ -190,7 +216,7 @@ export async function POST(request: NextRequest) {
         room.status = 'completed';
       }
 
-      serverRooms.set(cleanRoomId, room);
+      await persistRoom(cleanRoomId, room);
       return NextResponse.json(room);
     }
 
@@ -201,17 +227,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Missing or invalid roomId' }, { status: 400 });
       }
 
-      const room = serverRooms.get(roomId);
+      const room = await getPersistedRoom(roomId);
       if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
       }
 
       room.status = 'completed';
-      serverRooms.set(roomId, room);
+      await persistRoom(roomId, room);
       return NextResponse.json(room);
     }
 
-    // 6. SUBMIT ANSWER (Server-Authoritative Answer Verification)
+    // 6. SUBMIT ANSWER
     if (action === 'answer') {
       const { roomId, playerId, roundIndex, selected, correctAnswer, timeMs } = body;
       const cleanRoomId = sanitizeRoomId(roomId);
@@ -220,32 +246,30 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
       }
 
-      const room = serverRooms.get(cleanRoomId);
+      const room = await getPersistedRoom(cleanRoomId);
       if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
       }
 
-      const player = room.players[playerId];
+      const player = room.players?.[playerId];
       if (!player) {
         return NextResponse.json(room);
       }
 
-      // If player already answered this round, do not overwrite
-      if (player.answers[roundIndex]) {
+      if (player.answers?.[roundIndex]) {
         return NextResponse.json(room);
       }
 
-      // Security: Validate answer authoritatively against the stored question
-      const storedQuestion = room.questions[roundIndex];
+      const storedQuestion = room.questions?.[roundIndex];
       const authoritativeCorrectAnswer = storedQuestion?.correctAnswer;
       const isCorrect = authoritativeCorrectAnswer
         ? selected === authoritativeCorrectAnswer
         : selected === correctAnswer;
 
       const safeTimeMs = Math.min(Math.max(Number(timeMs) || 15000, 500), 15000);
-      const currentStreak = isCorrect ? player.streak + 1 : 0;
+      const currentStreak = isCorrect ? (player.streak || 0) + 1 : 0;
       const maxStreak = Math.max(player.maxStreak || 0, currentStreak);
-      const points = calculateAnswerPoints(isCorrect, safeTimeMs, player.streak);
+      const points = calculateAnswerPoints(isCorrect, safeTimeMs, player.streak || 0);
 
       const answer: BattleAnswer = {
         selected: String(selected || '').slice(0, 100),
@@ -254,12 +278,13 @@ export async function POST(request: NextRequest) {
         points,
       };
 
-      player.score += points;
+      player.score = (player.score || 0) + points;
       player.streak = currentStreak;
       player.maxStreak = maxStreak;
+      if (!player.answers) player.answers = {};
       player.answers[roundIndex] = answer;
 
-      serverRooms.set(cleanRoomId, room);
+      await persistRoom(cleanRoomId, room);
       return NextResponse.json(room);
     }
 
@@ -272,17 +297,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid roomId' }, { status: 400 });
       }
 
-      const room = serverRooms.get(cleanRoomId);
+      const room = await getPersistedRoom(cleanRoomId);
       if (!room) {
         return NextResponse.json({ error: 'Room not found' }, { status: 404 });
       }
 
-      // Idempotency check: don't double advance
       if (room.currentRound >= nextRound) {
         return NextResponse.json(room);
       }
 
-      const isFinished = nextRound >= room.questions.length;
+      const isFinished = nextRound >= (room.questions?.length || 5);
       let winnerId: string | undefined = undefined;
 
       if (isFinished) {
@@ -302,7 +326,7 @@ export async function POST(request: NextRequest) {
         room.winnerId = winnerId;
       }
 
-      serverRooms.set(cleanRoomId, room);
+      await persistRoom(cleanRoomId, room);
       return NextResponse.json(room);
     }
 

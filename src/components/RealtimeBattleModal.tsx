@@ -272,24 +272,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     const unsubscribe = listenToBattleRoom(roomId, (updatedRoom) => {
       if (!updatedRoom) return;
 
-      setRoom((prev) => {
-        // If guest has already joined locally, don't let a stale poller response wipe out the guest or revert status
-        if (prev?.guest && !updatedRoom.guest) {
-          return {
-            ...updatedRoom,
-            guest: prev.guest,
-            status: updatedRoom.status === 'waiting' ? (prev.status || 'ready') : updatedRoom.status,
-          };
-        }
-        if (prev?.status === 'in_progress' && updatedRoom.status !== 'completed') {
-          return {
-            ...updatedRoom,
-            status: 'in_progress',
-            guest: updatedRoom.guest || prev.guest,
-          };
-        }
-        return updatedRoom;
-      });
+      setRoom(updatedRoom);
 
       // On the Host device (isHost === true):
       // When updatedRoom.guest is non-null, immediately alert host & transition to countdown

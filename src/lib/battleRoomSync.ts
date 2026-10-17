@@ -16,7 +16,7 @@ async function ensureAuthSession(): Promise<void> {
   try {
     await signInAnonymously(auth);
   } catch (err) {
-    console.warn('[BATTLE_SYNC_AUTH_WARN]: Anonymous auth not enabled or failed:', err);
+    console.warn('[BATTLE_SYNC_AUTH_WARN]: Anonymous auth notice:', err);
   }
 }
 
@@ -172,7 +172,7 @@ function getLocalRoom(roomId: string): BattleRoomDoc | null {
 }
 
 /**
- * 1. Create a new Battle Room (Firestore + Server API Route)
+ * 1. Create a new Battle Room (Canonical Store: Firestore battle_rooms/{roomId})
  */
 export async function createBattleRoom(
   hostUser: { id: string; name: string },
@@ -203,10 +203,10 @@ export async function createBattleRoom(
     createdAt: Date.now(),
   };
 
-  // Immediate local cache
+  // Immediate local cache for instant UI feedback
   saveLocalRoom(roomDoc);
 
-  // Firestore sync: fire non-blockingly so room creation is never stalled
+  // Canonical Firestore write
   if (db && isFirebaseConfigured) {
     const payload = {
       id: roomId,
@@ -215,43 +215,16 @@ export async function createBattleRoom(
       guest: null,
       createdAt: Date.now(),
     };
-    setDoc(doc(db, 'battle_rooms', roomId), payload, { merge: true }).catch(() => {});
-    setDoc(doc(db, 'battles', roomId), payload, { merge: true }).catch(() => {});
-  }
-
-  // Also sync to server API route /api/battle with a 3-second timeout
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timeoutId = controller ? setTimeout(() => controller.abort(), 3000) : null;
-  try {
-    const res = await fetch('/api/battle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller?.signal,
-      body: JSON.stringify({
-        action: 'create',
-        room: {
-          id: roomId,
-          ...roomDoc,
-        },
-      }),
+    await setDoc(doc(db, 'battle_rooms', roomId), payload, { merge: true }).catch((err) => {
+      console.warn('[BATTLE_SYNC_WARN]: Firestore room creation error:', err);
     });
-    if (timeoutId) clearTimeout(timeoutId);
-    if (res.ok) {
-      const roomData = await res.json();
-      const mapped = mapServerRoomToDoc(roomData);
-      saveLocalRoom(mapped);
-      return mapped;
-    }
-  } catch (err) {
-    if (timeoutId) clearTimeout(timeoutId);
-    console.warn('[BATTLE_SYNC_WARN]: Server room create warning:', err);
   }
 
   return roomDoc;
 }
 
 /**
- * 2. Fetch Battle Room by roomId (Firestore + Server API Route)
+ * 2. Fetch Battle Room by roomId (Canonical Store: Firestore battle_rooms/{roomId})
  */
 export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | null> {
   await ensureAuthSession();
@@ -259,50 +232,28 @@ export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | nul
   const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   if (!cleanId) return null;
 
-  // Try Firestore first with 2.5s timeout race
+  // Direct Firestore fetch with 3s timeout guard
   if (db && isFirebaseConfigured) {
     try {
       const snapPromise = getDoc(doc(db, 'battle_rooms', cleanId));
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500));
-      let snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
-      if (!snap || !snap.exists || !snap.exists()) {
-        const snapPromise2 = getDoc(doc(db, 'battles', cleanId));
-        snap = (await Promise.race([snapPromise2, timeoutPromise])) as any;
-      }
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+
       if (snap && snap.exists && snap.exists()) {
         const mapped = mapServerRoomToDoc({ id: snap.id, ...snap.data() });
         saveLocalRoom(mapped);
         return mapped;
       }
     } catch (err) {
-      console.warn('[BATTLE_SYNC_FIRESTORE_WARN]: Failed to get room from Firestore:', err);
+      console.warn('[BATTLE_SYNC_WARN]: Firestore getDoc error:', err);
     }
-  }
-
-  // Fallback to Server API route /api/battle with 2.5s timeout
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timeoutId = controller ? setTimeout(() => controller.abort(), 2500) : null;
-  try {
-    const res = await fetch(`/api/battle?roomId=${cleanId}`, {
-      signal: controller?.signal,
-    });
-    if (timeoutId) clearTimeout(timeoutId);
-    if (res.ok) {
-      const roomData = await res.json();
-      const mapped = mapServerRoomToDoc(roomData);
-      saveLocalRoom(mapped);
-      return mapped;
-    }
-  } catch (err) {
-    if (timeoutId) clearTimeout(timeoutId);
-    console.warn('[BATTLE_SYNC_WARN]: Failed to get battle room from server:', err);
   }
 
   return getLocalRoom(cleanId);
 }
 
 /**
- * 3. Guest Join: Updates Firestore directly with guest and status: 'ready', and notifies /api/battle
+ * 3. Guest Join: Updates Firestore battle_rooms/{roomId} with guest and status: 'ready'
  */
 export async function joinBattleRoom(
   roomId: string,
@@ -319,45 +270,19 @@ export async function joinBattleRoom(
     currentRound: 0,
   };
 
-  // Use setDoc with { merge: true } so document creation or update never fails
+  // Canonical Firestore update
   if (db && isFirebaseConfigured && cleanId) {
     const joinPayload = {
       guest: sanitizeForFirestore(guestData),
       status: 'ready',
       countdown: 3,
     };
-    setDoc(doc(db, 'battle_rooms', cleanId), joinPayload, { merge: true }).catch(() => {});
-    setDoc(doc(db, 'battles', cleanId), joinPayload, { merge: true }).catch(() => {});
-  }
-
-  // Send POST /api/battle with { action: 'join', roomId: cleanId, guestUser: guestData } wrapped in a 2500ms timeout
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timeoutId = controller ? setTimeout(() => controller.abort(), 2500) : null;
-  try {
-    const res = await fetch('/api/battle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller?.signal,
-      body: JSON.stringify({
-        action: 'join',
-        roomId: cleanId,
-        guestUser: guestData,
-      }),
+    setDoc(doc(db, 'battle_rooms', cleanId), joinPayload, { merge: true }).catch((err) => {
+      console.warn('[BATTLE_SYNC_WARN]: Firestore join error:', err);
     });
-    if (timeoutId) clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const roomData = await res.json();
-      const mapped = mapServerRoomToDoc(roomData);
-      saveLocalRoom(mapped);
-      return mapped;
-    }
-  } catch (err) {
-    if (timeoutId) clearTimeout(timeoutId);
-    console.warn('[BATTLE_SYNC_WARN]: Server join request timed out or failed:', err);
   }
 
-  // Return the updated room payload immediately so the guest UI never hangs
+  // Update local cache & return immediately so guest UI transitions without delay
   const existing = getLocalRoom(cleanId);
   const updatedRoom: BattleRoomDoc = existing
     ? {
@@ -383,7 +308,7 @@ export async function joinBattleRoom(
 }
 
 /**
- * 4. Start Match: POST /api/battle with action: 'start' and update Firestore
+ * 4. Start Match: Updates status: 'in_progress' in Firestore
  */
 export async function startBattleRoomMatch(roomId: string): Promise<void> {
   const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
@@ -394,26 +319,14 @@ export async function startBattleRoomMatch(roomId: string): Promise<void> {
   }
 
   if (db && isFirebaseConfigured) {
-    setDoc(doc(db, 'battle_rooms', cleanId), { status: 'in_progress' }, { merge: true }).catch(() => {});
-    setDoc(doc(db, 'battles', cleanId), { status: 'in_progress' }, { merge: true }).catch(() => {});
-  }
-
-  try {
-    await fetch('/api/battle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'start',
-        roomId: cleanId,
-      }),
+    setDoc(doc(db, 'battle_rooms', cleanId), { status: 'in_progress' }, { merge: true }).catch((err) => {
+      console.warn('[BATTLE_SYNC_WARN]: Firestore start match error:', err);
     });
-  } catch (err) {
-    console.error('[BATTLE_SYNC_ERROR]: Failed to start match on server:', err);
   }
 }
 
 /**
- * 5. Update live player score: updates Firestore and /api/battle
+ * 5. Update live player score in Firestore
  */
 export async function updateBattlePlayerScore(
   roomId: string,
@@ -450,30 +363,14 @@ export async function updateBattlePlayerScore(
     if (isCorrect !== undefined) {
       updates[`${fieldPrefix}.lastAnswerCorrect`] = isCorrect;
     }
-    setDoc(doc(db, 'battle_rooms', cleanId), updates, { merge: true }).catch(() => {});
-    setDoc(doc(db, 'battles', cleanId), updates, { merge: true }).catch(() => {});
-  }
-
-  try {
-    await fetch('/api/battle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'score',
-        roomId: cleanId,
-        isHost,
-        newScore,
-        newRound,
-        isCorrect,
-      }),
+    setDoc(doc(db, 'battle_rooms', cleanId), updates, { merge: true }).catch((err) => {
+      console.warn('[BATTLE_SYNC_WARN]: Firestore score update error:', err);
     });
-  } catch (err) {
-    console.error('[BATTLE_SYNC_ERROR]: Failed to update score on server:', err);
   }
 }
 
 /**
- * 6. Set room completed: updates Firestore and /api/battle
+ * 6. Set room completed in Firestore
  */
 export async function setBattleRoomCompleted(roomId: string): Promise<void> {
   const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
@@ -484,26 +381,15 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
   }
 
   if (db && isFirebaseConfigured) {
-    setDoc(doc(db, 'battle_rooms', cleanId), { status: 'completed' }, { merge: true }).catch(() => {});
-    setDoc(doc(db, 'battles', cleanId), { status: 'completed' }, { merge: true }).catch(() => {});
-  }
-
-  try {
-    await fetch('/api/battle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'complete',
-        roomId: cleanId,
-      }),
+    setDoc(doc(db, 'battle_rooms', cleanId), { status: 'completed' }, { merge: true }).catch((err) => {
+      console.warn('[BATTLE_SYNC_WARN]: Firestore complete error:', err);
     });
-  } catch (err) {
-    console.error('[BATTLE_SYNC_ERROR]: Failed to set room completed on server:', err);
   }
 }
 
 /**
- * 7. Active Polling & Firestore Real-Time Listener
+ * 7. Live Firestore onSnapshot Real-Time Listener (sub-50ms WebSocket push)
+ * No polling overhead or serverless memory volatility!
  */
 export function listenToBattleRoom(
   roomId: string,
@@ -512,7 +398,7 @@ export function listenToBattleRoom(
   const cleanId = roomId.trim().replace(/^#+/, '').toUpperCase();
   let unsubFirestore: Unsubscribe | null = null;
 
-  // Initial local state
+  // Immediate local state
   const initial = getLocalRoom(cleanId);
   if (initial) {
     onUpdate(initial);
@@ -539,7 +425,7 @@ export function listenToBattleRoom(
     window.addEventListener('battle_room_local_sync', handleCustomSync);
   }
 
-  // 1. Live Firestore onSnapshot Listener with ensureAuthSession
+  // Canonical Live Firestore onSnapshot Listener
   if (db && isFirebaseConfigured) {
     const firestoreDb = db;
     ensureAuthSession()
@@ -556,22 +442,8 @@ export function listenToBattleRoom(
                 onUpdate(mapped);
               }
             },
-            () => {
-              // Fallback listener on 'battles' collection
-              try {
-                unsubFirestore = onSnapshot(
-                  doc(firestoreDb, 'battles', cleanId),
-                  (snap2) => {
-                    if (snap2.exists()) {
-                      const data2 = snap2.data();
-                      const mapped2 = mapServerRoomToDoc({ id: snap2.id, ...data2 });
-                      saveLocalRoom(mapped2);
-                      onUpdate(mapped2);
-                    }
-                  },
-                  () => {}
-                );
-              } catch {}
+            (err) => {
+              console.warn('[BATTLE_SYNC_FIRESTORE_SNAPSHOT_WARN]:', err);
             }
           );
         } catch (err) {
@@ -580,29 +452,7 @@ export function listenToBattleRoom(
       });
   }
 
-  // 2. Active 1000ms Poller on /api/battle
-  const fetchRoom = async () => {
-    try {
-      const res = await fetch(`/api/battle?roomId=${cleanId}`);
-      if (res.ok) {
-        const roomData = await res.json();
-        const mapped = mapServerRoomToDoc(roomData);
-        saveLocalRoom(mapped);
-        onUpdate(mapped);
-      }
-    } catch (err) {
-      console.error('[BATTLE_SYNC_POLL_ERROR]:', err);
-    }
-  };
-
-  // Immediate poll on mount
-  fetchRoom();
-
-  // 1000ms active polling
-  const pollTimer = setInterval(fetchRoom, 1000);
-
   return () => {
-    clearInterval(pollTimer);
     if (unsubFirestore) {
       unsubFirestore();
     }
