@@ -67,8 +67,10 @@ function LeagueContent() {
 
   useEffect(() => {
     if (isGuestInvite && roomIdParam) {
-      setRealtimeRoomId(roomIdParam);
-      setIsRealtimeHost(false);
+      const cleanId = roomIdParam.trim().replace(/^#+/, '').toUpperCase();
+      const isActuallyHost = typeof window !== 'undefined' && localStorage.getItem(`battle_host_${cleanId}`) === 'true';
+      setRealtimeRoomId(cleanId);
+      setIsRealtimeHost(isActuallyHost);
       setIsRealtimeBattleOpen(true);
     }
   }, [isGuestInvite, roomIdParam]);

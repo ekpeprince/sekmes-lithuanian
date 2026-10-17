@@ -56,16 +56,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid or missing roomId parameter' }, { status: 400 });
   }
 
-  const room = await getPersistedRoom(roomId);
+  let room = await getPersistedRoom(roomId);
   if (!room) {
-    return NextResponse.json({ error: 'Room not found' }, {
-      status: 404,
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    });
+    room = await getOrCreateRoom(roomId);
+    await persistRoom(roomId, room);
   }
 
   return NextResponse.json(room, {

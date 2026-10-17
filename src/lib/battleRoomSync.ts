@@ -1,3 +1,4 @@
+import mqtt, { MqttClient } from 'mqtt';
 import { BATTLE_QUESTIONS } from '@/data/battleQuestions';
 
 export interface BattleRoomPlayer {
@@ -44,7 +45,7 @@ export function sanitizeRoomId(roomId?: any): string {
 
 // Global pub/sub topic for cross-device real-time sync
 export function getRoomTopic(roomId: string): string {
-  return `sekmes_1v1_${sanitizeRoomId(roomId).toLowerCase()}`;
+  return `sekmes/battle/${sanitizeRoomId(roomId).toLowerCase()}`;
 }
 
 // Generate 5 questions formatted to the required schema deterministically by seedStr
@@ -159,77 +160,54 @@ function getLocalRoom(roomId: string): BattleRoomDoc | null {
   }
 }
 
-// Broadcast event to public pub/sub relay and server API
-export async function broadcastRoomEvent(roomId: string, eventData: any): Promise<void> {
-  const cleanId = sanitizeRoomId(roomId);
-  if (!cleanId) return;
+// ============================================================================
+// MQTT Connection Management (EMQX & HiveMQ ultra-fast WebSocket relays)
+// ============================================================================
+const BROKER_URLS = [
+  'wss://broker.emqx.io:8084/mqtt',
+  'wss://broker.hivemq.com:8884/mqtt',
+];
 
-  const topic = getRoomTopic(cleanId);
-  const payload = {
-    ...eventData,
-    roomId: cleanId,
-    timestamp: Date.now(),
-  };
+let globalMqttClient: MqttClient | null = null;
+let currentBrokerIdx = 0;
+const subscribedTopics = new Set<string>();
 
-  // 1. ntfy.sh public pub/sub relay (instant cross-device delivery worldwide)
+function getOrCreateMqttClient(): MqttClient | null {
+  if (typeof window === 'undefined') return null;
+
+  if (globalMqttClient && !globalMqttClient.disconnecting) {
+    return globalMqttClient;
+  }
+
   try {
-    fetch(`https://ntfy.sh/${topic}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
-  } catch {}
+    const brokerUrl = BROKER_URLS[currentBrokerIdx % BROKER_URLS.length];
+    const client = mqtt.connect(brokerUrl, {
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 2000,
+      keepalive: 30,
+      clientId: `sekmes_${Math.random().toString(36).substring(2, 10)}`,
+    });
 
-  // 2. Server API route synchronization
-  try {
-    fetch('/api/battle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
-  } catch {}
-}
+    client.on('connect', () => {
+      // Re-subscribe all active topics on reconnect
+      for (const topic of subscribedTopics) {
+        client.subscribe(topic, { qos: 1 });
+      }
+    });
 
-/**
- * 1. Create a new Battle Room
- */
-export async function createBattleRoom(
-  hostUser: { id: string; name: string },
-  tier: string = 'SIDABRINĖ LYGA',
-  customRoomId?: string
-): Promise<BattleRoomDoc> {
-  const cleanId = customRoomId ? sanitizeRoomId(customRoomId) : Math.random().toString(36).substring(2, 8).toUpperCase();
-  const roomId = cleanId;
-  const questions = generateBattleRoomQuestions(5, roomId);
+    client.on('error', (err) => {
+      console.warn('[BATTLE_MQTT_ERROR]:', err);
+      // Try next broker on failure
+      currentBrokerIdx++;
+    });
 
-  const roomDoc: BattleRoomDoc = {
-    roomId,
-    status: 'waiting',
-    host: {
-      id: hostUser.id,
-      name: hostUser.name || 'Host',
-      joined: true,
-      score: 0,
-      ready: false,
-      currentRound: 0,
-    },
-    guest: null,
-    hostReady: false,
-    guestReady: false,
-    countdown: 3,
-    currentRound: 0,
-    tier,
-    questions,
-    createdAt: Date.now(),
-  };
-
-  // Immediate local cache for instant UI feedback
-  saveLocalRoom(roomDoc);
-
-  // Broadcast create event to pub/sub and server API
-  await broadcastRoomEvent(roomId, { action: 'create', room: roomDoc });
-
-  return roomDoc;
+    globalMqttClient = client;
+    return client;
+  } catch (e) {
+    console.warn('[BATTLE_MQTT_INIT_WARN]:', e);
+    return null;
+  }
 }
 
 // Reconstruct room state by replaying an array of event payloads
@@ -238,6 +216,24 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
 
   for (const ev of events) {
     if (!ev || !ev.action) continue;
+
+    if (ev.room) {
+      const existingGuest = room?.guest;
+      const existingGuestReady = room?.guestReady;
+      const existingHostReady = room?.hostReady;
+
+      room = mapServerRoomToDoc(ev.room);
+
+      if (existingGuest && !room.guest) {
+        room.guest = existingGuest;
+        room.guestReady = existingGuestReady ?? false;
+      }
+      if (existingHostReady && !room.hostReady) {
+        room.hostReady = true;
+        if (room.host) room.host.ready = true;
+      }
+      continue;
+    }
 
     if (!room && ev.roomId) {
       const roomId = sanitizeRoomId(ev.roomId);
@@ -344,6 +340,94 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
   return room;
 }
 
+// Broadcast event to MQTT broker with RETAINED flag and server API
+export async function broadcastRoomEvent(roomId: string, eventData: any): Promise<void> {
+  const cleanId = sanitizeRoomId(roomId);
+  if (!cleanId) return;
+
+  const topic = getRoomTopic(cleanId);
+  const payload = {
+    ...eventData,
+    roomId: cleanId,
+    timestamp: Date.now(),
+  };
+  const payloadStr = JSON.stringify(payload);
+
+  // 1. MQTT Broker with retain: true (guarantees cross-device state delivery even to late joiners)
+  try {
+    const client = getOrCreateMqttClient();
+    if (client) {
+      if (client.connected) {
+        client.publish(topic, payloadStr, { retain: true, qos: 1 });
+      } else {
+        client.once('connect', () => {
+          client.publish(topic, payloadStr, { retain: true, qos: 1 });
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[BATTLE_MQTT_BROADCAST_WARN]:', err);
+  }
+
+  // 2. Server API route synchronization (POST /api/battle)
+  try {
+    fetch('/api/battle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payloadStr,
+    }).catch(() => {});
+  } catch {}
+}
+
+/**
+ * 1. Create a new Battle Room
+ */
+export async function createBattleRoom(
+  hostUser: { id: string; name: string },
+  tier: string = 'SIDABRINĖ LYGA',
+  customRoomId?: string
+): Promise<BattleRoomDoc> {
+  const cleanId = customRoomId ? sanitizeRoomId(customRoomId) : Math.random().toString(36).substring(2, 8).toUpperCase();
+  const roomId = cleanId;
+  const questions = generateBattleRoomQuestions(5, roomId);
+
+  const roomDoc: BattleRoomDoc = {
+    roomId,
+    status: 'waiting',
+    host: {
+      id: hostUser.id,
+      name: hostUser.name || 'Host',
+      joined: true,
+      score: 0,
+      ready: false,
+      currentRound: 0,
+    },
+    guest: null,
+    hostReady: false,
+    guestReady: false,
+    countdown: 3,
+    currentRound: 0,
+    tier,
+    questions,
+    createdAt: Date.now(),
+  };
+
+  // Remember host identity locally
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(`battle_host_${roomId}`, 'true');
+    } catch {}
+  }
+
+  // Immediate local cache for instant UI feedback
+  saveLocalRoom(roomDoc);
+
+  // Broadcast create event to MQTT broker and server API
+  await broadcastRoomEvent(roomId, { action: 'create', room: roomDoc });
+
+  return roomDoc;
+}
+
 /**
  * 2. Fetch Battle Room by roomId
  */
@@ -352,60 +436,33 @@ export async function getBattleRoom(roomId: string): Promise<BattleRoomDoc | nul
   if (!cleanId) return null;
 
   const local = getLocalRoom(cleanId);
-  const topic = getRoomTopic(cleanId);
+  if (local) return local;
 
-  // 1. Fetch event log from ntfy.sh
-  try {
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const timeout = controller ? setTimeout(() => controller.abort(), 2000) : null;
-    const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1&since=all`, { signal: controller?.signal });
-    if (timeout) clearTimeout(timeout);
-
-    if (res.ok) {
-      const text = await res.text();
-      const lines = text.split('\n').filter((l) => l.trim().length > 0);
-      const events: any[] = [];
-      for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line);
-          if (parsed.event === 'message' && parsed.message) {
-            const body = typeof parsed.message === 'string' ? JSON.parse(parsed.message) : parsed.message;
-            events.push(body);
-          }
-        } catch {}
-      }
-
-      if (events.length > 0) {
-        const reconstructed = applyEventsToRoom(local, events);
-        if (reconstructed) {
-          saveLocalRoom(reconstructed);
-          return reconstructed;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[BATTLE_SYNC_WARN]: ntfy fetch error:', err);
-  }
-
-  // 2. Fallback to Server API Route /api/battle
+  // Fallback to Server API Route /api/battle
   try {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeout = controller ? setTimeout(() => controller.abort(), 1500) : null;
-    const res = await fetch(`/api/battle?roomId=${cleanId}`, { signal: controller?.signal });
+    const res = await fetch(`/api/battle?roomId=${cleanId}&_t=${Date.now()}`, {
+      signal: controller?.signal,
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
     if (timeout) clearTimeout(timeout);
     if (res.ok) {
       const data = await res.json();
       const mapped = mapServerRoomToDoc(data);
-      saveLocalRoom(mapped);
-      return mapped;
+      if (mapped) {
+        saveLocalRoom(mapped);
+        return mapped;
+      }
     }
   } catch {}
 
-  return local;
+  return null;
 }
 
 /**
- * 3. Guest Join: Updates local, pub/sub & API route with guest in lobby
+ * 3. Guest Join: Updates local, MQTT broker & API route with guest in lobby
  */
 export async function joinBattleRoom(
   roomId: string,
@@ -425,6 +482,7 @@ export async function joinBattleRoom(
   if (!existing) {
     existing = await getBattleRoom(cleanId);
   }
+
   const updatedRoom: BattleRoomDoc = existing
     ? {
         ...existing,
@@ -449,12 +507,13 @@ export async function joinBattleRoom(
 
   saveLocalRoom(updatedRoom);
 
-  // Broadcast join event to host and server
+  // Broadcast join event to host and server with full room document
   await broadcastRoomEvent(cleanId, {
     action: 'join',
     roomId: cleanId,
     guest: guestData,
     guestUser: guestData,
+    room: updatedRoom,
   });
 
   return updatedRoom;
@@ -469,8 +528,10 @@ export async function setBattlePlayerReady(
   isReady: boolean = true
 ): Promise<void> {
   const cleanId = sanitizeRoomId(roomId);
-  const existing = getLocalRoom(cleanId);
-  let bothReady = false;
+  let existing = getLocalRoom(cleanId);
+  if (!existing) {
+    existing = await getBattleRoom(cleanId);
+  }
 
   if (existing) {
     if (isHost) {
@@ -480,24 +541,33 @@ export async function setBattlePlayerReady(
       existing.guestReady = isReady;
       if (existing.guest) existing.guest.ready = isReady;
     }
-    bothReady = Boolean(
-      existing.guest &&
-      (existing.hostReady ?? existing.host?.ready) &&
-      (existing.guestReady ?? existing.guest?.ready)
-    );
+
+    const hostIsReady = Boolean(existing.hostReady ?? existing.host?.ready);
+    const guestIsReady = Boolean(existing.guestReady ?? existing.guest?.ready);
+    const bothReady = Boolean(existing.guest && hostIsReady && guestIsReady);
+
     if (bothReady) {
       existing.status = 'starting';
     }
-    saveLocalRoom(existing);
-  }
 
-  await broadcastRoomEvent(cleanId, {
-    action: 'ready',
-    roomId: cleanId,
-    isHost,
-    isReady,
-    bothReady,
-  });
+    saveLocalRoom(existing);
+
+    await broadcastRoomEvent(cleanId, {
+      action: 'ready',
+      roomId: cleanId,
+      isHost,
+      isReady,
+      bothReady,
+      room: existing,
+    });
+  } else {
+    await broadcastRoomEvent(cleanId, {
+      action: 'ready',
+      roomId: cleanId,
+      isHost,
+      isReady,
+    });
+  }
 }
 
 /**
@@ -511,7 +581,11 @@ export async function startBattleRoomMatch(roomId: string): Promise<void> {
     saveLocalRoom(existing);
   }
 
-  await broadcastRoomEvent(cleanId, { action: 'start', roomId: cleanId });
+  await broadcastRoomEvent(cleanId, {
+    action: 'start',
+    roomId: cleanId,
+    room: existing ? { ...existing, status: 'in_progress' } : undefined,
+  });
 }
 
 /**
@@ -550,6 +624,7 @@ export async function updateBattlePlayerScore(
     newScore,
     newRound,
     isCorrect,
+    room: existing,
   });
 }
 
@@ -564,11 +639,15 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
     saveLocalRoom(existing);
   }
 
-  await broadcastRoomEvent(cleanId, { action: 'complete', roomId: cleanId });
+  await broadcastRoomEvent(cleanId, {
+    action: 'complete',
+    roomId: cleanId,
+    room: existing ? { ...existing, status: 'completed' } : undefined,
+  });
 }
 
 /**
- * 8. Live Real-Time Listener (SSE Stream via ntfy.sh + fast 1s Polling Fallback + Local Event Sync)
+ * 8. Live Real-Time Listener (MQTT over WebSocket + Local Storage Sync + Polling Fallback)
  * Guarantees instant 1v1 cross-device connection and ready status updates
  */
 export function listenToBattleRoom(
@@ -580,7 +659,6 @@ export function listenToBattleRoom(
 
   let currentRoom: BattleRoomDoc | null = getLocalRoom(cleanId);
   let isCancelled = false;
-  let eventSource: any = null;
 
   // Dispatch initial local room immediately
   if (currentRoom) {
@@ -611,50 +689,67 @@ export function listenToBattleRoom(
     window.addEventListener('battle_room_local_sync', handleCustomSync);
   }
 
-  // Helper to handle any incoming event payload
-  const handleEventPayload = (payload: any) => {
-    if (isCancelled || !payload) return;
-    const updated = applyEventsToRoom(currentRoom, [payload]);
-    if (updated) {
-      currentRoom = updated;
-      saveLocalRoom(updated);
-      onUpdate(updated);
+  const topic = getRoomTopic(cleanId);
+  subscribedTopics.add(topic);
+
+  // 1. MQTT Real-Time WebSocket Connection
+  const client = getOrCreateMqttClient();
+
+  const handleMqttMessage = (incomingTopic: string, messageBuffer: Buffer) => {
+    if (isCancelled) return;
+    if (incomingTopic === topic) {
+      try {
+        const payload = JSON.parse(messageBuffer.toString());
+        if (payload.room) {
+          const mapped = mapServerRoomToDoc(payload.room);
+          if (mapped) {
+            // Preserve local player ready if incoming is missing it
+            if (currentRoom?.guest && !mapped.guest) {
+              mapped.guest = currentRoom.guest;
+              mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
+            }
+            if (currentRoom?.hostReady && !mapped.hostReady) {
+              mapped.hostReady = true;
+              if (mapped.host) mapped.host.ready = true;
+            }
+            if (currentRoom?.guestReady && !mapped.guestReady) {
+              mapped.guestReady = true;
+              if (mapped.guest) mapped.guest.ready = true;
+            }
+            currentRoom = mapped;
+            saveLocalRoom(mapped);
+            onUpdate(mapped);
+            return;
+          }
+        }
+
+        const updated = applyEventsToRoom(currentRoom, [payload]);
+        if (updated) {
+          currentRoom = updated;
+          saveLocalRoom(updated);
+          onUpdate(updated);
+        }
+      } catch (err) {
+        console.warn('[BATTLE_MQTT_PARSE_ERR]:', err);
+      }
     }
   };
 
-  const topic = getRoomTopic(cleanId);
-
-  // 1. Connect to SSE live stream for <50ms real-time event delivery
-  if (typeof window !== 'undefined' && typeof EventSource !== 'undefined') {
-    try {
-      eventSource = new EventSource(`https://ntfy.sh/${topic}/sse`);
-
-      eventSource.onmessage = (event: MessageEvent) => {
-        if (isCancelled) return;
-        try {
-          const data = JSON.parse(event.data);
-          if (data.event === 'message' && data.message) {
-            const body = typeof data.message === 'string' ? JSON.parse(data.message) : data.message;
-            handleEventPayload(body);
-          }
-        } catch (e) {
-          console.warn('[BATTLE_SYNC_SSE_PARSE_WARN]:', e);
-        }
-      };
-
-      eventSource.onerror = () => {
-        // SSE will automatically attempt reconnection; polling acts as fallback
-      };
-    } catch (err) {
-      console.warn('[BATTLE_SYNC_SSE_INIT_WARN]:', err);
+  if (client) {
+    client.on('message', handleMqttMessage);
+    if (client.connected) {
+      client.subscribe(topic, { qos: 1 });
+    } else {
+      client.once('connect', () => {
+        if (!isCancelled) client.subscribe(topic, { qos: 1 });
+      });
     }
   }
 
-  // 2. Active Polling (Prioritize /api/battle with cache-busting timestamp + ntfy.sh parallel)
-  const pollHistory = async () => {
+  // 2. Active Polling Fallback via /api/battle
+  const pollServer = async () => {
     if (isCancelled) return;
 
-    // 1. PRIMARY: Query server /api/battle with cache-busting and no-store
     try {
       const res = await fetch(`/api/battle?roomId=${cleanId}&_t=${Date.now()}`, {
         cache: 'no-store',
@@ -682,44 +777,23 @@ export function listenToBattleRoom(
         }
       }
     } catch {}
-
-    // 2. PARALLEL: Query ntfy.sh public pub/sub relay
-    try {
-      const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1&since=all`);
-      if (res.ok) {
-        const text = await res.text();
-        const lines = text.split('\n').filter((l) => l.trim().length > 0);
-        const events: any[] = [];
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed.event === 'message' && parsed.message) {
-              const body = typeof parsed.message === 'string' ? JSON.parse(parsed.message) : parsed.message;
-              events.push(body);
-            }
-          } catch {}
-        }
-        if (events.length > 0) {
-          const updated = applyEventsToRoom(currentRoom, events);
-          if (updated) {
-            currentRoom = updated;
-            saveLocalRoom(updated);
-            onUpdate(updated);
-          }
-        }
-      }
-    } catch {}
   };
 
-  pollHistory();
-  const pollInterval = setInterval(pollHistory, 750);
+  pollServer();
+  const pollInterval = setInterval(pollServer, 1500);
 
   return () => {
     isCancelled = true;
     clearInterval(pollInterval);
-    if (eventSource) {
-      try { eventSource.close(); } catch {}
+    subscribedTopics.delete(topic);
+
+    if (client) {
+      client.off('message', handleMqttMessage);
+      try {
+        client.unsubscribe(topic);
+      } catch {}
     }
+
     if (typeof window !== 'undefined') {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('battle_room_local_sync', handleCustomSync);

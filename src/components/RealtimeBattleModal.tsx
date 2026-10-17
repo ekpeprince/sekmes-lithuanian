@@ -93,6 +93,12 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   });
   const [isHost, setIsHost] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && initialQueryRoomId) {
+      const clean = sanitizeRoomId(initialQueryRoomId);
+      if (localStorage.getItem(`battle_host_${clean}`) === 'true') {
+        return true;
+      }
+    }
     if (isGuestFromUrl) return false;
     return isHostInitial;
   });
@@ -122,6 +128,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const [roundCompleted, setRoundCompleted] = useState(false);
   const [localScore, setLocalScore] = useState(0);
   const [xpAwarded, setXpAwarded] = useState(false);
+  const [opponentTimeoutReached, setOpponentTimeoutReached] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const prevGuestRef = useRef<BattleRoomPlayer | null>(null);
@@ -206,22 +213,27 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
     const init = async () => {
       try {
+        const isLocallyHost = typeof window !== 'undefined' && localStorage.getItem(`battle_host_${cleanInitialId}`) === 'true';
         const existing = await getBattleRoom(cleanInitialId);
 
         // Check if current user is actually the host of this room
-        if (existing && user?.uid && existing.host.id === user.uid) {
+        if (isLocallyHost || (existing && user?.uid && existing.host.id === user.uid)) {
           if (isMounted) {
             setIsHost(true);
-            setRoom(existing);
-            const bothReady = Boolean(
-              existing.guest &&
-              (existing.hostReady ?? existing.host?.ready) &&
-              (existing.guestReady ?? existing.guest?.ready)
-            );
-            if (bothReady || existing.status === 'starting') {
-              setPhase('countdown');
-            } else if (existing.status === 'in_progress') {
-              setPhase('battle');
+            if (existing) {
+              setRoom(existing);
+              const bothReady = Boolean(
+                existing.guest &&
+                (existing.hostReady ?? existing.host?.ready) &&
+                (existing.guestReady ?? existing.guest?.ready)
+              );
+              if (bothReady || existing.status === 'starting') {
+                setPhase('countdown');
+              } else if (existing.status === 'in_progress') {
+                setPhase('battle');
+              } else {
+                setPhase('waiting');
+              }
             } else {
               setPhase('waiting');
             }
@@ -337,32 +349,39 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     sounds.playClick();
 
     countdownTimerRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-          // When the countdown reaches 0, BOTH Host and Guest should call startBattleRoomMatch(roomId) AND locally update status to 'in_progress'
-          if (roomId) {
-            startBattleRoomMatch(roomId).catch((err) => {
-              console.error('[BATTLE_ARENA_ERROR]: Error starting match:', err);
-            });
-            setRoom((prevRoom) => (prevRoom ? { ...prevRoom, status: 'in_progress' } : prevRoom));
-          }
-          sounds.playSuccess();
-          haptics.victory();
-          setTimeout(() => {
-            setPhase('battle');
-          }, 400);
-          return 0;
-        }
-        sounds.playClick();
-        return prev - 1;
-      });
+      setCountdown((prev) => Math.max(0, prev - 1));
     }, 1000);
 
     return () => {
       if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     };
-  }, [phase, isOpen, roomId, isHost]);
+  }, [phase, isOpen]);
+
+  // Handle countdown completion side-effect safely
+  useEffect(() => {
+    if (phase !== 'countdown' || !isOpen) return;
+
+    if (countdown > 0) {
+      sounds.playClick();
+    } else if (countdown === 0) {
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+
+      if (roomId) {
+        startBattleRoomMatch(roomId).catch((err) => {
+          console.error('[BATTLE_ARENA_ERROR]: Error starting match:', err);
+        });
+        setRoom((prevRoom) => (prevRoom ? { ...prevRoom, status: 'in_progress' } : prevRoom));
+      }
+      sounds.playSuccess();
+      haptics.victory();
+
+      const timer = setTimeout(() => {
+        setPhase('battle');
+      }, 400);
+
+      return () => clearTimeout(timer);
+    }
+  }, [countdown, phase, isOpen, roomId]);
 
   // 4. Guest Confirms Display Name to Join (Step 4)
   const handleConfirmGuestJoin = () => {
@@ -652,7 +671,24 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   // 6. Post-match Victory Rewards & Confetti Trigger
   useEffect(() => {
+    if (phase !== 'completed') {
+      setOpponentTimeoutReached(false);
+      return;
+    }
+    // Allow up to 12s for opponent to finish before timing out and finalizing score
+    const timeout = setTimeout(() => {
+      setOpponentTimeoutReached(true);
+    }, 12000);
+    return () => clearTimeout(timeout);
+  }, [phase]);
+
+  useEffect(() => {
     if (phase !== 'completed' || xpAwarded || !room) return;
+
+    const opponentFinished = ((isHost ? room.guest?.currentRound : room.host.currentRound) ?? 0) >= TOTAL_ROUNDS;
+    if (!opponentFinished && !opponentTimeoutReached) {
+      return; // Wait for opponent to finish playing
+    }
 
     const myScore = isHost ? room.host.score : (room.guest?.score ?? localScore);
     const opponentScore = isHost ? (room.guest?.score ?? 0) : room.host.score;
@@ -676,7 +712,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     }
 
     setXpAwarded(true);
-  }, [phase, xpAwarded, room, isHost, localScore, addXp, recordDuelWin]);
+  }, [phase, xpAwarded, room, isHost, localScore, opponentTimeoutReached, addXp, recordDuelWin]);
 
   // Copy or Share Room Link
   const shareUrl = typeof window !== 'undefined' && roomId
@@ -1567,7 +1603,27 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         {/* ============================================================== */}
         {phase === 'completed' && (
           <div className="p-6 sm:p-8 text-center flex flex-col items-center">
-            {localScore >= opponentScore ? (
+            {((opponentPlayer?.currentRound ?? 0) < TOTAL_ROUNDS && !opponentTimeoutReached) ? (
+              <div className="flex flex-col items-center justify-center my-6">
+                <div className="relative flex items-center justify-center mb-4">
+                  <span className="absolute inline-flex h-16 w-16 rounded-full bg-amber-400 opacity-25 animate-ping" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-md">
+                    ⏳
+                  </div>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  Waiting for opponent to finish...
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  {opponentName} is currently on Round {Math.min(5, (opponentPlayer?.currentRound ?? 0) + 1)} / {TOTAL_ROUNDS}
+                </p>
+                <div className="mt-4 flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-700 shadow-2xs">
+                  <span>Your Score: <strong className="text-emerald-600">{localScore} pts</strong></span>
+                  <span className="text-slate-300">|</span>
+                  <span>Opponent Score: <strong className="text-amber-600">{opponentScore} pts</strong></span>
+                </div>
+              </div>
+            ) : localScore >= opponentScore ? (
               <>
                 <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-3 shadow-md animate-bounce">
                   🏆
