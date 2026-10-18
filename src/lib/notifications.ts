@@ -1,5 +1,7 @@
 // Notification Center for Sėkmės Lithuanian PWA
 
+import { getLocalDateString } from './storage';
+
 export interface NotificationSettings {
   enabled: boolean;
   streakReminders: boolean;
@@ -306,7 +308,7 @@ export function checkDailyNotifications(params: {
   }
 
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = getLocalDateString(now);
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
 

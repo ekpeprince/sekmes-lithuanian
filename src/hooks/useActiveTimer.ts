@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
 
 /**
@@ -9,6 +9,11 @@ import { useGame } from '@/context/GameContext';
  */
 export function useActiveTimer(isActive: boolean = true) {
   const { addActivePracticeTime } = useGame();
+  const addActivePracticeTimeRef = useRef(addActivePracticeTime);
+
+  useEffect(() => {
+    addActivePracticeTimeRef.current = addActivePracticeTime;
+  }, [addActivePracticeTime]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -20,7 +25,7 @@ export function useActiveTimer(isActive: boolean = true) {
         accumulatedSeconds += 1;
         // Batch sync every 5 seconds to reduce storage operations
         if (accumulatedSeconds >= 5) {
-          addActivePracticeTime(accumulatedSeconds);
+          addActivePracticeTimeRef.current(accumulatedSeconds);
           accumulatedSeconds = 0;
         }
       }
@@ -29,8 +34,9 @@ export function useActiveTimer(isActive: boolean = true) {
     return () => {
       clearInterval(interval);
       if (accumulatedSeconds > 0) {
-        addActivePracticeTime(accumulatedSeconds);
+        addActivePracticeTimeRef.current(accumulatedSeconds);
       }
     };
-  }, [isActive, addActivePracticeTime]);
+  }, [isActive]);
 }
+

@@ -61,13 +61,25 @@ export const DEFAULT_QUESTS: Quest[] = [
   },
 ];
 
+/**
+ * Returns the current date in the user's local calendar timezone as YYYY-MM-DD.
+ * Prevents UTC midnight drift where toISOString() resets daily quotas
+ * in the evening for Western timezones or late at night for Eastern timezones.
+ */
+export function getLocalDateString(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export const DEFAULT_PROGRESS: UserProgress = {
   xp: 0,
   hearts: 5,
   maxHearts: 5,
   streak: 1,
   completedLessons: [],
-  lastActiveDate: new Date().toISOString().split('T')[0],
+  lastActiveDate: getLocalDateString(),
   soundEnabled: true,
   gems: 120,
   voiceGender: 'female',
@@ -81,10 +93,10 @@ export const DEFAULT_PROGRESS: UserProgress = {
   totalPracticeSeconds: 0,
   activeMinutesToday: 0,
   activeSecondsToday: 0,
-  activeMinutesDate: new Date().toISOString().split('T')[0],
+  activeMinutesDate: getLocalDateString(),
   dailyXp: 0,
-  dailyXpDate: new Date().toISOString().split('T')[0],
-  lastQuestResetDate: new Date().toISOString().split('T')[0],
+  dailyXpDate: getLocalDateString(),
+  lastQuestResetDate: getLocalDateString(),
   duelsWonCount: 0,
   wordsMasteredCount: 0,
 };
@@ -100,7 +112,7 @@ export function getStoredProgress(): UserProgress {
       return DEFAULT_PROGRESS;
     }
     const parsed = JSON.parse(raw) as Partial<UserProgress>;
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const lastQuestDate = parsed.lastQuestResetDate || parsed.lastActiveDate;
     const isNewDay = Boolean(lastQuestDate && lastQuestDate !== today);
 
@@ -114,6 +126,20 @@ export function getStoredProgress(): UserProgress {
     const activeSecondsToday = parsed.activeMinutesDate === today ? (parsed.activeSecondsToday || 0) : 0;
     const dailyXp = parsed.dailyXpDate === today ? (parsed.dailyXp || 0) : 0;
 
+    // Check if streak was broken due to inactivity on a new calendar day
+    let streakToUse = typeof parsed.streak === 'number' ? parsed.streak : 1;
+    const streakFreezesToUse = typeof parsed.streakFreezes === 'number' ? parsed.streakFreezes : 1;
+    if (parsed.lastActiveDate) {
+      const lastDate = new Date(parsed.lastActiveDate);
+      const currentDate = new Date(today);
+      const diffDays = Math.round((currentDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+      if (!isNaN(diffDays)) {
+        if (diffDays > 2 || (diffDays === 2 && streakFreezesToUse <= 0)) {
+          streakToUse = 1;
+        }
+      }
+    }
+
     const merged: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
@@ -124,7 +150,8 @@ export function getStoredProgress(): UserProgress {
       quests: questsToUse,
       leagueTier: parsed.leagueTier || getLeagueTierByXp(parsed.xp || 0),
       speedDrillHighScore: parsed.speedDrillHighScore || 0,
-      streakFreezes: typeof parsed.streakFreezes === 'number' ? parsed.streakFreezes : 1,
+      streak: streakToUse,
+      streakFreezes: streakFreezesToUse,
       mysteryChestClaimedDate: parsed.mysteryChestClaimedDate,
       totalPracticeSeconds: parsed.totalPracticeSeconds || 0,
       activeMinutesToday,
@@ -189,7 +216,7 @@ export function getLeagueTierByXp(xp: number): LeagueTier {
 
 export function completeLesson(lessonId: string, xpEarned: number): UserProgress {
   const current = getStoredProgress();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   
   // Calculate streak & check freeze protection
   let newStreak = current.streak;
@@ -205,7 +232,7 @@ export function completeLesson(lessonId: string, xpEarned: number): UserProgress
       // Streak freeze protects 1 missed day!
       remainingFreezes -= 1;
       newStreak += 1;
-    } else if (diffDays > 1) {
+    } else if (diffDays > 1 || isNaN(diffDays)) {
       newStreak = 1;
     }
   }
@@ -278,7 +305,7 @@ export function recordMistake(mistake: Omit<MistakeItem, 'timestamp'>): UserProg
 export function resolveMistake(id: string): UserProgress {
   const current = getStoredProgress();
   const updatedBank = (current.mistakesBank || []).filter(m => m.id !== id);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const earnedXp = 5;
   const nextXp = current.xp + earnedXp;
   const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
@@ -314,7 +341,7 @@ export function resolveMistake(id: string): UserProgress {
 // Record speed drill high score
 export function recordSpeedDrillScore(score: number): UserProgress {
   const current = getStoredProgress();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const nextHigh = Math.max(current.speedDrillHighScore || 0, score);
   const earnedXp = Math.round(score / 2);
   const nextXp = current.xp + earnedXp;
@@ -380,7 +407,7 @@ export function claimMysteryChest(): {
   reward: { xp: number; gems: number; streakFreeze: boolean };
 } {
   const current = getStoredProgress();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const bonusXp = 50;
   const bonusGems = 25;
   const streakFreezeAwarded = true;
@@ -403,7 +430,7 @@ export function claimMysteryChest(): {
 
 export function addPracticeSeconds(seconds: number): UserProgress {
   const current = getStoredProgress();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const totalSeconds = (current.totalPracticeSeconds || 0) + seconds;
   const prevActiveSec = current.activeMinutesDate === today
     ? (current.activeSecondsToday || (current.activeMinutesToday || 0) * 60)
@@ -424,7 +451,7 @@ export function addPracticeSeconds(seconds: number): UserProgress {
 
 export function addXpStorage(amount: number): UserProgress {
   const current = getStoredProgress();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
   const nextXp = current.xp + amount;
   const nextDailyXp = currentDailyXp + amount;
@@ -453,7 +480,7 @@ export function addXpStorage(amount: number): UserProgress {
 
 export function recordBattleResult(earnedXp: number, isWin: boolean): UserProgress {
   const current = getStoredProgress();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
   const nextXp = current.xp + earnedXp;
   const nextDailyXp = currentDailyXp + earnedXp;

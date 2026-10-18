@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Target, Check, Gift, Sparkles, Shield, X } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
-import { DEFAULT_QUESTS } from '@/lib/storage';
+import { DEFAULT_QUESTS, getLocalDateString } from '@/lib/storage';
 
 export const DailyQuestsCard: React.FC = () => {
   const { progress, claimQuestRewardById, claimMysteryChestReward } = useGame();
@@ -20,7 +20,7 @@ export const DailyQuestsCard: React.FC = () => {
   const totalQuests = quests.length;
   const isAllCompleted = completedCount >= totalQuests;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
   const isChestClaimedToday = progress.mysteryChestClaimedDate === todayStr;
 
   const handleOpenChest = () => {

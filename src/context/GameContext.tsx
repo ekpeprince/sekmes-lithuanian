@@ -21,6 +21,7 @@ import {
   DEFAULT_PROGRESS,
   DEFAULT_QUESTS,
   getLeagueTierByXp,
+  getLocalDateString,
 } from '@/lib/storage';
 import { getAllLessons } from '@/data/curriculum';
 import { sounds } from '@/lib/audio';
@@ -119,7 +120,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const isCompletedToday = Boolean(
       progress.lastActiveDate &&
-      new Date(progress.lastActiveDate).toDateString() === new Date().toDateString()
+      progress.lastActiveDate === getLocalDateString()
     );
     checkDailyNotifications({
       streak: progress.streak,
@@ -241,8 +242,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     syncToCloudIfUser(updated);
   };
 
-  const today = typeof window !== 'undefined' ? new Date().toISOString().split('T')[0] : '';
-  const dailyXp = progress.dailyXpDate === today ? (progress.dailyXp || 0) : (progress.dailyXp || 0);
+  const today = typeof window !== 'undefined' ? getLocalDateString() : '';
+  const dailyXp = progress.dailyXpDate === today ? (progress.dailyXp || 0) : 0;
   const activeMinutesToday = progress.activeMinutesDate === today ? (progress.activeMinutesToday || 0) : 0;
   const totalPracticeSeconds = progress.totalPracticeSeconds || 0;
   const duelsWonCount = progress.duelsWonCount || 0;
