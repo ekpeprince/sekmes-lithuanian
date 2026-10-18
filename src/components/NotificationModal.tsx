@@ -4,18 +4,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Bell,
   BellRing,
-  Clock,
   CheckCircle2,
-  AlertCircle,
   Send,
   X,
-  Sparkles,
 } from 'lucide-react';
 import {
   NotificationSettings,
   getNotificationSettings,
   saveNotificationSettings,
-  isNotificationSupported,
   getNotificationPermission,
   requestNotificationPermission,
   sendTestNotification,
@@ -32,19 +28,20 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [supported, setSupported] = useState<boolean>(true);
-  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
-  const [settings, setSettings] = useState<NotificationSettings>(getNotificationSettings());
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() => getNotificationPermission());
+  const [settings, setSettings] = useState<NotificationSettings>(() => getNotificationSettings());
   const [testSent, setTestSent] = useState<boolean>(false);
   const [duelTestSent, setDuelTestSent] = useState<boolean>(false);
   const [isRequesting, setIsRequesting] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
-      setSupported(isNotificationSupported());
-      setPermission(getNotificationPermission());
-      setSettings(getNotificationSettings());
-      setTestSent(false);
+      const timer = setTimeout(() => {
+        setPermission(getNotificationPermission());
+        setSettings(getNotificationSettings());
+        setTestSent(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 

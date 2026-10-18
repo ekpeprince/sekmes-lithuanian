@@ -104,8 +104,8 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [opponentAnswered, setOpponentAnswered] = useState<boolean>(false);
   const [roundCompleted, setRoundCompleted] = useState(false);
-  const [xpAwarded, setXpAwarded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const xpAwardedRef = useRef(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const advanceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -120,9 +120,12 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   };
 
   const competitorsRef = useRef(competitors);
-  competitorsRef.current = competitors;
   const userRef = useRef(user);
-  userRef.current = user;
+
+  useEffect(() => {
+    competitorsRef.current = competitors;
+    userRef.current = user;
+  }, [competitors, user]);
 
   const currentUserName = user?.displayName || 'You';
   const currentUserAvatar = user?.photoURL || undefined;
@@ -168,7 +171,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     setSelectedOption(null);
     setOpponentAnswered(false);
     setRoundCompleted(false);
-    setXpAwarded(false);
+    xpAwardedRef.current = false;
     setTimeLeft(ROUND_SECONDS);
     setStatus('searching');
 
@@ -197,13 +200,35 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     };
   }, [isOpen, startNewMatch]);
 
+  // Schedule advance to next round or complete match
+  const scheduleNextRound = useCallback((currentR: number) => {
+    advanceTimerRef.current = setTimeout(() => {
+      if (currentR + 1 < TOTAL_ROUNDS) {
+        setCurrentRound(currentR + 1);
+        setRoundCompleted(false);
+        setTimeLeft(ROUND_SECONDS);
+        setSelectedOption(null);
+        setOpponentAnswered(false);
+      } else {
+        // Round 5 completed: Transition state to 'completed'. DO NOT route back to 'searching' or reset round counter
+        setStatus('completed');
+      }
+    }, 1400);
+  }, []);
+
+  // Handle timeout
+  const handleTimeOut = useCallback(() => {
+    if (roundCompleted) return;
+    setRoundCompleted(true);
+    sounds.playWrong();
+    haptics.error();
+
+    scheduleNextRound(currentRound);
+  }, [roundCompleted, currentRound, scheduleNextRound]);
+
   // Round Timer & Opponent answering simulation
   useEffect(() => {
     if (status !== 'battle' || roundCompleted || !isOpen) return;
-
-    setTimeLeft(ROUND_SECONDS);
-    setSelectedOption(null);
-    setOpponentAnswered(false);
 
     // Opponent response delay between 1.8s and 4.8s
     const opponentDelayMs = 1800 + Math.random() * 3000;
@@ -215,45 +240,21 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
       }
     }, opponentDelayMs);
 
+    let secondsLeft = ROUND_SECONDS;
     timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          handleTimeOut();
-          return 0;
-        }
-        return prev - 1;
-      });
+      secondsLeft -= 1;
+      setTimeLeft(Math.max(0, secondsLeft));
+      if (secondsLeft <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        handleTimeOut();
+      }
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
     };
-  }, [status, currentRound, roundCompleted, isOpen]);
-
-  // Handle timeout
-  const handleTimeOut = () => {
-    if (roundCompleted) return;
-    setRoundCompleted(true);
-    sounds.playWrong();
-    haptics.error();
-
-    scheduleNextRound(currentRound);
-  };
-
-  // Schedule advance to next round or complete match
-  const scheduleNextRound = (currentR: number) => {
-    advanceTimerRef.current = setTimeout(() => {
-      if (currentR + 1 < TOTAL_ROUNDS) {
-        setCurrentRound(currentR + 1);
-        setRoundCompleted(false);
-      } else {
-        // Round 5 completed: Transition state to 'completed'. DO NOT route back to 'searching' or reset round counter
-        setStatus('completed');
-      }
-    }, 1400);
-  };
+  }, [status, currentRound, roundCompleted, isOpen, handleTimeOut]);
 
   // Handle user option select
   const handleSelectOption = (ltText: string) => {
@@ -281,7 +282,8 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
 
   // Post-match victory logic, XP persistence and Confetti Trigger
   useEffect(() => {
-    if (status !== 'completed' || xpAwarded) return;
+    if (status !== 'completed' || xpAwardedRef.current) return;
+    xpAwardedRef.current = true;
 
     const isWin = userScore > opponentScore;
     const isTie = userScore === opponentScore;
@@ -308,9 +310,8 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
       haptics.error();
     }
 
-    setXpAwarded(true);
     if (onRewardClaimed) onRewardClaimed(earnedXp);
-  }, [status, userScore, opponentScore, xpAwarded, recordBattleResult, onRewardClaimed]);
+  }, [status, userScore, opponentScore, recordBattleResult, onRewardClaimed]);
 
   const handleInviteFriend = async () => {
     const res = await shareBattleInvite(currentUserName);

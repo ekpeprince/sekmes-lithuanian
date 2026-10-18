@@ -183,14 +183,15 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
 
       // 10-second comfortable countdown timer for learner breathing room
       clearAllTimers();
+      let remainingSeconds = 10;
       timerIntervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            stopListening();
-            return 0;
-          }
-          return prev - 1;
-        });
+        remainingSeconds -= 1;
+        if (remainingSeconds <= 0) {
+          stopListening();
+          setTimeLeft(0);
+        } else {
+          setTimeLeft(remainingSeconds);
+        }
       }, 1000);
 
       recognition.onresult = (event: SpeechRecognitionEventLike) => {

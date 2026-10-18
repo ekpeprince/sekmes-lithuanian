@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Zap,
@@ -80,7 +80,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   onPlayBot,
   onPlayQuickMatch,
 }) => {
-  const { progress, recordBattleResult } = useGame();
+  const { recordBattleResult } = useGame();
   const { user } = useAuth();
 
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -126,7 +126,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [roundCompleted, setRoundCompleted] = useState(false);
   const [localScore, setLocalScore] = useState(0);
-  const [xpAwarded, setXpAwarded] = useState(false);
+  const xpAwardedRef = useRef(false);
   const [opponentTimeoutReached, setOpponentTimeoutReached] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -169,33 +169,44 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
     let isMounted = true;
     cleanupTimers();
-    setXpAwarded(false);
-    setSelectedOptionIndex(null);
-    setRoundCompleted(false);
-    setCurrentRound(0);
-    setLocalScore(0);
-    setConnectionError(null);
-    setHostJoinBanner(null);
+    xpAwardedRef.current = false;
     prevGuestRef.current = null;
+
+    const timer = setTimeout(() => {
+      if (!isMounted) return;
+      setSelectedOptionIndex(null);
+      setRoundCompleted(false);
+      setCurrentRound(0);
+      setLocalScore(0);
+      setConnectionError(null);
+      setHostJoinBanner(null);
+
+      const activeUrlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const queryRoomId = initialRoomId || activeUrlParams?.get('roomId');
+
+      if (!queryRoomId) {
+        setIsHost(true);
+        setPhase('select_mode');
+        setManualCodeInput('');
+        setCodeError(null);
+        setIsJoiningWithCode(false);
+      } else {
+        const cleanInitialId = sanitizeRoomId(queryRoomId);
+        setRoomId(cleanInitialId);
+        setIsHost(false);
+      }
+    }, 0);
 
     const activeUrlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const queryRoomId = initialRoomId || activeUrlParams?.get('roomId');
-
-    // 1. DEFAULT FLOW: If no specific roomId was passed, show Battle Mode Selector
     if (!queryRoomId) {
-      setIsHost(true);
-      setPhase('select_mode');
-      setManualCodeInput('');
-      setCodeError(null);
-      setIsJoiningWithCode(false);
-      return;
+      return () => {
+        clearTimeout(timer);
+      };
     }
 
     // 2. DIRECT GUEST FLOW (URL Parameter Failsafe: drop directly into room join flow)
     const cleanInitialId = sanitizeRoomId(queryRoomId);
-    setRoomId(cleanInitialId);
-    setIsHost(false); // Force guest role
-    setPhase('loading');
 
     // 4-Second Timeout Guard to prevent infinite "Connecting to battle arena..." hanging
     connectionTimeoutRef.current = setTimeout(() => {
@@ -340,7 +351,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         setPhase('waiting');
         setCurrentRound(0);
         setLocalScore(0);
-        setXpAwarded(false);
+        xpAwardedRef.current = false;
         setSelectedOptionIndex(null);
         setRoundCompleted(false);
         setOpponentTimeoutReached(false);
@@ -357,43 +368,34 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   useEffect(() => {
     if (phase !== 'countdown' || !isOpen) return;
 
-    setCountdown(3);
+    let count = 3;
     sounds.playClick();
 
     countdownTimerRef.current = setInterval(() => {
-      setCountdown((prev) => Math.max(0, prev - 1));
+      count -= 1;
+      setCountdown(Math.max(0, count));
+      if (count > 0) {
+        sounds.playClick();
+      } else {
+        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+        sounds.playSuccess();
+        haptics.victory();
+        if (roomId) {
+          startBattleRoomMatch(roomId).catch((err) => {
+            console.error('[BATTLE_ARENA_ERROR]: Error starting match:', err);
+          });
+        }
+        setTimeout(() => {
+          setRoom((prevRoom) => (prevRoom ? { ...prevRoom, status: 'in_progress' } : prevRoom));
+          setPhase('battle');
+        }, 400);
+      }
     }, 1000);
 
     return () => {
       if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     };
-  }, [phase, isOpen]);
-
-  // Handle countdown completion side-effect safely
-  useEffect(() => {
-    if (phase !== 'countdown' || !isOpen) return;
-
-    if (countdown > 0) {
-      sounds.playClick();
-    } else if (countdown === 0) {
-      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-
-      if (roomId) {
-        startBattleRoomMatch(roomId).catch((err) => {
-          console.error('[BATTLE_ARENA_ERROR]: Error starting match:', err);
-        });
-        setRoom((prevRoom) => (prevRoom ? { ...prevRoom, status: 'in_progress' } : prevRoom));
-      }
-      sounds.playSuccess();
-      haptics.victory();
-
-      const timer = setTimeout(() => {
-        setPhase('battle');
-      }, 400);
-
-      return () => clearTimeout(timer);
-    }
-  }, [countdown, phase, isOpen, roomId]);
+  }, [phase, isOpen, roomId]);
 
   // 4. Guest Confirms Display Name to Join (Step 4)
   const handleConfirmGuestJoin = () => {
@@ -598,33 +600,21 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     });
   };
 
-  // 5. Active Round Countdown & Answer Timing
-  useEffect(() => {
-    if (phase !== 'battle' || roundCompleted || !isOpen) {
-      return;
-    }
-
-    setTimeLeft(ROUND_SECONDS);
-    setSelectedOptionIndex(null);
-
-    roundTimerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (roundTimerRef.current) clearInterval(roundTimerRef.current);
-          handleRoundTimeout();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (roundTimerRef.current) clearInterval(roundTimerRef.current);
-    };
-  }, [phase, currentRound, roundCompleted, isOpen]);
+  const scheduleAdvance = useCallback((rIndex: number) => {
+    advanceTimerRef.current = setTimeout(() => {
+      if (rIndex + 1 < TOTAL_ROUNDS) {
+        setCurrentRound(rIndex + 1);
+        setRoundCompleted(false);
+        setTimeLeft(ROUND_SECONDS);
+        setSelectedOptionIndex(null);
+      } else {
+        setPhase('completed');
+      }
+    }, 1400);
+  }, []);
 
   // Handle Timeout
-  const handleRoundTimeout = () => {
+  const handleRoundTimeout = useCallback(() => {
     if (roundCompleted) return;
     setRoundCompleted(true);
     sounds.playWrong();
@@ -636,7 +626,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       });
     }
     scheduleAdvance(currentRound);
-  };
+  }, [roundCompleted, roomId, isHost, localScore, currentRound, scheduleAdvance]);
 
   // Handle Option Selection
   const handleSelectOption = (index: number) => {
@@ -670,27 +660,35 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     scheduleAdvance(currentRound);
   };
 
-  const scheduleAdvance = (rIndex: number) => {
-    advanceTimerRef.current = setTimeout(() => {
-      if (rIndex + 1 < TOTAL_ROUNDS) {
-        setCurrentRound(rIndex + 1);
-        setRoundCompleted(false);
-      } else {
-        setPhase('completed');
+  // 5. Active Round Countdown & Answer Timing
+  useEffect(() => {
+    if (phase !== 'battle' || roundCompleted || !isOpen) {
+      return;
+    }
+
+    let secondsLeft = ROUND_SECONDS;
+    roundTimerRef.current = setInterval(() => {
+      secondsLeft -= 1;
+      setTimeLeft(Math.max(0, secondsLeft));
+      if (secondsLeft <= 0) {
+        if (roundTimerRef.current) clearInterval(roundTimerRef.current);
+        handleRoundTimeout();
       }
-    }, 1400);
-  };
+    }, 1000);
+
+    return () => {
+      if (roundTimerRef.current) clearInterval(roundTimerRef.current);
+    };
+  }, [phase, currentRound, roundCompleted, isOpen, handleRoundTimeout]);
 
   // 6. Post-match Victory Rewards & Confetti Trigger
   useEffect(() => {
     if (phase !== 'completed') {
-      setOpponentTimeoutReached(false);
       return;
     }
-    // If opponent already finished all rounds, finalize immediately
+    // If opponent already finished all rounds, no timer needed
     const opponentRounds = (isHost ? room?.guest?.currentRound : room?.host?.currentRound) ?? 0;
     if (opponentRounds >= TOTAL_ROUNDS || room?.status === 'completed') {
-      setOpponentTimeoutReached(true);
       return;
     }
 
@@ -705,7 +703,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   }, [phase, room?.status, isHost, room?.guest?.currentRound, room?.host?.currentRound]);
 
   useEffect(() => {
-    if (phase !== 'completed' || xpAwarded || !room) return;
+    if (phase !== 'completed' || xpAwardedRef.current || !room) return;
 
     // CRITICAL: Do NOT evaluate outcome or award XP until opponent has finished all rounds or timed out!
     const opponentFinished =
@@ -716,6 +714,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     if (!opponentFinished) {
       return; // Wait for opponent to finish playing
     }
+    xpAwardedRef.current = true;
 
     const myScore = Math.max(localScore, isHost ? room.host.score : (room.guest?.score ?? 0));
     const finalOpponentScore = isHost ? (room.guest?.score ?? 0) : room.host.score;
@@ -739,9 +738,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       sounds.playError();
       haptics.error();
     }
-
-    setXpAwarded(true);
-  }, [phase, xpAwarded, room, isHost, localScore, opponentTimeoutReached, recordBattleResult]);
+  }, [phase, room, isHost, localScore, opponentTimeoutReached, recordBattleResult]);
 
   // Copy or Share Room Link
   const shareUrl = typeof window !== 'undefined' && roomId
@@ -838,7 +835,8 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     cleanupTimers();
     setCurrentRound(0);
     setLocalScore(0);
-    setXpAwarded(false);
+    xpAwardedRef.current = false;
+    setOpponentTimeoutReached(false);
     setSelectedOptionIndex(null);
     setRoundCompleted(false);
     setConnectionError(null);
@@ -1052,11 +1050,18 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                     />
                     <button
                       type="button"
+                      onClick={handlePasteCode}
+                      className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs uppercase tracking-wider transition cursor-pointer shrink-0"
+                    >
+                      PASTE
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleJoinWithCode}
-                      disabled={!manualCodeInput.trim()}
+                      disabled={!manualCodeInput.trim() || isJoiningWithCode}
                       className="py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white font-black text-xs uppercase tracking-wider transition shadow-sm cursor-pointer shrink-0"
                     >
-                      JOIN
+                      {isJoiningWithCode ? '...' : 'JOIN'}
                     </button>
                   </div>
 
@@ -1290,7 +1295,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                   1v1 Arena Matchup
                 </h3>
                 <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                  Both players must tap "Ready" before the battle starts!
+                  Both players must tap &quot;Ready&quot; before the battle starts!
                 </p>
 
                 {/* Matchup Versus Card with Ready Indicators */}
@@ -1379,7 +1384,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                       className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-sm uppercase tracking-wider transition transform active:scale-95 shadow-xl shadow-emerald-500/30 cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Check className="w-5 h-5 stroke-[3]" />
-                      <span>I'M READY ⚔️</span>
+                      <span>I&apos;M READY ⚔️</span>
                     </button>
                   ) : (
                     <button
@@ -1403,7 +1408,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                       <span className="text-amber-600">⏳ Waiting for {opponentName} to tap Ready...</span>
                     )}
                     {!isMyReady && isOpponentReady && (
-                      <span className="text-emerald-600 animate-pulse">⚡ {opponentName} is READY! Tap I'M READY to start!</span>
+                      <span className="text-emerald-600 animate-pulse">⚡ {opponentName} is READY! Tap I&apos;M READY to start!</span>
                     )}
                     {!isMyReady && !isOpponentReady && (
                       <span>Both players must tap Ready to trigger the 3-second countdown!</span>

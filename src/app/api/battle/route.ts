@@ -1,17 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { BattleRoom, BattlePlayer, BattleAnswer, calculateAnswerPoints } from '@/lib/battleSync';
-import { generateBattleRoomQuestions } from '@/lib/battleRoomSync';
+import { BattlePlayer, BattleAnswer, calculateAnswerPoints } from '@/lib/battleSync';
+import { generateBattleRoomQuestions, BattleRoomPlayer, BattleRoomQuestion } from '@/lib/battleRoomSync';
 
 export const runtime = 'nodejs';
 
+export type ServerQuestion = (BattleRoomQuestion | Partial<BattleRoomQuestion>) & {
+  correctAnswer?: string;
+  [key: string]: unknown;
+};
+
+export interface ServerRoom {
+  id?: string;
+  roomId?: string;
+  status: string;
+  host?: BattleRoomPlayer | null;
+  guest?: BattleRoomPlayer | null;
+  hostReady?: boolean;
+  guestReady?: boolean;
+  countdown?: number;
+  currentRound: number;
+  tier?: string;
+  questions?: (BattleRoomQuestion | ServerQuestion)[];
+  createdAt?: number;
+  roundStartTime?: number;
+  winnerId?: string;
+  players?: Record<string, BattlePlayer>;
+  [key: string]: unknown;
+}
+
 // Server-side local memory cache
-const serverRooms: Map<string, any> = (globalThis as any).__labasServerRooms || new Map<string, any>();
-(globalThis as any).__labasServerRooms = serverRooms;
+const globalWithRooms = globalThis as unknown as { __labasServerRooms?: Map<string, ServerRoom> };
+const serverRooms: Map<string, ServerRoom> = globalWithRooms.__labasServerRooms || new Map<string, ServerRoom>();
+globalWithRooms.__labasServerRooms = serverRooms;
 
 const MAX_SERVER_ROOMS = 500;
 const ROOM_ID_REGEX = /^[A-Z0-9-]{3,16}$/;
 
-function sanitizeRoomId(id?: any): string {
+function sanitizeRoomId(id?: unknown): string {
   if (!id || typeof id !== 'string') return '';
   return id.trim().replace(/^#+/, '').toUpperCase();
 }
@@ -37,11 +62,11 @@ function cleanupOldRooms() {
 }
 
 // Server-side fast in-memory room store
-async function getPersistedRoom(roomId: string): Promise<any | null> {
+async function getPersistedRoom(roomId: string): Promise<ServerRoom | null> {
   return serverRooms.get(roomId) || null;
 }
 
-async function persistRoom(roomId: string, room: any): Promise<void> {
+async function persistRoom(roomId: string, room: ServerRoom): Promise<void> {
   serverRooms.set(roomId, room);
 }
 
@@ -72,27 +97,30 @@ export async function GET(request: NextRequest) {
 }
 
 // Helper to get or safely initialize room state across serverless instances
-async function getOrCreateRoom(cleanId: string): Promise<any> {
-  let room = await getPersistedRoom(cleanId);
-  if (!room) {
-    room = {
-      id: cleanId,
-      roomId: cleanId,
-      status: 'waiting',
-      host: { id: 'host_auto', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
-      guest: null,
-      hostReady: false,
-      guestReady: false,
-      countdown: 3,
-      currentRound: 0,
-      tier: 'GELEŽINĖ LYGA',
-      questions: generateBattleRoomQuestions(5, cleanId),
-      createdAt: Date.now(),
-    };
-  } else if (!room.questions || !Array.isArray(room.questions) || room.questions.length === 0) {
-    room.questions = generateBattleRoomQuestions(5, cleanId);
+async function getOrCreateRoom(cleanId: string): Promise<ServerRoom> {
+  const existing = await getPersistedRoom(cleanId);
+  if (existing) {
+    if (!existing.questions || !Array.isArray(existing.questions) || existing.questions.length === 0) {
+      existing.questions = generateBattleRoomQuestions(5, cleanId);
+    }
+    return existing;
   }
-  return room;
+
+  const freshRoom: ServerRoom = {
+    id: cleanId,
+    roomId: cleanId,
+    status: 'waiting',
+    host: { id: 'host_auto', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
+    guest: null,
+    hostReady: false,
+    guestReady: false,
+    countdown: 3,
+    currentRound: 0,
+    tier: 'GELEŽINĖ LYGA',
+    questions: generateBattleRoomQuestions(5, cleanId),
+    createdAt: Date.now(),
+  };
+  return freshRoom;
 }
 
 // POST /api/battle
@@ -303,8 +331,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(room);
       }
 
-      const storedQuestion = room.questions?.[roundIndex];
-      const authoritativeCorrectAnswer = storedQuestion?.correctAnswer;
+      const storedQuestion = room.questions?.[roundIndex] as (ServerQuestion & { answerIndex?: number }) | undefined;
+      const authoritativeCorrectAnswer = storedQuestion?.correctAnswer ||
+        (storedQuestion && typeof storedQuestion.answerIndex === 'number' && storedQuestion.options
+          ? storedQuestion.options[storedQuestion.answerIndex]
+          : undefined);
       const isCorrect = authoritativeCorrectAnswer
         ? selected === authoritativeCorrectAnswer
         : selected === correctAnswer;
@@ -353,7 +384,7 @@ export async function POST(request: NextRequest) {
       let winnerId: string | undefined = undefined;
 
       if (isFinished) {
-        const playerList = Object.values(room.players || {}) as any[];
+        const playerList = Object.values(room.players || {}) as BattlePlayer[];
         if (playerList.length > 0) {
           playerList.sort((a, b) => (b.score || 0) - (a.score || 0));
           winnerId = playerList[0].id;

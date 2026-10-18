@@ -7,16 +7,11 @@ import {
   Volume2,
   Sparkles,
   CheckCircle2,
-  RotateCcw,
-  Trophy,
   ChevronRight,
   ChevronLeft,
   Flame,
-  Award,
   Info,
   Zap,
-  BookOpen,
-  VolumeX,
 } from 'lucide-react';
 import { SPEAKING_DRILLS, SpeakingDrillItem } from '@/data/speakingDrills';
 import { SYLLABLE_STRESS_DRILLS, SyllableStressItem } from '@/data/syllableStressDrills';
@@ -349,12 +344,6 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
     setCurrentIndex((prev) => (prev - 1 + filteredDrills.length) % filteredDrills.length);
   };
 
-  const handleRetry = () => {
-    setTranscript('');
-    setScore(null);
-    setMatchedWords([]);
-    startListening();
-  };
 
   // --- SYLLABLE STRESS TRAINER HANDLERS ---
   const handleSelectStressSyllable = (idx: number) => {
@@ -668,7 +657,9 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
 
               {/* Status Caption */}
               <p className="text-xs font-semibold text-slate-500">
-                {isRecording
+                {!speechSupported
+                  ? 'Speech recognition not supported in this browser'
+                  : isRecording
                   ? `Listening... (${timeLeft}s left)`
                   : score !== null && score >= 70
                   ? `Great pronunciation! (${score}% accuracy)`

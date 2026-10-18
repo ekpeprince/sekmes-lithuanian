@@ -35,12 +35,12 @@ export interface BattleRoomDoc {
   currentRound: number;
   tier: string;
   questions: BattleRoomQuestion[];
-  createdAt: any;
+  createdAt: number | string | Record<string, unknown>;
   countdownStartTime?: number | null;
 }
 
 // Universal Room ID sanitization: strips leading '#' and whitespace, uppercase
-export function sanitizeRoomId(roomId?: any): string {
+export function sanitizeRoomId(roomId?: unknown): string {
   if (!roomId || typeof roomId !== 'string') return '';
   return roomId.trim().replace(/^#+/, '').toUpperCase();
 }
@@ -79,39 +79,39 @@ export function generateBattleRoomQuestions(count: number = 5, seedStr: string =
 }
 
 // Helper: map server room response to client BattleRoomDoc schema
-export function mapServerRoomToDoc(data: any): BattleRoomDoc {
-  if (!data) return data;
-  const roomId = data.roomId || data.id || '';
+export function mapServerRoomToDoc(data: Record<string, unknown> | null | undefined): BattleRoomDoc | null {
+  if (!data) return null;
+  const roomId = String(data.roomId || data.id || '');
 
-  let host: BattleRoomPlayer = data.host;
-  let guest: BattleRoomPlayer | null = data.guest || null;
+  let host = data.host as BattleRoomPlayer | undefined;
+  let guest = (data.guest as BattleRoomPlayer | undefined) || null;
 
   if (!host && data.players) {
-    const playersArr: any[] = Object.values(data.players);
+    const playersArr = Object.values(data.players) as Array<Record<string, unknown>>;
     const hostPlayer = playersArr.find((p) => p.isHost) || playersArr[0];
     if (hostPlayer) {
       host = {
-        id: hostPlayer.id,
-        name: hostPlayer.name || 'Host',
+        id: String(hostPlayer.id || 'host'),
+        name: String(hostPlayer.name || 'Host'),
         joined: true,
-        score: hostPlayer.score || 0,
+        score: Number(hostPlayer.score) || 0,
         ready: Boolean(hostPlayer.ready ?? data.hostReady),
-        currentRound: hostPlayer.currentRound || 0,
+        currentRound: Number(hostPlayer.currentRound) || 0,
       };
     }
   }
 
   if (!guest && data.players) {
-    const playersArr: any[] = Object.values(data.players);
+    const playersArr = Object.values(data.players) as Array<Record<string, unknown>>;
     const guestPlayer = playersArr.find((p) => !p.isHost && p.id !== host?.id);
     if (guestPlayer) {
       guest = {
-        id: guestPlayer.id,
-        name: guestPlayer.name || 'Player 2',
+        id: String(guestPlayer.id || 'guest'),
+        name: String(guestPlayer.name || 'Player 2'),
         joined: true,
-        score: guestPlayer.score || 0,
+        score: Number(guestPlayer.score) || 0,
         ready: Boolean(guestPlayer.ready ?? data.guestReady),
-        currentRound: guestPlayer.currentRound || 0,
+        currentRound: Number(guestPlayer.currentRound) || 0,
       };
     }
   }
@@ -120,22 +120,86 @@ export function mapServerRoomToDoc(data: any): BattleRoomDoc {
   const guestReady = Boolean(data.guestReady ?? guest?.ready);
 
   const questions = Array.isArray(data.questions) && data.questions.length > 0
-    ? data.questions
+    ? (data.questions as BattleRoomQuestion[])
     : generateBattleRoomQuestions(5, roomId);
 
   return {
     roomId,
-    status: (data.status === 'finished' ? 'completed' : data.status) || 'waiting',
+    status: (data.status === 'finished' ? 'completed' : data.status as BattleRoomDoc['status']) || 'waiting',
     host: host ? { ...host, ready: hostReady } : { id: 'unknown_host', name: 'Host', joined: true, score: 0, ready: hostReady, currentRound: 0 },
     guest: guest ? { ...guest, ready: guestReady } : null,
     hostReady,
     guestReady,
     countdown: typeof data.countdown === 'number' ? data.countdown : 3,
     currentRound: typeof data.currentRound === 'number' ? data.currentRound : 0,
-    tier: data.tier || 'GELEŽINĖ LYGA',
+    tier: String(data.tier || 'GELEŽINĖ LYGA'),
     questions,
-    createdAt: data.createdAt || Date.now(),
-    countdownStartTime: data.countdownStartTime ?? null,
+    createdAt: (data.createdAt as number | string | Record<string, unknown>) || Date.now(),
+    countdownStartTime: (data.countdownStartTime as number | null) ?? null,
+  };
+}
+
+/**
+ * Monotonically merges an incoming battle room snapshot with local room state.
+ * Prevents out-of-order network packets or lagging polling from regressing
+ * player scores, current rounds, or status backwards in real time.
+ */
+export function mergeBattleRoomDoc(current: BattleRoomDoc | null, incoming: BattleRoomDoc): BattleRoomDoc {
+  if (!current) return incoming;
+
+  // Rematch detection: if room was completed and is reset to 'waiting' for a rematch
+  const isRematch = current.status === 'completed' && incoming.status === 'waiting';
+  if (isRematch) {
+    return incoming;
+  }
+
+  // Preserve guest profile if incoming packet dropped it
+  const guest = incoming.guest || current.guest;
+  const guestReady = incoming.guestReady || (current.guestReady && guest?.id === current.guest?.id);
+  const hostReady = incoming.hostReady || current.hostReady;
+
+  // Monotonic score and round progression (never drop score or round backwards)
+  const hostScore = Math.max(incoming.host?.score || 0, current.host?.score || 0);
+  const hostRound = Math.max(incoming.host?.currentRound || 0, current.host?.currentRound || 0);
+
+  const guestScore = guest
+    ? Math.max(incoming.guest?.score || 0, (guest.id === current.guest?.id ? current.guest?.score : 0) || 0)
+    : 0;
+  const guestRound = guest
+    ? Math.max(incoming.guest?.currentRound || 0, (guest.id === current.guest?.id ? current.guest?.currentRound : 0) || 0)
+    : 0;
+
+  // Protect status from regressing backwards (waiting -> starting -> in_progress -> completed)
+  const statusRank: Record<string, number> = {
+    waiting: 1,
+    starting: 2,
+    in_progress: 3,
+    completed: 4,
+  };
+  const currentRank = statusRank[current.status] || 1;
+  const incomingRank = statusRank[incoming.status] || 1;
+  const effectiveStatus = incomingRank >= currentRank ? incoming.status : current.status;
+
+  return {
+    ...incoming,
+    status: effectiveStatus,
+    host: {
+      ...incoming.host,
+      score: hostScore,
+      currentRound: hostRound,
+      ready: hostReady,
+    },
+    guest: guest
+      ? {
+          ...guest,
+          score: guestScore,
+          currentRound: guestRound,
+          ready: guestReady,
+        }
+      : null,
+    hostReady,
+    guestReady,
+    currentRound: Math.max(incoming.currentRound || 0, current.currentRound || 0),
   };
 }
 
@@ -213,7 +277,7 @@ function getOrCreateMqttClient(): MqttClient | null {
 }
 
 // Reconstruct room state by replaying an array of event payloads
-export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[]): BattleRoomDoc | null {
+export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: Array<Record<string, unknown>>): BattleRoomDoc | null {
   let room: BattleRoomDoc | null = baseRoom ? { ...baseRoom } : null;
 
   for (const ev of events) {
@@ -223,9 +287,9 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
       const existingGuest = room?.guest;
       const existingGuestReady = room?.guestReady;
 
-      room = mapServerRoomToDoc(ev.room);
+      room = mapServerRoomToDoc(ev.room as Record<string, unknown>);
 
-      if (existingGuest && !room.guest) {
+      if (existingGuest && room && !room.guest) {
         room.guest = existingGuest;
         room.guestReady = existingGuestReady ?? false;
       }
@@ -249,16 +313,8 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
       };
     }
 
-    if (ev.action === 'create' && ev.room) {
-      const existingGuest = room?.guest;
-      const existingGuestReady = room?.guestReady;
-      room = mapServerRoomToDoc(ev.room);
-      if (existingGuest && !room.guest) {
-        room.guest = existingGuest;
-        room.guestReady = existingGuestReady ?? false;
-      }
-    } else if (ev.action === 'join') {
-      const guestData = ev.guest || ev.guestUser;
+    if (ev.action === 'join') {
+      const guestData = (ev.guest || ev.guestUser) as Record<string, unknown> | undefined;
       if (guestData) {
         if (!room) {
           const roomId = sanitizeRoomId(ev.roomId);
@@ -267,10 +323,10 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
             status: 'waiting',
             host: { id: 'host', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
             guest: {
-              id: guestData.id,
-              name: guestData.name || 'Player 2',
+              id: String(guestData.id || 'guest'),
+              name: String(guestData.name || 'Player 2'),
               joined: true,
-              score: guestData.score || 0,
+              score: Number(guestData.score) || 0,
               ready: false,
               currentRound: 0,
             },
@@ -284,10 +340,10 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
           };
         } else {
           room.guest = {
-            id: guestData.id,
-            name: guestData.name || 'Player 2',
+            id: String(guestData.id || 'guest'),
+            name: String(guestData.name || 'Player 2'),
             joined: true,
-            score: guestData.score || 0,
+            score: Number(guestData.score) || 0,
             ready: false,
             currentRound: 0,
           };
@@ -319,14 +375,17 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
     } else if (ev.action === 'start' && room) {
       room.status = 'in_progress';
     } else if (ev.action === 'score' && room) {
+      const newScore = Number(ev.newScore) || 0;
+      const newRound = Number(ev.newRound) || 0;
+      const isCorrect = ev.isCorrect !== undefined ? Boolean(ev.isCorrect) : undefined;
       if (ev.isHost) {
-        room.host.score = ev.newScore;
-        room.host.currentRound = ev.newRound;
-        if (ev.isCorrect !== undefined) room.host.lastAnswerCorrect = ev.isCorrect;
+        room.host.score = newScore;
+        room.host.currentRound = newRound;
+        if (isCorrect !== undefined) room.host.lastAnswerCorrect = isCorrect;
       } else if (room.guest) {
-        room.guest.score = ev.newScore;
-        room.guest.currentRound = ev.newRound;
-        if (ev.isCorrect !== undefined) room.guest.lastAnswerCorrect = ev.isCorrect;
+        room.guest.score = newScore;
+        room.guest.currentRound = newRound;
+        if (isCorrect !== undefined) room.guest.lastAnswerCorrect = isCorrect;
       }
       if ((room.host.currentRound ?? 0) >= 5 && (room.guest?.currentRound ?? 0) >= 5) {
         room.status = 'completed';
@@ -334,7 +393,7 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
     } else if (ev.action === 'complete' && room) {
       room.status = 'completed';
     } else if (ev.action === 'rematch' && ev.room) {
-      room = mapServerRoomToDoc(ev.room);
+      room = mapServerRoomToDoc(ev.room as Record<string, unknown>);
     }
   }
 
@@ -342,7 +401,7 @@ export function applyEventsToRoom(baseRoom: BattleRoomDoc | null, events: any[])
 }
 
 // Broadcast event to MQTT broker with RETAINED flag and server API
-export async function broadcastRoomEvent(roomId: string, eventData: any): Promise<void> {
+export async function broadcastRoomEvent(roomId: string, eventData: Record<string, unknown>): Promise<void> {
   const cleanId = sanitizeRoomId(roomId);
   if (!cleanId) return;
 
@@ -358,9 +417,9 @@ export async function broadcastRoomEvent(roomId: string, eventData: any): Promis
   if (db && isFirebaseConfigured) {
     try {
       const roomRef = doc(db, 'battle_rooms', cleanId);
-      const roomPayload = eventData.room ? { ...eventData.room } : { roomId: cleanId, ...eventData };
+      const roomPayload = eventData.room ? { ...(eventData.room as Record<string, unknown>) } : { roomId: cleanId, ...eventData };
       setDoc(roomRef, JSON.parse(JSON.stringify(roomPayload)), { merge: true }).catch(() => {});
-    } catch (e) {
+    } catch (e: unknown) {
       console.warn('[BATTLE_FIRESTORE_BROADCAST_WARN]:', e);
     }
   }
@@ -811,22 +870,19 @@ export function listenToBattleRoom(
         (snapshot) => {
           if (isCancelled || !snapshot.exists()) return;
           const firestoreData = snapshot.data();
-          const mapped = mapServerRoomToDoc(firestoreData);
+          const mapped = mapServerRoomToDoc(firestoreData as Record<string, unknown>);
           if (mapped) {
-            if (currentRoom?.guest && !mapped.guest) {
-              mapped.guest = currentRoom.guest;
-              mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
-            }
-            currentRoom = mapped;
-            saveLocalRoom(mapped);
-            onUpdate(mapped);
+            const merged = mergeBattleRoomDoc(currentRoom, mapped);
+            currentRoom = merged;
+            saveLocalRoom(merged);
+            onUpdate(merged);
           }
         },
         (err) => {
           console.warn('[BATTLE_FIRESTORE_SNAPSHOT_WARN]:', err);
         }
       );
-    } catch (e) {
+    } catch (e: unknown) {
       console.warn('[BATTLE_FIRESTORE_SUB_ERR]:', e);
     }
   }
@@ -840,27 +896,24 @@ export function listenToBattleRoom(
       try {
         const payload = JSON.parse(messageBuffer.toString());
         if (payload.room) {
-          const mapped = mapServerRoomToDoc(payload.room);
+          const mapped = mapServerRoomToDoc(payload.room as Record<string, unknown>);
           if (mapped) {
-            // Preserve local player ready if incoming is missing it
-            if (currentRoom?.guest && !mapped.guest) {
-              mapped.guest = currentRoom.guest;
-              mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
-            }
-            currentRoom = mapped;
-            saveLocalRoom(mapped);
-            onUpdate(mapped);
+            const merged = mergeBattleRoomDoc(currentRoom, mapped);
+            currentRoom = merged;
+            saveLocalRoom(merged);
+            onUpdate(merged);
             return;
           }
         }
 
         const updated = applyEventsToRoom(currentRoom, [payload]);
         if (updated) {
-          currentRoom = updated;
-          saveLocalRoom(updated);
-          onUpdate(updated);
+          const merged = mergeBattleRoomDoc(currentRoom, updated);
+          currentRoom = merged;
+          saveLocalRoom(merged);
+          onUpdate(merged);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.warn('[BATTLE_MQTT_PARSE_ERR]:', err);
       }
     }
@@ -887,16 +940,13 @@ export function listenToBattleRoom(
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
       });
       if (res.ok) {
-        const serverData = await res.json();
+        const serverData = (await res.json()) as Record<string, unknown>;
         const mapped = mapServerRoomToDoc(serverData);
         if (mapped) {
-          if (currentRoom?.guest && !mapped.guest) {
-            mapped.guest = currentRoom.guest;
-            mapped.guestReady = currentRoom.guestReady ?? currentRoom.guest.ready;
-          }
-          currentRoom = mapped;
-          saveLocalRoom(mapped);
-          onUpdate(mapped);
+          const merged = mergeBattleRoomDoc(currentRoom, mapped);
+          currentRoom = merged;
+          saveLocalRoom(merged);
+          onUpdate(merged);
         }
       }
     } catch {}

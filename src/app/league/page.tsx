@@ -13,8 +13,6 @@ import {
   ArrowRight,
   Award,
   Info,
-  Share2,
-  Users,
 } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +20,6 @@ import { LEAGUE_TIERS, LeagueTier, getLeagueTimeRemaining, getWeeklyCohort, Comp
 import { syncUserToLeaderboard, fetchRealLeaderboardMembers } from '@/lib/leagueSync';
 import { LeagueBattleModal } from '@/components/LeagueBattleModal';
 import { RealtimeBattleModal } from '@/components/RealtimeBattleModal';
-import { shareBattleInvite } from '@/lib/shareUtils';
 
 function LeagueContent() {
   const { progress } = useGame();
@@ -36,46 +33,32 @@ function LeagueContent() {
   const [activeTier, setActiveTier] = useState<LeagueTier>(userAssignedTier);
   const [realMembers, setRealMembers] = useState<Competitor[]>([]);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
-  const [isBattleOpen, setIsBattleOpen] = useState(false);
-  const [isRealtimeBattleOpen, setIsRealtimeBattleOpen] = useState(false);
-  const [realtimeRoomId, setRealtimeRoomId] = useState<string | null>(null);
-  const [isRealtimeHost, setIsRealtimeHost] = useState(true);
-  const [inviteToast, setInviteToast] = useState<string | null>(null);
-  const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
-
-  const handleInviteFriend = async () => {
-    const userName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Tu (You)');
-    const res = await shareBattleInvite(userName);
-    if (res.copied) {
-      setInviteToast('Invite link copied to clipboard!');
-      setTimeout(() => setInviteToast(null), 3000);
+  const [isBattleOpen, setIsBattleOpen] = useState(() => battleParam === 'invite');
+  const [realtimeRoomId, setRealtimeRoomId] = useState<string | null>(() => {
+    if (isGuestInvite && roomIdParam) {
+      return roomIdParam.trim().replace(/^#+/, '').toUpperCase();
     }
-  };
+    return null;
+  });
+  const [isRealtimeHost, setIsRealtimeHost] = useState(() => {
+    if (isGuestInvite && roomIdParam) {
+      const cleanId = roomIdParam.trim().replace(/^#+/, '').toUpperCase();
+      return typeof window !== 'undefined' && localStorage.getItem(`battle_host_${cleanId}`) === 'true';
+    }
+    return true;
+  });
+  const [isRealtimeBattleOpen, setIsRealtimeBattleOpen] = useState(() => {
+    if (battleParam === 'room') return true;
+    if (isGuestInvite && roomIdParam) return true;
+    return false;
+  });
+  const [timeInfo, setTimeInfo] = useState(() => getLeagueTimeRemaining());
 
   const handleStartRealtimeBattle = () => {
     setRealtimeRoomId(null);
     setIsRealtimeHost(true);
     setIsRealtimeBattleOpen(true);
   };
-
-  // Auto-launch battle modal or realtime room if navigated via URL params
-  useEffect(() => {
-    if (battleParam === 'invite') {
-      setIsBattleOpen(true);
-    } else if (battleParam === 'room' && !roomIdParam) {
-      setIsRealtimeBattleOpen(true);
-    }
-  }, [battleParam, roomIdParam]);
-
-  useEffect(() => {
-    if (isGuestInvite && roomIdParam) {
-      const cleanId = roomIdParam.trim().replace(/^#+/, '').toUpperCase();
-      const isActuallyHost = typeof window !== 'undefined' && localStorage.getItem(`battle_host_${cleanId}`) === 'true';
-      setRealtimeRoomId(cleanId);
-      setIsRealtimeHost(isActuallyHost);
-      setIsRealtimeBattleOpen(true);
-    }
-  }, [isGuestInvite, roomIdParam]);
 
   // Periodically refresh countdown
   useEffect(() => {
@@ -731,13 +714,7 @@ function LeagueContent() {
         }}
       />
 
-      {/* Invite Toast Notification */}
-      {inviteToast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200">
-          <span>📋</span>
-          <span>{inviteToast}</span>
-        </div>
-      )}
+
     </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   ShoppingBag,
   Compass,
   MessageCircle,
-  HelpCircle,
   Zap,
   Sliders,
   Settings,
@@ -22,9 +21,6 @@ import {
   Trash2,
   User,
   Check,
-  Flame,
-  Info,
-  ChevronDown,
   Lightbulb,
   Plus,
   History,
@@ -55,6 +51,7 @@ import {
   TutorSession,
   INITIAL_AISTE_GREETING,
   INITIAL_AISTE_TRANSLATION,
+  getTimestampNow,
 } from '@/lib/tutorStorage';
 
 import { FREE_CHAT_SCENARIO } from '@/data/scenarios';
@@ -380,43 +377,44 @@ export default function TutorPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Record session in tutor memory on mount
+  // Record session in tutor memory and load active chat session on mount
   useEffect(() => {
-    const updated = recordNewSession(currentScenario.title);
-    setMemory(updated);
-    setEditingLearnerName(updated.learnerName || '');
-  }, []);
+    const timer = setTimeout(() => {
+      const updated = recordNewSession(currentScenario.title);
+      setMemory(updated);
+      setEditingLearnerName(updated.learnerName || '');
 
-  // Load or create active chat session from storage
-  useEffect(() => {
-    const allSessions = getSessions();
-    const storedActiveId = getActiveSessionId();
-    let currentSession: TutorSession | null = null;
+      const allSessions = getSessions();
+      const storedActiveId = getActiveSessionId();
+      let currentSession: TutorSession | null = null;
 
-    if (storedActiveId) {
-      currentSession = allSessions.find((s) => s.id === storedActiveId) || null;
-    }
-
-    if (!currentSession) {
-      if (allSessions.length > 0) {
-        currentSession = allSessions[0];
-      } else {
-        currentSession = createNewSession();
+      if (storedActiveId) {
+        currentSession = allSessions.find((s) => s.id === storedActiveId) || null;
       }
-    }
 
-    setActiveSessionId(currentSession.id);
-    setActiveSessionIdState(currentSession.id);
-    setSessionsList(getSessions());
+      if (!currentSession) {
+        if (allSessions.length > 0) {
+          currentSession = allSessions[0];
+        } else {
+          currentSession = createNewSession();
+        }
+      }
 
-    if (currentSession.messages && currentSession.messages.length > 0) {
-      const { messages: restoredMsgs, suggestions: restoredSuggs } = convertFromTutorMessages(
-        currentSession.messages
-      );
-      setMessages(restoredMsgs);
-      setSuggestions(restoredSuggs);
-    }
-  }, []);
+      setActiveSessionId(currentSession.id);
+      setActiveSessionIdState(currentSession.id);
+      setSessionsList(getSessions());
+
+      if (currentSession.messages && currentSession.messages.length > 0) {
+        const { messages: restoredMsgs, suggestions: restoredSuggs } = convertFromTutorMessages(
+          currentSession.messages
+        );
+        setMessages(restoredMsgs);
+        setSuggestions(restoredSuggs);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [currentScenario.title]);
 
   // Clear toast after 4s
   useEffect(() => {
@@ -734,8 +732,8 @@ export default function TutorPage() {
     saveSession({
       id: currentSessionId,
       title: sessionTitle,
-      createdAt: latestStoredSession?.createdAt || activeSession.createdAt || Date.now(),
-      updatedAt: Date.now(),
+      createdAt: latestStoredSession?.createdAt || activeSession.createdAt || getTimestampNow(),
+      updatedAt: getTimestampNow(),
       messages: convertToTutorMessages(newHistory),
     });
     setSessionsList(getSessions());
@@ -791,8 +789,8 @@ export default function TutorPage() {
       saveSession({
         id: currentSessionId,
         title: sessionForSave?.title || sessionTitle,
-        createdAt: sessionForSave?.createdAt || latestStoredSession?.createdAt || activeSession.createdAt || Date.now(),
-        updatedAt: Date.now(),
+        createdAt: sessionForSave?.createdAt || latestStoredSession?.createdAt || activeSession.createdAt || getTimestampNow(),
+        updatedAt: getTimestampNow(),
         messages: convertToTutorMessages(finalMessages, normalizedSuggestions),
       });
       setSessionsList(getSessions());

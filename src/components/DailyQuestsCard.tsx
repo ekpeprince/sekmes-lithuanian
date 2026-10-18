@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Target, Check, Gift, Sparkles, Shield, X } from 'lucide-react';
+import { Target, Check, Sparkles, Shield, X } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { DEFAULT_QUESTS, getLocalDateString } from '@/lib/storage';
 

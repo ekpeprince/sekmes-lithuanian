@@ -3,7 +3,7 @@
 import React, { useState, use } from 'react';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import { X, Heart, AlertCircle, RefreshCw, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Heart, AlertCircle, RefreshCw, Lightbulb } from 'lucide-react';
 import { getLessonById, getNextLessonId } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
 import { MultipleChoice } from '@/components/exercises/MultipleChoice';

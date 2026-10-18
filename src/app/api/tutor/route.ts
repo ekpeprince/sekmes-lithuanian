@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
   try {
     const body: TutorRequest = await req.json();
     const scenario = body.scenario || 'free-chat';
-    const messages: Message[] = Array.isArray(body.messages) ? body.messages : [];
 
     // Check GEMINI_API_KEY environment variable
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -171,7 +170,6 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
     }
 
     const CANDIDATES = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'];
-    const MODEL_NAME = 'gemini-3.6-flash';
     let lastError: unknown = null;
 
     try {

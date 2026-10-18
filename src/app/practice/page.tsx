@@ -14,7 +14,6 @@ import {
   Clock,
   Flame,
   Mic,
-  GraduationCap,
   BookOpen,
   ChevronLeft,
 } from 'lucide-react';

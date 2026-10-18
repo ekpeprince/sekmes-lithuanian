@@ -23,6 +23,10 @@ export const INITIAL_AISTE_GREETING =
 export const INITIAL_AISTE_TRANSLATION =
   "Hi! I'm Aistė. What would you like to talk about today?";
 
+export function getTimestampNow(): number {
+  return Date.now();
+}
+
 function getCurrentTimeStr(): string {
   if (typeof window === 'undefined') return '12:00';
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

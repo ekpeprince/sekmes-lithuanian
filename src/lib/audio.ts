@@ -206,7 +206,9 @@ class SoundManager {
     }
 
     try {
+      const isSlow = typeof optionsOrOnEnd === 'object' && Boolean(optionsOrOnEnd?.slow);
       const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}&v=2`);
+      audio.playbackRate = isSlow ? 0.75 : 1.0;
       this.currentAudio = audio;
 
       audio.onended = () => {

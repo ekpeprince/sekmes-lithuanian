@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bell, Flame, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Bell, X, Sparkles } from 'lucide-react';
 import {
   isNotificationSupported,
   requestNotificationPermission,

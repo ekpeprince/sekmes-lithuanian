@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Volume2, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { getOfflineAudioStats, downloadOfflineAudioPack, clearOfflineAudioPack, OfflineAudioStats } from '@/lib/offlineAudio';
 import { sounds } from '@/lib/audio';
 
 export const OfflineAudioPackCard: React.FC = () => {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const [stats, setStats] = useState<OfflineAudioStats>({
     totalPhrases: 0,
     cachedCount: 0,
@@ -16,11 +16,14 @@ export const OfflineAudioPackCard: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<{ loaded: number; total: number; currentPhrase: string } | null>(null);
 
+  const refreshStats = useCallback(async () => {
+    const current = await getOfflineAudioStats();
+    setStats(current);
+  }, []);
+
   // Monitor online / offline network state
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsOnline(navigator.onLine);
-
       const handleOnline = () => setIsOnline(true);
       const handleOffline = () => setIsOnline(false);
 
@@ -36,13 +39,14 @@ export const OfflineAudioPackCard: React.FC = () => {
 
   // Fetch offline audio storage stats on mount
   useEffect(() => {
-    refreshStats();
+    let isMounted = true;
+    getOfflineAudioStats().then((current) => {
+      if (isMounted) setStats(current);
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-  const refreshStats = async () => {
-    const current = await getOfflineAudioStats();
-    setStats(current);
-  };
 
   const handleDownload = async () => {
     if (isDownloading) return;

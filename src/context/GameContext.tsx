@@ -19,8 +19,6 @@ import {
   recordBattleResult as recordBattleResultStorage,
   formatTimeLearned,
   DEFAULT_PROGRESS,
-  DEFAULT_QUESTS,
-  getLeagueTierByXp,
   getLocalDateString,
 } from '@/lib/storage';
 import { getAllLessons } from '@/data/curriculum';
