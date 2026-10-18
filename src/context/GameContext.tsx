@@ -156,8 +156,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const toggleSound = () => {
-    const nextVal = !progress.soundEnabled;
-    const updated = { ...progress, soundEnabled: nextVal };
+    const current = getStoredProgress();
+    const nextVal = !current.soundEnabled;
+    const updated = { ...current, soundEnabled: nextVal };
     saveProgress(updated);
     setProgress(updated);
     sounds.setSoundEnabled(nextVal);
@@ -167,7 +168,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const setVoiceGender = (gender: 'female' | 'male') => {
-    const updated = { ...progress, voiceGender: gender };
+    const current = getStoredProgress();
+    const updated = { ...current, voiceGender: gender };
     saveProgress(updated);
     setProgress(updated);
     sounds.setVoiceGender(gender);

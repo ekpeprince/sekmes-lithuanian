@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   Dumbbell,
@@ -73,6 +73,7 @@ export default function PracticePage() {
   const [drillCombo, setDrillCombo] = useState(0);
   const [drillQuestionIndex, setDrillQuestionIndex] = useState(0);
   const [drillFinished, setDrillFinished] = useState(false);
+  const drillScoreSavedRef = useRef(false);
 
   // Speed drill pool generated from curriculum exercises with English subtitles
   const speedQuestions = useMemo(() => {
@@ -235,15 +236,17 @@ export default function PracticePage() {
     return () => clearInterval(timer);
   }, [drillActive]);
 
-  // Persist score when drill finishes
+  // Persist score once when drill finishes
   useEffect(() => {
-    if (drillFinished && drillScore > 0) {
+    if (drillFinished && drillScore > 0 && !drillScoreSavedRef.current) {
+      drillScoreSavedRef.current = true;
       saveSpeedDrillScoreVal(drillScore);
     }
   }, [drillFinished, drillScore, saveSpeedDrillScoreVal]);
 
   const startSpeedDrill = () => {
     sounds.playClick();
+    drillScoreSavedRef.current = false;
     setDrillTimeLeft(60);
     setDrillScore(0);
     setDrillCombo(0);
