@@ -105,6 +105,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   const [opponentAnswered, setOpponentAnswered] = useState<boolean>(false);
   const [roundCompleted, setRoundCompleted] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showAnotherBattlePopup, setShowAnotherBattlePopup] = useState(false);
   const xpAwardedRef = useRef(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -171,6 +172,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     setSelectedOption(null);
     setOpponentAnswered(false);
     setRoundCompleted(false);
+    setShowAnotherBattlePopup(false);
     xpAwardedRef.current = false;
     setTimeLeft(ROUND_SECONDS);
     setStatus('searching');
@@ -312,6 +314,12 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     }
 
     if (onRewardClaimed) onRewardClaimed(earnedXp);
+
+    const popupTimer = setTimeout(() => {
+      setShowAnotherBattlePopup(true);
+    }, 1500);
+
+    return () => clearTimeout(popupTimer);
   }, [status, userScore, opponentScore, recordBattleResult, onRewardClaimed]);
 
   const handleInviteFriend = async () => {
@@ -679,6 +687,52 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
               >
                 Grįžti į lygą
               </button>
+            </div>
+          </div>
+        )}
+        {/* "Do you want another battle?" Pop-up Modal */}
+        {showAnotherBattlePopup && status === 'completed' && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="w-full max-w-sm rounded-3xl bg-white border-2 border-amber-300 p-6 shadow-2xl relative text-center animate-in zoom-in-95 duration-200">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center text-3xl mx-auto mb-3 shadow-md shadow-amber-500/20">
+                ⚔️
+              </div>
+
+              <h3 className="text-xl font-black text-slate-900 leading-tight">
+                Do you want another battle?
+              </h3>
+              <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mt-1">
+                Ar norite dar vienos dvikovos?
+              </p>
+
+              <p className="text-xs text-slate-500 font-medium my-3 leading-relaxed">
+                Continue your momentum, earn more League XP, and climb higher in the division standings!
+              </p>
+
+              <div className="flex flex-col gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAnotherBattlePopup(false);
+                    startNewMatch();
+                  }}
+                  className="w-full btn-3d btn-green-3d py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Taip! Žaisti dar kartą (Yes, Battle!)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAnotherBattlePopup(false);
+                    onClose();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs transition cursor-pointer"
+                >
+                  Ne, grįžti į lygą (No, Return to League)
+                </button>
+              </div>
             </div>
           </div>
         )}
