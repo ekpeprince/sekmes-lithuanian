@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BattlePlayer, BattleAnswer, calculateAnswerPoints } from '@/lib/battleSync';
 import { generateBattleRoomQuestions, BattleRoomPlayer, BattleRoomQuestion } from '@/lib/battleRoomSync';
+import { notifyHostOfGuest } from '@/lib/pushStore';
 
 export const runtime = 'nodejs';
 
@@ -191,6 +192,10 @@ export async function POST(request: NextRequest) {
       };
 
       await persistRoom(cleanId, room);
+      // Trigger Web Push alert to the host's phone asynchronously
+      void notifyHostOfGuest(cleanId, guestData.name).catch((err) => {
+        console.warn('[BATTLE_PUSH_NOTIFY_WARN]:', err);
+      });
       return NextResponse.json(room);
     }
 

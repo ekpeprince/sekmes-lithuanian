@@ -14,11 +14,13 @@ import {
   AlertCircle,
   MessageCircle,
   ArrowRight,
+  Bell,
 } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 import { haptics } from '@/lib/haptics';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { registerHostBattlePush } from '@/lib/pushSubscription';
 import {
   BattleRoomDoc,
   BattleRoomPlayer,
@@ -119,6 +121,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [hostJoinBanner, setHostJoinBanner] = useState<string | null>(null);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
 
   // Active quiz state
   const [currentRound, setCurrentRound] = useState(0); // 0..4
@@ -759,8 +762,37 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     return shareUrl || `${window.location.origin}/league?battle=room&roomId=${roomId || 'ROOM'}`;
   };
 
+  // Auto-subscribe host to push notifications if permission already granted
+  useEffect(() => {
+    if (isHost && roomId && typeof window !== 'undefined') {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        registerHostBattlePush(roomId, currentUserName).then((res) => {
+          if (res.success) setPushSubscribed(true);
+        });
+      }
+    }
+  }, [isHost, roomId, currentUserName]);
+
+  const handleEnablePushAlert = async () => {
+    if (!roomId) return;
+    const res = await registerHostBattlePush(roomId, currentUserName);
+    if (res.success) {
+      setPushSubscribed(true);
+      showToast('🔔 Phone alert active! Your phone will buzz when your friend joins.');
+    } else if (res.reason === 'Notification permission denied') {
+      showToast('Notifications are blocked in your browser settings.');
+    } else {
+      showToast('Could not enable phone notifications.');
+    }
+  };
+
   const handleCopyLink = async () => {
     const activeUrl = getActiveShareUrl();
+    if (isHost && roomId) {
+      void registerHostBattlePush(roomId, currentUserName).then((res) => {
+        if (res.success) setPushSubscribed(true);
+      });
+    }
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(activeUrl);
@@ -786,6 +818,11 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   const handleShareWhatsApp = () => {
     const activeUrl = getActiveShareUrl();
+    if (isHost && roomId) {
+      void registerHostBattlePush(roomId, currentUserName).then((res) => {
+        if (res.success) setPushSubscribed(true);
+      });
+    }
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + activeUrl)}`;
     if (typeof window !== 'undefined') {
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
@@ -794,6 +831,11 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
 
   const handleShareInvite = async () => {
     const activeUrl = getActiveShareUrl();
+    if (isHost && roomId) {
+      void registerHostBattlePush(roomId, currentUserName).then((res) => {
+        if (res.success) setPushSubscribed(true);
+      });
+    }
     const shareData = {
       title: 'LabasApp 1v1 Battle 🇱🇹⚔️',
       text: shareText,
@@ -1244,6 +1286,37 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                   </button>
                 </div>
 
+                {/* Phone Push Notification Alert Card for Host */}
+                <div className="mt-3.5 w-full max-w-sm rounded-2xl bg-indigo-50/90 border-2 border-indigo-200/80 p-3 flex items-center justify-between gap-3 text-left shadow-2xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-indigo-950 flex items-center gap-1.5 leading-tight">
+                        <span>{pushSubscribed ? 'Phone Alert Active ✓' : 'Notify Phone on Join'}</span>
+                        {pushSubscribed && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
+                      </p>
+                      <p className="text-[11px] text-indigo-800/80 font-medium leading-tight mt-0.5">
+                        {pushSubscribed
+                          ? 'Your phone will buzz with an OS push alert the moment your friend joins!'
+                          : 'Get an OS push alert if you close the app or switch to WhatsApp.'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleEnablePushAlert}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition cursor-pointer active:scale-95 ${
+                      pushSubscribed
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                    }`}
+                  >
+                    {pushSubscribed ? 'Active' : 'Turn On'}
+                  </button>
+                </div>
+
                 {/* Optional Ready-in-advance Toggle */}
                 <div className="mt-4 w-full max-w-sm p-3 rounded-2xl bg-amber-50/70 border border-amber-200 flex items-center justify-between gap-3">
                   <div className="text-left">
@@ -1425,6 +1498,34 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                       <span className="text-emerald-700 font-black animate-pulse">🚀 Both ready! Starting battle...</span>
                     )}
                   </p>
+
+                  {/* Guest reassurance and WhatsApp nudge if host is not ready yet */}
+                  {!isHost && !isHostReady && (
+                    <div className="mt-3 w-full max-w-sm space-y-2 text-left">
+                      <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-200/80 flex items-start gap-2 text-xs text-sky-900">
+                        <span className="text-base shrink-0">📲</span>
+                        <p className="text-[11px] leading-tight text-sky-800">
+                          We sent a push alert to <strong>{hostPlayer?.name || 'the Host'}</strong>&apos;s phone! If they stepped away, you can also give them a quick WhatsApp nudge:
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const activeUrl = getActiveShareUrl();
+                          const nudgeText = `Hey! I just joined your Lithuanian Battle room (#${roomId}) on LabasApp and I'm ready! Jump in: ${activeUrl}`;
+                          const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(nudgeText)}`;
+                          if (typeof window !== 'undefined') {
+                            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs transition active:scale-95 cursor-pointer"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>Nudge {hostPlayer?.name || 'Host'} on WhatsApp</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer Controls */}

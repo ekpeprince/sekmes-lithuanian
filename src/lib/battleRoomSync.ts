@@ -2,6 +2,7 @@ import mqtt, { MqttClient } from 'mqtt';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { BATTLE_QUESTIONS } from '@/data/battleQuestions';
+import { triggerHostJoinNotification } from '@/lib/pushSubscription';
 
 export interface BattleRoomPlayer {
   id: string;
@@ -601,6 +602,9 @@ export async function joinBattleRoom(
     guestUser: guestData,
     room: updatedRoom,
   });
+
+  // Trigger cross-device Web Push notification to host's phone
+  void triggerHostJoinNotification(cleanId, guestData.name).catch(() => {});
 
   return updatedRoom;
 }

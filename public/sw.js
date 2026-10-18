@@ -155,7 +155,10 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
-    vibrate: [100, 50, 100],
+    tag: data.tag || 'sekmes-push',
+    renotify: true,
+    requireInteraction: true,
+    vibrate: [200, 100, 200, 100, 200],
     data: { url: data.url || '/' },
   };
 

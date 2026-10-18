@@ -32,9 +32,13 @@ export const PwaInstallPrompt: React.FC = () => {
       const ua = window.navigator.userAgent.toLowerCase();
       const isIosDevice = /iphone|ipad|ipod/.test(ua);
 
-      if (isIosDevice) {
-        // iOS WebKit has known issues with Service Worker lifecycles and does not support full PWA installation outside Safari.
-        // Bypassing Service Worker on iOS guarantees standard, flawless web loading without process shutdowns or memory errors.
+      const isStandaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+
+      if (isIosDevice && !isStandaloneMode) {
+        // In standard iOS Safari tab mode, bypass ServiceWorker to prevent WebKit lifecycle crashes.
+        // Standalone PWA mode keeps the ServiceWorker registered for Web Push notifications.
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (const reg of registrations) {
             reg.unregister().catch(() => {});
