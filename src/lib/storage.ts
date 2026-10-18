@@ -422,6 +422,65 @@ export function addPracticeSeconds(seconds: number): UserProgress {
   return updated;
 }
 
+export function addXpStorage(amount: number): UserProgress {
+  const current = getStoredProgress();
+  const today = new Date().toISOString().split('T')[0];
+  const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
+  const nextXp = current.xp + amount;
+  const nextDailyXp = currentDailyXp + amount;
+
+  // Advance daily quest for XP
+  const updatedQuests = (current.quests || DEFAULT_QUESTS).map((q) => {
+    if (q.id === 'quest-xp') {
+      const nextCurr = Math.min(q.target, q.current + amount);
+      return { ...q, current: nextCurr, completed: nextCurr >= q.target };
+    }
+    return q;
+  });
+
+  const updated: UserProgress = {
+    ...current,
+    xp: nextXp,
+    dailyXp: nextDailyXp,
+    dailyXpDate: today,
+    quests: updatedQuests,
+    leagueTier: getLeagueTierByXp(nextXp),
+  };
+
+  saveProgress(updated);
+  return updated;
+}
+
+export function recordBattleResult(earnedXp: number, isWin: boolean): UserProgress {
+  const current = getStoredProgress();
+  const today = new Date().toISOString().split('T')[0];
+  const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
+  const nextXp = current.xp + earnedXp;
+  const nextDailyXp = currentDailyXp + earnedXp;
+
+  // Advance daily quest for XP
+  const updatedQuests = (current.quests || DEFAULT_QUESTS).map((q) => {
+    if (q.id === 'quest-xp') {
+      const nextCurr = Math.min(q.target, q.current + earnedXp);
+      return { ...q, current: nextCurr, completed: nextCurr >= q.target };
+    }
+    return q;
+  });
+
+  const updated: UserProgress = {
+    ...current,
+    xp: nextXp,
+    dailyXp: nextDailyXp,
+    dailyXpDate: today,
+    quests: updatedQuests,
+    leagueTier: getLeagueTierByXp(nextXp),
+    duelsWonCount: isWin ? (current.duelsWonCount || 0) + 1 : (current.duelsWonCount || 0),
+  };
+
+  saveProgress(updated);
+  return updated;
+}
+
 export function recordDuelWin(): UserProgress {
   const current = getStoredProgress();
   const updated: UserProgress = {

@@ -45,7 +45,11 @@ This submission packages the complete **Game Progression**, **League Tournament*
   * **Defeat** (`myScore < opponentScore`): `+10 Lygos XP`.
 - Real-time rematches (`requestBattleRoomRematch`) synchronize both connected players back into the lobby of the same room with fresh question seeds and zeroed scores.
 
-### 2.4. Production Build Verification
+### 2.4. Atomic Battle Results & Stale Closure Prevention
+- **Root Problem**: Calling `addXp(earnedXp)` and `recordDuelWin()` sequentially in the same synchronous render cycle caused a React state closure race condition where component state overwrote `duelsWonCount` or the freshly awarded `+25 XP`.
+- **Resolution**: Implemented atomic `recordBattleResult(earnedXp, isWin)` and refactored `addXp()` to `addXpStorage()`. Both operations read the live storage state, update XP, quest progress, and duel wins in a single atomic transaction, and push the unified state to React and cloud.
+
+### 2.5. Production Build Verification
 - **Framework**: Next.js 16.3.8 (Turbopack compiler).
 - **TypeScript**: Strict type-checking passed with **0 compiler errors**.
 - **Page Optimization**: 19/19 routes statically and dynamically built without errors.

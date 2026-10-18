@@ -80,7 +80,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   onPlayBot,
   onPlayQuickMatch,
 }) => {
-  const { progress, addXp, recordDuelWin } = useGame();
+  const { progress, recordBattleResult } = useGame();
   const { user } = useAuth();
 
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -707,10 +707,8 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     const isWin = myScore > opponentScore;
     const isTie = myScore === opponentScore;
     const earnedXp = isWin ? 25 : isTie ? 15 : 10;
-
-    addXp(earnedXp);
+    recordBattleResult(earnedXp, isWin);
     if (isWin) {
-      recordDuelWin();
       sounds.playSuccess();
       haptics.victory();
       confetti({
@@ -728,7 +726,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     }
 
     setXpAwarded(true);
-  }, [phase, xpAwarded, room, isHost, localScore, opponentTimeoutReached, addXp, recordDuelWin]);
+  }, [phase, xpAwarded, room, isHost, localScore, opponentTimeoutReached, recordBattleResult]);
 
   // Copy or Share Room Link
   const shareUrl = typeof window !== 'undefined' && roomId

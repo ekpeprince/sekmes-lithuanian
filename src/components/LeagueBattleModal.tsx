@@ -85,7 +85,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
   onRewardClaimed,
   onChallengeFriend,
 }) => {
-  const { progress, addXp, recordDuelWin } = useGame();
+  const { progress, recordBattleResult } = useGame();
   const { user } = useAuth();
 
   // Dynamic Tier Resolution
@@ -287,10 +287,9 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     const isTie = userScore === opponentScore;
     const earnedXp = isWin ? 25 : isTie ? 15 : 10;
 
-    // Persist XP reward to the user's total league XP in storage/context
-    addXp(earnedXp);
+    // Atomically persist XP reward & duel win count to storage and context
+    recordBattleResult(earnedXp, isWin);
     if (isWin) {
-      recordDuelWin();
       sounds.playSuccess();
       haptics.victory();
       // Confetti Trigger:
@@ -311,7 +310,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
 
     setXpAwarded(true);
     if (onRewardClaimed) onRewardClaimed(earnedXp);
-  }, [status, userScore, opponentScore, xpAwarded, addXp, recordDuelWin, onRewardClaimed]);
+  }, [status, userScore, opponentScore, xpAwarded, recordBattleResult, onRewardClaimed]);
 
   const handleInviteFriend = async () => {
     const res = await shareBattleInvite(currentUserName);

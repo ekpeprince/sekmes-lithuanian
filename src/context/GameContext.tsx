@@ -15,6 +15,8 @@ import {
   recordSpeedDrillScore,
   addPracticeSeconds,
   recordDuelWin as recordDuelWinStorage,
+  addXpStorage,
+  recordBattleResult as recordBattleResultStorage,
   formatTimeLearned,
   DEFAULT_PROGRESS,
   DEFAULT_QUESTS,
@@ -36,6 +38,7 @@ interface GameContextType {
   formatTimeLearned: (seconds: number) => string;
   addActivePracticeTime: (seconds: number) => void;
   recordDuelWin: () => void;
+  recordBattleResult: (earnedXp: number, isWin: boolean) => void;
   loseHeart: () => boolean;
   refillHearts: () => void;
   finishLesson: (lessonId: string, xpReward: number) => void;
@@ -224,30 +227,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     syncToCloudIfUser(updated);
   };
 
+  const recordBattleResult = (earnedXp: number, isWin: boolean) => {
+    const updated = recordBattleResultStorage(earnedXp, isWin);
+    setProgress(updated);
+    syncToCloudIfUser(updated);
+  };
+
   const addXp = (amount: number) => {
-    const today = new Date().toISOString().split('T')[0];
-    const currentDailyXp = progress.dailyXpDate === today ? (progress.dailyXp || 0) : 0;
-    const nextXp = progress.xp + amount;
-    const nextDailyXp = currentDailyXp + amount;
-
-    // Advance daily quest for XP
-    const updatedQuests = (progress.quests || DEFAULT_QUESTS).map((q) => {
-      if (q.id === 'quest-xp') {
-        const nextCurr = Math.min(q.target, q.current + amount);
-        return { ...q, current: nextCurr, completed: nextCurr >= q.target };
-      }
-      return q;
-    });
-
-    const updated: UserProgress = {
-      ...progress,
-      xp: nextXp,
-      dailyXp: nextDailyXp,
-      dailyXpDate: today,
-      quests: updatedQuests,
-      leagueTier: getLeagueTierByXp(nextXp),
-    };
-    saveProgress(updated);
+    const updated = addXpStorage(amount);
     setProgress(updated);
     syncToCloudIfUser(updated);
   };
@@ -278,6 +265,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         formatTimeLearned,
         addActivePracticeTime,
         recordDuelWin,
+        recordBattleResult,
         loseHeart,
         refillHearts,
         finishLesson,
