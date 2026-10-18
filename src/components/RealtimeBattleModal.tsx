@@ -833,7 +833,7 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
     if (roomId && room?.guest) {
       setPhase('waiting');
       try {
-        const rematched = await requestBattleRoomRematch(roomId);
+        const rematched = await requestBattleRoomRematch(roomId, room);
         if (rematched) {
           setRoom(rematched);
           showToast('Rematch started! Both players must tap READY.');

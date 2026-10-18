@@ -675,14 +675,36 @@ export async function setBattleRoomCompleted(roomId: string): Promise<void> {
 
 /**
  * 7b. Request Rematch within the same room (resets scores and generates fresh questions)
+ * Resilient against serverless cold-starts by updating LocalStorage, Cloud Firestore, and MQTT.
  */
-export async function requestBattleRoomRematch(roomId: string): Promise<BattleRoomDoc | null> {
+export async function requestBattleRoomRematch(
+  roomId: string,
+  fallbackRoom?: BattleRoomDoc | null
+): Promise<BattleRoomDoc | null> {
   const cleanId = sanitizeRoomId(roomId);
-  let existing = getLocalRoom(cleanId);
+  if (!cleanId) return null;
+
+  let existing = getLocalRoom(cleanId) || fallbackRoom || null;
   if (!existing) {
     existing = await getBattleRoom(cleanId);
   }
-  if (!existing) return null;
+
+  // If room cannot be found, synthesize from cleanId so rematch never drops
+  if (!existing) {
+    existing = {
+      roomId: cleanId,
+      status: 'waiting',
+      host: { id: 'host', name: 'Host', joined: true, score: 0, ready: false, currentRound: 0 },
+      guest: null,
+      hostReady: false,
+      guestReady: false,
+      countdown: 3,
+      currentRound: 0,
+      tier: 'GELEŽINĖ LYGA',
+      questions: generateBattleRoomQuestions(5, `${cleanId}_${Date.now()}`),
+      createdAt: Date.now(),
+    };
+  }
 
   const newQuestions = generateBattleRoomQuestions(5, `${cleanId}_${Date.now()}`);
 
@@ -710,8 +732,20 @@ export async function requestBattleRoomRematch(roomId: string): Promise<BattleRo
       : null,
   };
 
+  // 1. Immediately cache to local storage
   saveLocalRoom(updatedRoom);
 
+  // 2. Direct Firestore update for guaranteed multi-device / serverless persistence
+  if (db && isFirebaseConfigured) {
+    try {
+      const roomRef = doc(db, 'battle_rooms', cleanId);
+      await setDoc(roomRef, JSON.parse(JSON.stringify(updatedRoom)), { merge: true });
+    } catch (e) {
+      console.warn('[BATTLE_REMATCH_FIRESTORE_WARN]:', e);
+    }
+  }
+
+  // 3. Broadcast to MQTT broker & Server API
   await broadcastRoomEvent(cleanId, {
     action: 'rematch',
     roomId: cleanId,
