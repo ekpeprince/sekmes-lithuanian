@@ -687,25 +687,40 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
       setOpponentTimeoutReached(false);
       return;
     }
-    // Allow up to 12s for opponent to finish before timing out and finalizing score
+    // If opponent already finished all rounds, finalize immediately
+    const opponentRounds = (isHost ? room?.guest?.currentRound : room?.host?.currentRound) ?? 0;
+    if (opponentRounds >= TOTAL_ROUNDS || room?.status === 'completed') {
+      setOpponentTimeoutReached(true);
+      return;
+    }
+
+    // Allow opponent fair time based on remaining rounds: (15s round + 5s buffer) per remaining question
+    const remainingRounds = Math.max(1, TOTAL_ROUNDS - opponentRounds);
+    const timeoutMs = Math.min(60000, remainingRounds * (ROUND_SECONDS + 5) * 1000);
+
     const timeout = setTimeout(() => {
       setOpponentTimeoutReached(true);
-    }, 12000);
+    }, timeoutMs);
     return () => clearTimeout(timeout);
-  }, [phase]);
+  }, [phase, room?.status, isHost, room?.guest?.currentRound, room?.host?.currentRound]);
 
   useEffect(() => {
     if (phase !== 'completed' || xpAwarded || !room) return;
 
-    const opponentFinished = ((isHost ? room.guest?.currentRound : room.host.currentRound) ?? 0) >= TOTAL_ROUNDS;
-    if (!opponentFinished && !opponentTimeoutReached) {
+    // CRITICAL: Do NOT evaluate outcome or award XP until opponent has finished all rounds or timed out!
+    const opponentFinished =
+      ((isHost ? room.guest?.currentRound : room.host.currentRound) ?? 0) >= TOTAL_ROUNDS ||
+      room.status === 'completed' ||
+      opponentTimeoutReached;
+
+    if (!opponentFinished) {
       return; // Wait for opponent to finish playing
     }
 
     const myScore = Math.max(localScore, isHost ? room.host.score : (room.guest?.score ?? 0));
-    const opponentScore = isHost ? (room.guest?.score ?? 0) : room.host.score;
-    const isWin = myScore > opponentScore;
-    const isTie = myScore === opponentScore;
+    const finalOpponentScore = isHost ? (room.guest?.score ?? 0) : room.host.score;
+    const isWin = myScore > finalOpponentScore;
+    const isTie = myScore === finalOpponentScore;
     const earnedXp = isWin ? 25 : isTie ? 15 : 10;
     recordBattleResult(earnedXp, isWin);
     if (isWin) {
@@ -875,6 +890,11 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
   const opponentPlayer = isHost ? guestPlayer : hostPlayer;
   const opponentName = opponentPlayer?.name || (isHost ? 'Waiting for Friend...' : 'Host');
   const opponentScore = opponentPlayer?.score || 0;
+  const isOpponentFinished = Boolean(
+    ((opponentPlayer?.currentRound ?? 0) >= TOTAL_ROUNDS) ||
+    (room?.status === 'completed') ||
+    opponentTimeoutReached
+  );
 
   const isHostReady = Boolean(room?.hostReady ?? room?.host?.ready);
   const isGuestReady = Boolean(room?.guestReady ?? room?.guest?.ready);
@@ -1634,148 +1654,180 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         {/* ============================================================== */}
         {phase === 'completed' && (
           <div className="p-6 sm:p-8 text-center flex flex-col items-center">
-            {((opponentPlayer?.currentRound ?? 0) < TOTAL_ROUNDS && !opponentTimeoutReached) ? (
-              <div className="flex flex-col items-center justify-center my-6">
+            {!isOpponentFinished ? (
+              // STANDBY: Early Finisher Waiting for Opponent
+              <div className="flex flex-col items-center justify-center my-4 max-w-sm w-full animate-in fade-in duration-200">
                 <div className="relative flex items-center justify-center mb-4">
                   <span className="absolute inline-flex h-16 w-16 rounded-full bg-amber-400 opacity-25 animate-ping" />
                   <div className="relative w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-md">
                     ⏳
                   </div>
                 </div>
-                <h3 className="text-base sm:text-lg font-black text-slate-900">
-                  Waiting for opponent to finish...
+                <h3 className="text-lg font-black text-slate-900">
+                  Laukiama varžovo pabaigos...
                 </h3>
                 <p className="text-xs text-slate-500 font-medium mt-1">
-                  {opponentName} is currently on Round {Math.min(5, (opponentPlayer?.currentRound ?? 0) + 1)} / {TOTAL_ROUNDS}
+                  Tu jau baigei visus 5 raundus! {opponentName} šiuo metu atsako į{' '}
+                  <strong className="text-amber-600">
+                    {Math.min(5, (opponentPlayer?.currentRound ?? 0) + 1)} iš {TOTAL_ROUNDS}
+                  </strong>{' '}
+                  klausimą.
                 </p>
-                <div className="mt-4 flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-700 shadow-2xs">
-                  <span>Your Score: <strong className="text-emerald-600">{localScore} pts</strong></span>
-                  <span className="text-slate-300">|</span>
-                  <span>Opponent Score: <strong className="text-amber-600">{opponentScore} pts</strong></span>
+
+                {/* Live Progress Card */}
+                <div className="mt-5 w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                  <div className="text-left">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tavo rezultatas</span>
+                    <span className="text-base font-black text-emerald-600">{localScore} taškų</span>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200" />
+                  <div className="text-right">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">{opponentName}</span>
+                    <span className="text-base font-black text-amber-600">
+                      {opponentScore} taškų ({Math.min(5, (opponentPlayer?.currentRound ?? 0) + 1)}/5)
+                    </span>
+                  </div>
                 </div>
+
+                <p className="text-[11px] text-slate-400 mt-4 italic">
+                  Galutinis nugalėtojas ir lygos apdovanojimas bus nustatyti, kai abu žaidėjai baigs kovą.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="mt-6 w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition cursor-pointer"
+                >
+                  Grįžti į lygą
+                </button>
               </div>
-            ) : localScore > opponentScore ? (
-              <>
-                <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-3 shadow-md animate-bounce">
-                  🏆
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  Pergalė! 🏆
-                </h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">
-                  You outscored {opponentName} in 5 synchronized rounds!
-                </p>
-              </>
-            ) : localScore === opponentScore ? (
-              <>
-                <div className="w-16 h-16 rounded-3xl bg-blue-100 text-blue-600 flex items-center justify-center text-3xl mb-3 shadow-md">
-                  🤝
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  Lygiosios! 🤝
-                </h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">
-                  Atkakli kova! Abu žaidėjai surinko po {localScore} taškų.
-                </p>
-              </>
             ) : (
-              <>
-                <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-700 flex items-center justify-center text-3xl mb-3 shadow-md">
-                  ⚔️
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  Gera kova! ⚔️
-                </h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">
-                  {opponentName} won this match. Great effort!
-                </p>
-              </>
-            )}
+              // FINAL MATCH RESULT (Both players finished or timeout reached)
+              <div className="flex flex-col items-center w-full animate-in fade-in duration-200">
+                {localScore > opponentScore ? (
+                  <>
+                    <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mb-3 shadow-md animate-bounce">
+                      🏆
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                      Pergalė! 🏆
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      You outscored {opponentName} in 5 synchronized rounds!
+                    </p>
+                  </>
+                ) : localScore === opponentScore ? (
+                  <>
+                    <div className="w-16 h-16 rounded-3xl bg-blue-100 text-blue-600 flex items-center justify-center text-3xl mb-3 shadow-md">
+                      🤝
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                      Lygiosios! 🤝
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      Atkakli kova! Abu žaidėjai surinko po {localScore} taškų.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-700 flex items-center justify-center text-3xl mb-3 shadow-md">
+                      ⚔️
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                      Gera kova! ⚔️
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      {opponentName} won this match. Great effort!
+                    </p>
+                  </>
+                )}
 
-            {/* Score Comparison */}
-            <div className="w-full max-w-sm grid grid-cols-2 gap-3 my-5">
-              {/* You */}
-              <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
-                localScore > opponentScore
-                  ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
-                  : 'bg-white border-slate-200'
-              }`}>
-                <div className="relative mb-2">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-sm flex items-center justify-center ring-2 ring-emerald-400 shadow-xs">
-                    Tu
+                {/* Score Comparison */}
+                <div className="w-full max-w-sm grid grid-cols-2 gap-3 my-5">
+                  {/* You */}
+                  <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
+                    localScore > opponentScore
+                      ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
+                      : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="relative mb-2">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-sm flex items-center justify-center ring-2 ring-emerald-400 shadow-xs">
+                        Tu
+                      </div>
+                      {localScore > opponentScore && (
+                        <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-slate-800 truncate max-w-full">
+                      {currentUserName} (You)
+                    </span>
+                    <span className="text-xl font-black text-emerald-600 mt-1">
+                      {localScore} <span className="text-xs text-slate-400 font-semibold">pts</span>
+                    </span>
                   </div>
-                  {localScore > opponentScore && (
-                    <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
-                  )}
-                </div>
-                <span className="text-xs font-bold text-slate-800 truncate max-w-full">
-                  {currentUserName} (You)
-                </span>
-                <span className="text-xl font-black text-emerald-600 mt-1">
-                  {localScore} <span className="text-xs text-slate-400 font-semibold">pts</span>
-                </span>
-              </div>
 
-              {/* Opponent */}
-              <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
-                opponentScore > localScore
-                  ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
-                  : 'bg-white border-slate-200'
-              }`}>
-                <div className="relative mb-2">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-600 to-orange-700 text-white font-bold text-sm flex items-center justify-center ring-2 ring-amber-400 shadow-xs">
-                    {opponentName.slice(0, 2).toUpperCase()}
+                  {/* Opponent */}
+                  <div className={`p-3.5 rounded-2xl border-2 flex flex-col items-center text-center ${
+                    opponentScore > localScore
+                      ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300/50 shadow-sm'
+                      : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="relative mb-2">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-600 to-orange-700 text-white font-bold text-sm flex items-center justify-center ring-2 ring-amber-400 shadow-xs">
+                        {opponentName.slice(0, 2).toUpperCase()}
+                      </div>
+                      {opponentScore > localScore && (
+                        <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-slate-800 truncate max-w-full">
+                      {opponentName}
+                    </span>
+                    <span className="text-xl font-black text-amber-600 mt-1">
+                      {opponentScore} <span className="text-xs text-slate-400 font-semibold">pts</span>
+                    </span>
                   </div>
-                  {opponentScore > localScore && (
-                    <span className="absolute -top-1.5 -right-1.5 text-base">👑</span>
-                  )}
                 </div>
-                <span className="text-xs font-bold text-slate-800 truncate max-w-full">
-                  {opponentName}
-                </span>
-                <span className="text-xl font-black text-amber-600 mt-1">
-                  {opponentScore} <span className="text-xs text-slate-400 font-semibold">pts</span>
-                </span>
-              </div>
-            </div>
 
-            {/* XP Award Card */}
-            <div className="w-full max-w-sm rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white p-3.5 shadow-md flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Zap className="w-5 h-5 fill-white text-white" />
-                </div>
-                <div className="text-left">
-                  <span className="text-xs font-semibold text-amber-100 block">Lygos apdovanojimas</span>
-                  <span className="text-sm font-black">
-                    {localScore > opponentScore ? '+25 Lygos XP' : localScore === opponentScore ? '+15 Lygos XP' : '+10 Lygos XP'}
+                {/* XP Award Card */}
+                <div className="w-full max-w-sm rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white p-3.5 shadow-md flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                      <Zap className="w-5 h-5 fill-white text-white" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs font-semibold text-amber-100 block">Lygos apdovanojimas</span>
+                      <span className="text-sm font-black">
+                        {localScore > opponentScore ? '+25 Lygos XP' : localScore === opponentScore ? '+15 Lygos XP' : '+10 Lygos XP'}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-xl">
+                    Įskaityta!
                   </span>
                 </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-sm">
+                  <button
+                    type="button"
+                    onClick={handlePlayAgain}
+                    className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider transition active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Žaisti dar kartą</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+                  >
+                    Grįžti į lygą
+                  </button>
+                </div>
               </div>
-              <span className="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-xl">
-                Įskaityta!
-              </span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-sm">
-              <button
-                type="button"
-                onClick={handlePlayAgain}
-                className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider transition active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-1.5"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Žaisti dar kartą</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
-              >
-                Grįžti į lygą
-              </button>
-            </div>
+            )}
           </div>
         )}
       </div>
