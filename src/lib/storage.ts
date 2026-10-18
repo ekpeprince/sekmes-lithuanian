@@ -113,8 +113,23 @@ export function getStoredProgress(): UserProgress {
     }
     const parsed = JSON.parse(raw) as Partial<UserProgress>;
     const today = getLocalDateString();
-    const lastQuestDate = parsed.lastQuestResetDate || parsed.lastActiveDate;
-    const isNewDay = Boolean(lastQuestDate && lastQuestDate !== today);
+
+    // Determine if a new calendar day has arrived.
+    // If lastQuestResetDate is absent, fallback to lastActiveDate, or check if
+    // a returning legacy user has existing quest progress from a prior session.
+    let isNewDay = false;
+    if (parsed.lastQuestResetDate) {
+      isNewDay = parsed.lastQuestResetDate !== today;
+    } else if (parsed.lastActiveDate) {
+      isNewDay = parsed.lastActiveDate !== today;
+    } else {
+      // Legacy user with stored quest completions from an older version with no recorded dates
+      const hasLegacyQuestProgress = Array.isArray(parsed.quests) &&
+        parsed.quests.some(q => q.current > 0 || q.completed || q.claimed);
+      if (hasLegacyQuestProgress) {
+        isNewDay = true;
+      }
+    }
 
     // Reset daily quests if a new calendar day has arrived
     const questsToUse = isNewDay
@@ -164,7 +179,15 @@ export function getStoredProgress(): UserProgress {
       wordsMasteredCount: parsed.wordsMasteredCount || 0,
     };
 
-    if (isNewDay) {
+    // Ensure state is persisted to localStorage whenever a new calendar day arrives OR if
+    // tracking dates (lastQuestResetDate, dailyXpDate, activeMinutesDate) were missing from storage
+    const needsSave =
+      isNewDay ||
+      !parsed.lastQuestResetDate ||
+      parsed.dailyXpDate !== today ||
+      parsed.activeMinutesDate !== today;
+
+    if (needsSave) {
       saveProgress(merged);
     }
 
