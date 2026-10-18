@@ -20,6 +20,7 @@ import {
   formatTimeLearned,
   DEFAULT_PROGRESS,
   getLocalDateString,
+  getLeagueTierByXp,
 } from '@/lib/storage';
 import { getAllLessons } from '@/data/curriculum';
 import { sounds } from '@/lib/audio';
@@ -91,13 +92,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (!user) return;
 
-    loadProgressFromCloud(user.uid).then((cloudProg) => {
+        loadProgressFromCloud(user.uid).then((cloudProg) => {
       if (cloudProg) {
         setProgress((prev) => {
+          const mergedXp = Math.max(prev.xp, cloudProg.xp || 0);
           const merged: UserProgress = {
             ...prev,
             ...cloudProg,
-            xp: Math.max(prev.xp, cloudProg.xp || 0),
+            xp: mergedXp,
+            gems: Math.max(prev.gems || 0, cloudProg.gems || 0),
+            duelsWonCount: Math.max(prev.duelsWonCount || 0, cloudProg.duelsWonCount || 0),
+            totalPracticeSeconds: Math.max(prev.totalPracticeSeconds || 0, cloudProg.totalPracticeSeconds || 0),
+            wordsMasteredCount: Math.max(prev.wordsMasteredCount || 0, cloudProg.wordsMasteredCount || 0),
+            leagueTier: getLeagueTierByXp(mergedXp),
             streak: Math.max(prev.streak, cloudProg.streak || 0),
             completedLessons: Array.from(
               new Set([...prev.completedLessons, ...(cloudProg.completedLessons || [])])

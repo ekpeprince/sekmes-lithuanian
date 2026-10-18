@@ -30,7 +30,9 @@ function LeagueContent() {
   const isGuestInvite = (battleParam === 'room' || !!roomIdParam) && !!roomIdParam;
 
   const userAssignedTier: LeagueTier = progress.leagueTier || 'Geležis';
-  const [activeTier, setActiveTier] = useState<LeagueTier>(userAssignedTier);
+  const [selectedTier, setSelectedTier] = useState<LeagueTier | null>(null);
+  const activeTier: LeagueTier = selectedTier ?? userAssignedTier;
+  const setActiveTier = (tier: LeagueTier) => setSelectedTier(tier);
   const [realMembers, setRealMembers] = useState<Competitor[]>([]);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [isBattleOpen, setIsBattleOpen] = useState(() => battleParam === 'invite');
@@ -67,6 +69,8 @@ function LeagueContent() {
     }, 60000);
     return () => clearInterval(interval);
   }, []);
+
+
 
   // Sync logged-in user to Firestore
   useEffect(() => {
@@ -111,7 +115,18 @@ function LeagueContent() {
     if (realMembers.length > 0) {
       const mergedMap = new Map<string, Competitor>();
       realMembers.forEach((m) => mergedMap.set(m.name, m));
+
+      // Check if realMembers already has this user
+      const hasRealUser = realMembers.some(
+        (m) =>
+          (user?.uid && m.id === `firestore_${user.uid}`) ||
+          (user?.displayName && m.name === user.displayName) ||
+          (user?.email && m.name === user.email.split('@')[0])
+      );
+
       cohort.forEach((c) => {
+        // Skip dummy user_active if user is already present in Firestore realMembers
+        if (c.id === 'user_active' && hasRealUser) return;
         if (!mergedMap.has(c.name)) {
           mergedMap.set(c.name, c);
         }
@@ -121,15 +136,29 @@ function LeagueContent() {
       list = [...cohort];
     }
 
-    // Ensure the current user has isCurrentUser flag
+    // Ensure the current user has isCurrentUser flag and deduplicate multiple matches
+    let foundCurrentUser = false;
     list = list.map((c) => {
       const isCurrent =
-        c.isCurrentUser ||
-        c.isUser ||
-        Boolean(user?.uid && c.id === `firestore_${user.uid}`) ||
-        Boolean(user?.displayName && c.name === user.displayName) ||
-        Boolean(user?.email && c.name === user.email.split('@')[0]);
-      return isCurrent ? { ...c, isUser: true, isCurrentUser: true } : c;
+        !foundCurrentUser &&
+        (c.isCurrentUser ||
+          c.isUser ||
+          Boolean(user?.uid && c.id === `firestore_${user.uid}`) ||
+          Boolean(user?.displayName && c.name === user.displayName) ||
+          Boolean(user?.email && c.name === user.email.split('@')[0]));
+
+      if (isCurrent) {
+        foundCurrentUser = true;
+        return {
+          ...c,
+          isUser: true,
+          isCurrentUser: true,
+          // Guarantee latest XP and streak from local progress
+          xp: isViewingUserTier ? Math.max(c.xp, progress.xp) : c.xp,
+          streak: isViewingUserTier ? Math.max(c.streak, progress.streak) : c.streak,
+        };
+      }
+      return { ...c, isUser: false, isCurrentUser: false };
     });
 
     // Complete player roster unified into a single sorted array descending by XP

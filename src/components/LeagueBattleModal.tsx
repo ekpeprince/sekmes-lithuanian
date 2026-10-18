@@ -261,6 +261,7 @@ export const LeagueBattleModal: React.FC<LeagueBattleModalProps> = ({
     if (roundCompleted || selectedOption !== null) return;
 
     if (timerRef.current) clearInterval(timerRef.current);
+    if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
     setSelectedOption(ltText);
     setRoundCompleted(true);
 
