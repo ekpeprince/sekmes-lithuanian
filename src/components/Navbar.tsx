@@ -43,10 +43,15 @@ export const Navbar: React.FC = () => {
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-2.5 group select-none shrink-0">
             <LithuanianFlagEmblem size="md" className="group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200" />
-            <div className="flex items-center notranslate text-lg sm:text-xl font-black tracking-tight leading-tight" translate="no">
-              <span className="text-slate-900 group-hover:text-emerald-700 transition-colors">Labas</span>
-              <span className="text-emerald-600 font-extrabold">App</span>
-              <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
+            <div className="flex flex-col notranslate justify-center" translate="no">
+              <div className="flex items-center text-lg sm:text-xl font-black tracking-tight leading-none">
+                <span className="text-slate-900 group-hover:text-emerald-700 transition-colors">Labas</span>
+                <span className="text-emerald-600 font-extrabold">App</span>
+                <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
+              </div>
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 group-hover:text-emerald-600 tracking-wide leading-tight mt-0.5 transition-colors">
+                Learn Lithuanian
+              </span>
             </div>
           </Link>
 

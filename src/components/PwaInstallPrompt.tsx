@@ -141,9 +141,12 @@ export const PwaInstallPrompt: React.FC = () => {
           <div className="flex items-center gap-3 min-w-0">
             <LithuanianFlagEmblem size="lg" />
             <div className="min-w-0 flex-1">
-              <h4 className="text-sm font-bold tracking-tight text-white">
+              <h4 className="text-sm font-bold tracking-tight text-white leading-tight">
                 Install <span className="notranslate" translate="no">LabasApp</span>
               </h4>
+              <p className="text-[11px] text-emerald-400 font-bold tracking-wide mt-0.5">
+                Learn Lithuanian
+              </p>
               <p className="text-xs text-slate-400 font-normal leading-tight mt-0.5">
                 Fast, offline-ready & fullscreen voice practice
               </p>
