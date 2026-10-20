@@ -49,7 +49,7 @@ export const Navbar: React.FC = () => {
                 <span className="text-emerald-600 font-extrabold">App</span>
                 <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
               </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 group-hover:text-emerald-600 tracking-wide leading-tight mt-0.5 transition-colors">
+              <span className="text-[10px] sm:text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-1">
                 Learn Lithuanian
               </span>
             </div>
