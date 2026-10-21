@@ -114,7 +114,7 @@ export const LessonNode: React.FC<LessonNodeProps> = ({
               </div>
 
               <h4 className="font-extrabold text-slate-800 text-base mb-1">
-                {lesson.title}
+                {displayTitle}
               </h4>
               <p className="text-xs text-slate-500 mb-2.5 leading-relaxed">
                 {lesson.description}

@@ -14,7 +14,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-1',
         unitId: 'unit-1',
-        title: 'Alphabet & Pronunciation • Abėcėlė ir tarimas',
+        title: 'Alphabet & Pronunciation',
         description: 'Learn the Lithuanian alphabet, unique letters with diacritics (ė, ą, č, ū), and basic starter words.',
         subExplanation: 'Master the core sounds of the 32-letter Lithuanian alphabet, unique diacritics, and pronounce your first everyday words.',
         detailedExplanation: '• Lithuanian uses 32 Latin letters without Q, W, or X.\n• Unique vowel with dot: "ė" (closed long "ay" sound, e.g. "tėtis" = dad, "kėdė" = chair).\n• Long vowels: "ū" and "y" are held longer than short "u" and "i".\n• Nasal vowels (nosinės): "ą, ę, į, ų" are pronounced today as long vowels.\n• Soft consonants: "č" (like ch in church), "š" (like sh in ship), "ž" (like s in measure).\n• Core starter vocabulary: "kava" (coffee), "arbata" (tea), "namas" (house), "vanduo" (water), "prašom" (please).',
@@ -75,7 +75,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-2',
         unitId: 'unit-1',
-        title: 'Introductions & Verb "būti" • Susipažinimas',
+        title: 'Introductions & Verb "būti"',
         description: 'Practice introducing yourself, asking names, and conjugating "būti / nebūti" (to be).',
         subExplanation: 'Learn to introduce yourself, ask someone\'s name formally or informally, and conjugate the core verb "būti" (to be) and its negative forms.',
         detailedExplanation: '• Present tense of "būti" (to be):\n  - Aš esu (I am) / Aš nesu (I am not)\n  - Tu esi (You are sg.) / Tu nesi (You are not)\n  - Jis / Ji yra (He/She is) / nėra (is not)\n  - Mes esame (We are) / Mes nesame (We are not)\n  - Jūs esate (You are pl./formal) / Jūs nesate (You are not)\n• Asking names: "Koks jūsų vardas?" (What is your first name? — "vardas" is masculine, so "koks") vs. "Kokia jūsų pavardė?" (What is your surname? — "pavardė" is feminine, so "kokia").\n• Responding politely: "Labai malonu" (Very nice to meet you) or "Man taip pat labai malonu" (Nice to meet you too).',
@@ -154,7 +154,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-3',
         unitId: 'unit-1',
-        title: 'Countries & Nationalities • Šalys ir tautybės',
+        title: 'Countries & Nationalities',
         description: 'Learn countries and male/female demonyms (Lietuva, Anglija, Vokietija, Ukraina).',
         subExplanation: 'Explore countries and national demonyms, recognizing masculine (-as, -is) vs. feminine (-ė) endings and lowercase spelling conventions.',
         detailedExplanation: '• In Lithuanian, country names are capitalized (Lietuva, Vokietija, Prancūzija, Ispanija, Anglija, Ukraina).\n• Demonyms (nationalities) are written in LOWERCASE in Lithuanian (unlike English!):\n  - Masculine: typically ends in -as or -is (lietuvis, vokietis, prancūzas, ispanas, anglas, ukrainietis).\n  - Feminine: always ends in -ė (lietuvė, vokietė, prancūzė, ispanė, anglė, ukrainietė).\n• Origin with "iš" (from) triggers the Genitive case: "iš Lietuvos" (from Lithuania), "iš Ukrainos" (from Ukraine).',
@@ -217,8 +217,8 @@ export const UNITS: Unit[] = [
   {
     id: 'unit-2',
     number: 2,
-    title: 'Unit 2: Čia mano draugas',
-    subtitle: 'Wellbeing, Origin, Languages & Vocative • Savijauta ir kilmė',
+    title: 'Meet friends and introduce others',
+    subtitle: 'Wellbeing, Origin, Languages & Vocative',
     description: 'Ask "Kaip sekasi?", express origin with "iš + Genitive", languages ending in "-iškai", and call friends with the Vocative case (Tomai!).',
     color: '#0284c7',
     accentColor: '#38bdf8',
@@ -226,7 +226,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-4',
         unitId: 'unit-2',
-        title: 'How are you? & Introductions • Kaip sekasi?',
+        title: 'How are you? & Introductions',
         description: 'Express wellbeing (gerai, puikiai, šiaip sau) and introduce friends (Čia mano draugas).',
         subExplanation: 'Learn to ask and answer "Kaip sekasi?" (How are you?), introduce a friend ("Čia mano draugas"), and use essential classroom requests.',
         detailedExplanation: '• Inquiring about wellbeing: "Kaip sekasi?" (How are things going? / How are you?):\n  - "Puikiai!" (Great! / Perfectly!)\n  - "Labai gerai" (Very good) / "Gerai" (Good)\n  - "Šiaip sau" (So-so / Okayish)\n  - "Blogai" (Badly)\n• Introducing someone: "Čia mano draugas Paulius" (This is my friend Paulius - masc.) / "Čia mano draugė Lina" (This is my friend Lina - fem.).\n• Polite requests: "Prašom pakartoti!" (Please repeat!), "Prašom kalbėti lėčiau!" (Please speak slower!), "Ar aišku?" (Is it clear?).',
@@ -295,7 +295,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-5',
         unitId: 'unit-2',
-        title: 'Where are you from? • iš + Kilmininkas',
+        title: 'Where are you from?',
         description: 'Express your city and country of origin using the Genitive case after "iš" (from).',
         subExplanation: 'Express geographical origin using the preposition "iš" (from), which strictly requires the Genitive case (Kilmininkas).',
         detailedExplanation: '• The preposition "iš" (from) always demands the Genitive case (Kilmininkas - question "Ko? / Iš kur?"):\n  - Masculine nouns ending in -as -> -o (Kaunas -> iš Kauno, Monakas -> iš Monako)\n  - Masculine nouns ending in -ius -> -iaus (Vilnius -> iš Vilniaus)\n  - Masculine nouns ending in -ys / -is -> -io (Panevėžys -> iš Panevėžio)\n  - Feminine nouns ending in -a -> -os (Lietuva -> iš Lietuvos, Ryga -> iš Rygos)\n  - Feminine nouns ending in -ė -> -ės (Čilė -> iš Čilės, Klaipėda -> iš Klaipėdos)\n• Question: "Iš kur tu esi?" (Where are you from? informal) or "Iš kur jūs esate?" (formal/plural).',
@@ -355,7 +355,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-6',
         unitId: 'unit-2',
-        title: 'Languages & Vocative Case • Kalbos ir Šauksmininkas',
+        title: 'Languages & Vocative Case',
         description: 'Conjugate "kalbėti" (to speak), language adverbs (-iškai), and address people (Tomai!, pone Jonai!).',
         subExplanation: 'Conjugate the verb "kalbėti" (to speak), form language adverbs in "-iškai", and address people respectfully or warmly using the Vocative case (Šauksmininkas).',
         detailedExplanation: '• Talking about languages: use the adverb ending in "-iškai" after "kalbėti" (to speak):\n  - lietuviškai (Lithuanian), angliškai (English), vokiškai (German), prancūziškai (French), ispaniškai (Spanish).\n  - Present tense of "kalbėti": aš kalbu, tu kalbi, jis/ji kalba, mes kalbame, jūs kalbate.\n• Vocative Case (Šauksmininkas) — used exclusively to call, address, or greet someone:\n  - Masculine -as -> -ai! (Tomas -> Tomai!, Jonas -> Jonai!)\n  - Masculine -us -> -au! (Paulius -> Pauliau!, Andrius -> Andriau!)\n  - Feminine -ė -> -e! (Eglė -> Egle!, Rasa -> Rasa!)\n  - Titles: "Ponas Jonas" -> "Pone Jonai!" (Mr. Jonas! / Sir!).',
@@ -431,8 +431,8 @@ export const UNITS: Unit[] = [
   {
     id: 'unit-3',
     number: 3,
-    title: 'Unit 3: Koks tavo adresas?',
-    subtitle: 'City, Living, Locative Case & Numbers • Miestas ir vietininkas',
+    title: 'Explore the city and share your address',
+    subtitle: 'City, Living, Locative Case & Numbers',
     description: 'Say where you live in the Locative case (Vilniuje, Kaune), express places near each other with "prie + Genitive", and count 0–300.',
     color: '#d97706',
     accentColor: '#f59e0b',
@@ -440,7 +440,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-7',
         unitId: 'unit-3',
-        title: 'Where do you live? • Vienaskaitos Vietininkas',
+        title: 'Where do you live?',
         description: 'Locative case (Kur? - Where?): Vilniuje, Kaune, centre, bendrabutyje, Trakuose.',
         subExplanation: 'Master the Locative case (Vietininkas - answering "Kur?" / Where?) to say which city, neighborhood, or building you live or study in.',
         detailedExplanation: '• Locative case (Vietininkas - question "Kur?" / Where?):\n  - Feminine -a -> -oje (Lietuva -> Lietuvoje, Palanga -> Palangoje)\n  - Feminine -ė -> -ėje (aikštė -> aikštėje, kavinė -> kavinėje)\n  - Masculine -as -> -e (Kaunas -> Kaune, centras -> centre)\n  - Masculine -is / -ys -> -yje (bendrabutis -> bendrabutyje, kambarys -> kambaryje)\n  - Masculine -ius -> -iuje (Vilnius -> Vilniuje)\n  - Plural place names: -ai -> -uose (Trakai -> Trakuose, Šiauliai -> Šiauliuose)\n• Key verbs: "gyventi" (to live: aš gyvenu, tu gyveni...), "studijuoti" (to study: aš studijuoju...), "dirbti" (to work: aš dirbu...).',
@@ -510,7 +510,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-8',
         unitId: 'unit-3',
-        title: 'City Buildings & "prie + Kilmininkas" • Miesto pastatai',
+        title: 'City Buildings & Locations',
         description: 'Describe buildings near each other (prie banko, prie pašto, prie stoties).',
         subExplanation: 'Learn essential city building vocabulary and navigate spatial relationships using the preposition "prie" (near/by) + Genitive case.',
         detailedExplanation: '• Core city landmarks:\n  - bankas (bank), paštas (post office), teatras (theater), universitetas (university)\n  - kavinė (cafe), vaistinė (pharmacy), ligoninė (hospital), knygynas (bookstore), stotis (station)\n• Preposition "prie" (near / next to / by) always triggers the Genitive case (Kilmininkas):\n  - prie pašto (near the post office, paštas -> pašto)\n  - prie banko (near the bank, bankas -> banko)\n  - prie kavinės (near the cafe, kavinė -> kavinės)\n  - prie stoties (near the station, stotis -> stoties)\n• Adverbs of distance: "arti" (close / nearby) vs. "toli" (far away).',
@@ -580,7 +580,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-9',
         unitId: 'unit-3',
-        title: 'Address, Phone & Numbers (0–300) • Adresas ir skaičiai',
+        title: 'Address, Phone & Numbers (0–300)',
         description: 'Read addresses (Parko g. 4-10), give phone numbers, and master numbers up to 300.',
         subExplanation: 'Count confidently up to 300, ask for contact information, and understand how street and apartment numbers are spoken aloud in Lithuania.',
         detailedExplanation: '• Lithuanian numbers:\n  - 0–9: nulis, vienas, du, trys, keturi, penki, šeši, septyni, aštuoni, devyni\n  - 10–90: dešimt, dvidešimt, trisdešimt, keturiasdešimt, penkiasdešimt...\n  - Hundreds: 100 = šimtas, 200 = du šimtai, 300 = trys šimtai\n• Address format:\n  - Street name + "gatvė" (e.g. Parko gatvė, Gedimino prospektas).\n  - A hyphenated house-apartment number like "4-10" is spoken as two distinct numbers: "keturi, dešimt" (house 4, apartment 10).\n• Asking for contacts:\n  - "Koks tavo adresas?" (What is your address?)\n  - "Koks yra jūsų telefono numeris?" (What is your telephone number?).',
@@ -648,8 +648,8 @@ export const UNITS: Unit[] = [
   {
     id: 'unit-4',
     number: 4,
-    title: 'Unit 4: Kada ir kur susitinkame?',
-    subtitle: 'Meetings, Time, Days of the Week & Directions • Laikas ir susitikimai',
+    title: 'Schedule meetings and tell time',
+    subtitle: 'Meetings, Time, Days of the Week & Directions',
     description: 'Set meetings using days in the Accusative case, express half-hours ("pusę aštuntos"), and choose between "į" (places) vs "pas" (people).',
     color: '#6366f1',
     accentColor: '#8b5cf6',
@@ -657,7 +657,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-10',
         unitId: 'unit-4',
-        title: 'When do we meet? • Savaitės dienos ir laikas',
+        title: 'When do we meet?',
         description: 'Days of the week in the Accusative case (pirmadienį, penktadienį) and weekend wishes.',
         subExplanation: 'Learn the days of the week and express "When?" (Kada?) using the Accusative case (pirmadienį, penktadienį, savaitgalį).',
         detailedExplanation: '• Days of the week in Lithuanian are named after ordinal numbers + "diena" (day):\n  - Pirmadienis (Monday - 1st day)\n  - Antradienis (Tuesday - 2nd day)\n  - Trečiadienis (Wednesday - 3rd day)\n  - Ketvirtadienis (Thursday - 4th day)\n  - Penktadienis (Friday - 5th day)\n  - Šeštadienis (Saturday - 6th day)\n  - Sekmadienis (Sunday - 7th day, from sekti = to follow)\n  - Savaitgalis (Weekend)\n• Expressing "ON what day?" (answering "Kada?" / When?):\n  - Use the Accusative singular ending: nouns in "-is" take "-į":\n  - pirmadienį (on Monday), penktadienį (on Friday), savaitgalį (on the weekend).\n• Common phrases: "Kada susitinkame?" (When do we meet?), "Gero savaitgalio!" (Have a good weekend! - Genitive of wish).',
@@ -716,7 +716,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-11',
         unitId: 'unit-4',
-        title: 'Telling Time & Half-Hours • Valandos ir pusvalandžiai',
+        title: 'Telling Time & Half-Hours',
         description: 'Hours in the Accusative (šeštą valandą) and half-hours (pusė aštuntos = 7:30, pusė dešimtos = 9:30).',
         subExplanation: 'Master telling the exact hour in the Accusative ("šeštą valandą") and the unique Lithuanian system for half-hours ("pusė + upcoming hour in Genitive").',
         detailedExplanation: '• Exact time:\n  - Stating time: "Dabar yra šešta valanda" (It is 6 o\'clock now - Nominative).\n  - Answering "Kelintą valandą?" (At what time?):\n    Use the Accusative case: "penktą valandą" (at 5:00), "šeštą valandą" (at 6:00).\n• Half-Hours ("pusė") — CRITICAL RULE:\n  - Unlike English "half past seven", Lithuanian looks forward to the NEXT hour!\n  - "pusė aštuntos" = 7:30 (literally: half of the 8th hour).\n  - "pusė dešimtos" = 9:30 (half of the 10th hour).\n  - "pusė šeštos" = 5:30 (half of the 6th hour).\n• "Lygiai" means "exactly / sharp" (e.g. "lygiai šeštą valandą" = at exactly 6 o\'clock).',
@@ -782,7 +782,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-12',
         unitId: 'unit-4',
-        title: 'Where are we going? • į vs pas + Galininkas',
+        title: 'Where are we going?',
         description: 'Distinguish between "į" (going to places: į teatrą) vs "pas" (going to people: pas Paulių).',
         subExplanation: 'Distinguish between destinations: use "į" when going to places, cities, and buildings, and "pas" when visiting people, doctors, or friends (both with Accusative).',
         detailedExplanation: '• Both "į" and "pas" indicate movement towards a destination and require the Accusative case (Galininkas - question "Kur? / Į ką? / Pas ką?"):\n• Use "į + Accusative" for PLACES, BUILDINGS, CITIES, and EVENTS:\n  - į teatrą (to the theater), į kavinę (to the cafe), į universitetą (to the university), į Vilnių (to Vilnius).\n• Use "pas + Accusative" for PEOPLE, FRIENDS, SPECIALISTS, and HOMES:\n  - pas draugą (to a friend / to friend\'s place), pas Paulių (to Paulius\'s), pas gydytoją (to the doctor), pas mane (to my place / to me).\n• Idiomatic phrase: "eiti į svečius" (to go visiting / to go as a guest), "kviesti į svečius" (to invite someone over).',
@@ -870,8 +870,8 @@ export const UNITS: Unit[] = [
   {
     id: 'unit-5',
     number: 5,
-    title: 'Unit 5: Kavinėje ir restorane',
-    subtitle: 'Food, Drinks, Ordering & Paying • Maistas ir užsakymai',
+    title: 'Order food and drinks at a restaurant',
+    subtitle: 'Food, Drinks, Ordering & Paying',
     description: 'Master ordering traditional Lithuanian food (cepelinai, šaltibarščiai), asking prices, and paying by card or cash.',
     color: '#d97706',
     accentColor: '#f59e0b',
@@ -879,7 +879,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-13',
         unitId: 'unit-5',
-        title: 'Food & Drinks • Maistas ir gėrimai',
+        title: 'Food & Drinks',
         description: 'Learn iconic Lithuanian dishes (šaltibarščiai, cepelinai) and daily beverages.',
         subExplanation: 'Explore famous Lithuanian culinary vocabulary, from cold pink beet soup to hot herbal tea.',
         detailedExplanation: '• Lithuanian national dishes:\n  - „Šaltibarščiai“ (cold beet soup with kefir, served with hot boiled potatoes)\n  - „Didžkukuliai“ or „Cepelinai“ (large grated potato dumplings with meat or curd filling)\n  - „Kepta duona su sūriu“ (crispy fried rye bread with garlic & melted cheese)\n• Drinks:\n  - „Kava su pienu“ (coffee with milk) / „Juoda kava“ (black coffee)\n  - „Arbata su citrina“ (tea with lemon)\n  - „Gira“ (traditional fermented rye bread kvass)\n  - „Vanduo su citrina“ (water with lemon).',
@@ -926,7 +926,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-14',
         unitId: 'unit-5',
-        title: 'Polite Ordering & Paying • Užsakymas kavinėje',
+        title: 'Polite Ordering & Paying',
         description: 'Order politely using "Norėčiau...", ask for the bill, and choose payment methods.',
         subExplanation: 'Learn real-world dialogue at a café: ordering, requesting the check, and paying with card or cash.',
         detailedExplanation: '• Polite ordering:\n  - „Norėčiau...“ (I would like... + Genitive or Accusative)\n  - „Prašom sąskaitą!“ (The bill, please!)\n• Paying:\n  - „Mokėsiu kortele“ (I will pay by card - Instrumental „kortele“)\n  - „Mokėsiu grynaisiais“ (I will pay in cash - „grynaisiais“)\n• Complimenting food:\n  - „Labai skanu!“ (Very tasty/delicious!)',
@@ -991,7 +991,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-15',
         unitId: 'unit-5',
-        title: 'Prices & Numbers • Kiek kainuoja?',
+        title: 'Prices & Numbers',
         description: 'Ask prices with "Kiek kainuoja?", understand Euro amounts, and count numbers.',
         subExplanation: 'Master asking prices and understanding currency amounts from 1 to 100 Euros in Lithuanian.',
         detailedExplanation: '• Inquiring price:\n  - „Kiek kainuoja kava?“ (How much does the coffee cost?)\n  - „Kiek kainuoja šis pyragaitis?“ (How much does this pastry cost?)\n• Number and currency rules with „euras“:\n  - 1 euras (Nominative singular for number 1: vienas euras)\n  - 2–9 eurai (Nominative plural for numbers ending in 2-9: du eurai, penki eurai)\n  - 10–20 eurų (Genitive plural for numbers 10-20 & tens: dešimt eurų, dvidešimt eurų)\n• Cent endings: 1 centas, 2–9 centai, 10–20 centų.',
@@ -1040,8 +1040,8 @@ export const UNITS: Unit[] = [
   {
     id: 'unit-6',
     number: 6,
-    title: 'Unit 6: Miesto orientacija ir kelionės',
-    subtitle: 'Directions, Public Transit & Vilnius Landmarks • Miestas ir kelionės',
+    title: 'Navigate the city and take transit',
+    subtitle: 'Directions, Public Transit & Vilnius Landmarks',
     description: 'Learn to ask for directions (tiesiai, į kairę, į dešinę), use public transport (autobusas, troleibusas), and explore Vilnius landmarks.',
     color: '#0891b2',
     accentColor: '#06b6d4',
@@ -1049,7 +1049,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-16',
         unitId: 'unit-6',
-        title: 'Asking Directions • Kur yra...?',
+        title: 'Asking Directions',
         description: 'Ask for famous city spots and understand directional instructions.',
         subExplanation: 'Navigate the cobblestone streets of Vilnius by mastering directional prepositions and landmarks.',
         detailedExplanation: '• Directional adverbs and phrases:\n  - „Tiesiai“ (straight ahead)\n  - „Į dešinę“ (to the right - į + Accusative)\n  - „Į kairę“ (to the left - į + Accusative)\n  - „Šalia“ (next to / near)\n  - „Priešais“ (opposite / in front of)\n• Vilnius landmarks:\n  - „Katedros aikštė“ (Cathedral Square)\n  - „Gedimino pilis“ (Gediminas Tower/Castle)\n  - „Bernardinų sodas“ (Bernardine Garden)\n  - „Geležinkelio stotis“ (Railway Station).',
@@ -1107,7 +1107,7 @@ export const UNITS: Unit[] = [
       {
         id: 'lesson-17',
         unitId: 'unit-6',
-        title: 'Public Transit • Autobusas ir troleibusas',
+        title: 'Public Transit',
         description: 'Take buses, trolleybuses, and buy tickets like a local.',
         subExplanation: 'Navigate city public transport in Vilnius and Kaunas, buy tickets, and listen for station announcements.',
         detailedExplanation: '• Transport modes in Lithuania:\n  - „Autobusas“ (bus)\n  - „Troleibusas“ (electric trolleybus - prominent in Vilnius & Kaunas!)\n  - „Traukinys“ (train)\n• Key travel words:\n  - „Stotelė“ (bus/trolleybus stop)\n  - „Stotis“ (central station: autobusų stotis / geležinkelio stotis)\n  - „Bilietas“ (ticket)\n  - „Kitas sustojimas“ (next stop announcement).',
