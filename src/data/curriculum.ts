@@ -1,12 +1,12 @@
 import { Unit, Lesson } from '@/types/lesson';
 
 export const UNITS: Unit[] = [
-  // UNIT 1: PRADĖKITE SAVO PIRMĄJĄ PAMOKĄ
+  // UNIT 1: START YOUR FIRST LESSON
   {
     id: 'unit-1',
     number: 1,
-    title: 'Unit 1: Pradėkite savo pirmąją pamoką',
-    subtitle: 'Start your first lesson • Pasisveikinimai ir susipažinimas',
+    title: 'Start your first lesson',
+    subtitle: 'Introductions & Alphabet',
     description: 'Master the Lithuanian alphabet, pronunciation, introductions, the verb "būti / nebūti" (to be), and countries with nationalities.',
     color: '#059669',
     accentColor: '#10b981',

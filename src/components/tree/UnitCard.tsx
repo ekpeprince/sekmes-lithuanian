@@ -24,50 +24,61 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons, acti
     return pattern[index % pattern.length];
   };
 
+  // Derive clean action/title (e.g. Unit 1 -> "Start your first lesson")
+  const displayTitle = (
+    unit.number === 1
+      ? 'Start your first lesson'
+      : unit.title.replace(/^(Unit\s*\d+:?|\d+\s*skyrius:?)\s*/i, '')
+  );
+
   return (
     <div className="w-full mb-16">
       {/* Unit Header Banner */}
       <div
-        className="rounded-3xl py-3.5 px-4 sm:p-5 text-white shadow-lg relative overflow-hidden mb-4"
+        className="rounded-3xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden mb-4"
         style={{
           background: `linear-gradient(135deg, ${unit.color} 0%, ${unit.accentColor} 100%)`,
         }}
       >
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-xs font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full">
-                Unit {unit.number}
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase text-white/95">
-                {unit.subtitle}
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Top Tag: "UNIT X" */}
+            <div className="mb-2">
+              <span className="text-[11px] font-black uppercase tracking-wider bg-white/20 border border-white/25 px-2.5 py-0.5 rounded-full inline-flex items-center">
+                UNIT {unit.number}
               </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mt-1 text-white">
-              {unit.title}
+
+            {/* Main Bold Header */}
+            <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight text-white">
+              {displayTitle}
             </h3>
-            <p className="mt-1 text-xs line-clamp-2 leading-relaxed text-emerald-50/90 max-w-xl font-medium">
-              {unit.description}
-            </p>
+
+            {/* Clean Subtitle / Description Body */}
+            {unit.description && (
+              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-white/90 max-w-xl font-normal">
+                {unit.description}
+              </p>
+            )}
           </div>
 
-          <div className="self-start sm:self-center shrink-0 flex items-center gap-2 flex-wrap">
-            {/* For Unit 1, rely on floating START beacon on the active node. Retain Start button for Unit 2+ */}
+          {/* Action Buttons: Cleanly positioned */}
+          <div className="self-start sm:self-center shrink-0 flex items-center gap-2 pt-1 sm:pt-0">
             {!isUnit1 && activeLesson && (
               <Link
                 href={`/lesson/${activeLesson.id}`}
                 onClick={() => sounds.playClick()}
-                className="btn-tactile bg-white text-emerald-900 hover:bg-emerald-50 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+                className="btn-tactile bg-white text-emerald-900 hover:bg-emerald-50 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
               >
                 <span>▶</span>
-                <span>Start Lesson</span>
+                <span>Start</span>
               </Link>
             )}
 
             <Link
               href="/grammar"
               onClick={() => sounds.playClick()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs uppercase tracking-wider transition backdrop-blur-xs active:scale-95 cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white font-bold text-xs uppercase tracking-wider transition backdrop-blur-xs active:scale-95 cursor-pointer shadow-2xs"
             >
               <BookOpen className="h-3.5 w-3.5 text-white" />
               <span>Guidebook</span>
