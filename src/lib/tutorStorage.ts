@@ -1,6 +1,6 @@
 export interface TutorMessage {
   id: string;
-  sender: 'user' | 'aiste';
+  sender: 'user' | 'aiste' | 'leonas';
   text: string;
   translation?: string;
   suggestions?: string[];
@@ -18,10 +18,14 @@ export interface TutorSession {
 const STORAGE_KEY = 'labasapp_tutor_sessions';
 const ACTIVE_SESSION_KEY = 'labasapp_active_tutor_session_id';
 
-export const INITIAL_AISTE_GREETING =
-  'Labas! Aš esu Aistė. Apie ką norėtum pasikalbėti šiandien?';
-export const INITIAL_AISTE_TRANSLATION =
-  "Hi! I'm Aistė. What would you like to talk about today?";
+export const INITIAL_LEONAS_GREETING =
+  'Labas! Aš esu Leonas. Apie ką norėtum pasikalbėti šiandien?';
+export const INITIAL_LEONAS_TRANSLATION =
+  "Hi! I'm Leonas. What would you like to talk about today?";
+
+// Backward compatibility aliases
+export const INITIAL_AISTE_GREETING = INITIAL_LEONAS_GREETING;
+export const INITIAL_AISTE_TRANSLATION = INITIAL_LEONAS_TRANSLATION;
 
 export function getTimestampNow(): number {
   return Date.now();
@@ -114,9 +118,9 @@ export function createNewSession(initialTitle = 'New Conversation'): TutorSessio
     messages: [
       {
         id: `init-${now}`,
-        sender: 'aiste',
-        text: INITIAL_AISTE_GREETING,
-        translation: INITIAL_AISTE_TRANSLATION,
+        sender: 'leonas',
+        text: INITIAL_LEONAS_GREETING,
+        translation: INITIAL_LEONAS_TRANSLATION,
         suggestions: [
           'Kaip sekasi?',
           'Papasakok apie Lietuvą 🇱🇹',

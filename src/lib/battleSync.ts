@@ -83,8 +83,8 @@ export const AI_RIVALS: AIRival[] = [
     maxDelayMs: 7000,
   },
   {
-    id: 'bot-aiste',
-    name: 'Mokytoja Aistė',
+    id: 'bot-leonas',
+    name: 'Mokytojas Leonas',
     city: 'Senamiestis',
     avatar: '🦉',
     tagline: 'Native Lithuanian teacher. Rarely misses!',

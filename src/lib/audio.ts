@@ -167,7 +167,7 @@ class SoundManager {
   }
 
   private currentAudio: HTMLAudioElement | null = null;
-  private voiceGender: 'female' | 'male' = 'female';
+  private voiceGender: 'female' | 'male' = 'male';
 
   public setVoiceGender(gender: 'female' | 'male') {
     this.voiceGender = gender;

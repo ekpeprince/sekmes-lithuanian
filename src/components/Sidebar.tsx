@@ -16,7 +16,7 @@ const DESKTOP_NAV_ITEMS = [
   },
   {
     href: '/tutor',
-    label: 'Aistė AI',
+    label: 'Leonas AI',
     icon: Sparkles,
     matches: (pathname: string) => pathname.startsWith('/tutor'),
   },

@@ -49,8 +49,8 @@ import {
   getSession,
   TutorMessage,
   TutorSession,
-  INITIAL_AISTE_GREETING,
-  INITIAL_AISTE_TRANSLATION,
+  INITIAL_LEONAS_GREETING,
+  INITIAL_LEONAS_TRANSLATION,
   getTimestampNow,
 } from '@/lib/tutorStorage';
 
@@ -164,9 +164,9 @@ const SCENARIOS = [
     subtitle: 'Laisvas Pokalbis • Open Talk',
     icon: Sparkles,
     color: 'from-amber-400 via-rose-400 to-indigo-500',
-    greeting: 'Labas! Aš esu Aistė. Apie ką norėtum pasikalbėti šiandien?',
-    greetingEn: "Hi! I'm Aistė. What would you like to talk about today?",
-    tip: 'Feel free to speak about any topic! Aistė adapts to your level and gently corrects mistakes.',
+    greeting: 'Labas! Aš esu Leonas. Apie ką norėtum pasikalbėti šiandien?',
+    greetingEn: "Hi! I'm Leonas. What would you like to talk about today?",
+    tip: 'Feel free to speak about any topic! Leonas adapts to your level and gently corrects mistakes.',
     promptSystem: FREE_CHAT_SCENARIO.promptSystem,
     initialSuggestions: [
       { lt: 'Kaip sekasi?', en: 'How are you?' },
@@ -254,7 +254,7 @@ const SCENARIOS = [
 function convertToTutorMessages(msgs: Message[], lastSuggestions?: Suggestion[]): TutorMessage[] {
   return msgs.map((m, idx) => ({
     id: m.id,
-    sender: m.role === 'user' ? 'user' : 'aiste',
+    sender: m.role === 'user' ? 'user' : 'leonas',
     text: m.textLt,
     translation: m.textEn,
     suggestions:
@@ -276,7 +276,7 @@ function convertFromTutorMessages(tMsgs: TutorMessage[]): { messages: Message[];
 
   const lastAssistantWithSuggestions = [...tMsgs]
     .reverse()
-    .find((m) => m.sender === 'aiste' && m.suggestions && m.suggestions.length > 0);
+    .find((m) => m.sender !== 'user' && m.suggestions && m.suggestions.length > 0);
 
   const loadedSuggestions: Suggestion[] = lastAssistantWithSuggestions?.suggestions
     ? lastAssistantWithSuggestions.suggestions.map((lt) => ({ lt, en: '' }))
@@ -307,9 +307,9 @@ export default function TutorPage() {
     {
       id: 'init-1',
       role: 'assistant',
-      textLt: INITIAL_AISTE_GREETING,
-      textEn: INITIAL_AISTE_TRANSLATION,
-      tip: 'Feel free to speak about any topic! Aistė adapts to your level and gently corrects mistakes.',
+      textLt: INITIAL_LEONAS_GREETING,
+      textEn: INITIAL_LEONAS_TRANSLATION,
+      tip: 'Feel free to speak about any topic! Leonas adapts to your level and gently corrects mistakes.',
       timestamp: '12:00',
     },
   ]);
@@ -541,7 +541,7 @@ export default function TutorPage() {
     newSession.messages = [
       {
         id: initialMsg.id,
-        sender: 'aiste',
+        sender: 'leonas',
         text: initialMsg.textLt,
         translation: initialMsg.textEn,
         suggestions: target.initialSuggestions.map((s) => s.lt),
@@ -963,7 +963,7 @@ export default function TutorPage() {
             type="button"
             onClick={() => setIsMemoryModalOpen(true)}
             className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 font-black text-xs px-2.5 py-1 rounded-full flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs"
-            title="Fluency Score & Aistė's Memory"
+            title="Fluency Score & Leonas's Memory"
           >
             <Brain className="w-3.5 h-3.5 text-purple-600" />
             <span>{messages.filter((m) => m.role === 'user').length * 10} pts</span>
@@ -986,7 +986,7 @@ export default function TutorPage() {
         <div className="shrink-0 px-4 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold flex items-center justify-between gap-2 shadow-xs z-20">
           <div className="flex items-center gap-2 min-w-0">
             <Brain className="w-4 h-4 text-violet-200 shrink-0 animate-pulse" />
-            <span className="truncate">Aistė remembered: &ldquo;{learnedFactToast}&rdquo;</span>
+            <span className="truncate">Leonas remembered: &ldquo;{learnedFactToast}&rdquo;</span>
           </div>
           <button
             type="button"
@@ -1031,9 +1031,9 @@ export default function TutorPage() {
               {isAssistant ? (
                 <div className="flex items-center gap-1.5 mb-1 pl-1">
                   <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[10px] font-black shadow-2xs">
-                    A
+                    L
                   </div>
-                  <span className="text-xs font-bold text-slate-700">Aistė</span>
+                  <span className="text-xs font-bold text-slate-700">Leonas</span>
                   <span className="text-[10px] text-slate-400 font-medium">• {msg.timestamp}</span>
                 </div>
               ) : (
@@ -1142,7 +1142,7 @@ export default function TutorPage() {
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce delay-150"></span>
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce delay-300"></span>
             </div>
-            <span className="text-xs font-bold text-slate-600">Aistė is typing...</span>
+            <span className="text-xs font-bold text-slate-600">Leonas is typing...</span>
           </div>
         )}
 
@@ -1400,10 +1400,10 @@ export default function TutorPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900">
-                    Aistės Atmintis • Tutor Memory
+                    Leono Atmintis • Tutor Memory
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
-                    What Aistė remembers about you across sessions
+                    What Leonas remembers about you across sessions
                   </p>
                 </div>
               </div>
@@ -1470,7 +1470,7 @@ export default function TutorPage() {
 
               {memory.facts.length === 0 ? (
                 <div className="p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400 italic">
-                  Aistė dar mokosi apie tave! Kalbėkite apie savo pomėgius, darbą ar gyvenimą, ir ji viską įsimins natūraliai.
+                  Leonas dar mokosi apie tave! Kalbėkite apie savo pomėgius, darbą ar gyvenimą, ir jis viską įsimins natūraliai.
                 </div>
               ) : (
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
@@ -1735,7 +1735,7 @@ export default function TutorPage() {
                   <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
                     {historySearchQuery
                       ? 'Try searching for another word or phrase.'
-                      : 'Start chatting with Aistė — conversations are saved automatically!'}
+                      : 'Start chatting with Leonas — conversations are saved automatically!'}
                   </p>
                 </div>
               ) : (
@@ -1781,7 +1781,7 @@ export default function TutorPage() {
 
                       {lastMsg && (
                         <p className="text-[11px] text-slate-500 line-clamp-1 italic">
-                          {lastMsg.sender === 'user' ? 'You: ' : 'Aistė: '}
+                          {lastMsg.sender === 'user' ? 'You: ' : 'Leonas: '}
                           {lastMsg.text}
                         </p>
                       )}

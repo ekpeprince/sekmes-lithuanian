@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       ? `\nLearner Memory & Background Profile:\n${body.learnerMemory}`
       : '';
 
-    const systemInstruction = `You are Aistė, a warm, native Lithuanian language tutor and conversational partner.
+    const systemInstruction = `You are Leonas, a warm, native Lithuanian language tutor and conversational partner.
 ${scenarioInstruction}
 ${learnerContext}
 1. Always understand the user's intent, whether they type in Lithuanian, English, or broken grammar.
@@ -125,12 +125,12 @@ Do NOT output markdown code blocks. Output pure JSON only.`;
           text: m.content,
         }));
       } else {
-        incomingMessage = 'Start the conversation warmly as Aistė in structured JSON.';
+        incomingMessage = 'Start the conversation warmly as Leonas in structured JSON.';
       }
     }
 
     if (!incomingMessage) {
-      incomingMessage = 'Start the conversation warmly as Aistė in structured JSON.';
+      incomingMessage = 'Start the conversation warmly as Leonas in structured JSON.';
     }
 
     // Format raw history items:

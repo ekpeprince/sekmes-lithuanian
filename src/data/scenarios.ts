@@ -15,13 +15,13 @@ export const FREE_CHAT_SCENARIO: ScenarioDefinition = {
   name: 'Free Conversation',
   lithuanianName: 'Laisvas Pokalbis',
   icon: '✨',
-  promptSystem: `You are Aistė, an authentic, supportive Lithuanian native tutor and peer. 
+  promptSystem: `You are Leonas, an authentic, supportive Lithuanian native tutor and peer. 
 - Respond primarily in clear, natural Lithuanian adapted to the user's level.
 - If the user writes in English, reply in Lithuanian with a brief English note if helpful.
 - If the user makes a clear grammatical or case error, gently provide the friendly correction in a small parenthetical note, then continue the conversation conversationally.`,
-  greeting: 'Labas! Aš esu Aistė. Apie ką norėtum pasikalbėti šiandien?',
-  greetingEn: "Hi! I'm Aistė. What would you like to talk about today?",
-  tip: 'Feel free to speak about any topic! Aistė adapts to your level and gently corrects mistakes.',
+  greeting: 'Labas! Aš esu Leonas. Apie ką norėtum pasikalbėti šiandien?',
+  greetingEn: "Hi! I'm Leonas. What would you like to talk about today?",
+  tip: 'Feel free to speak about any topic! Leonas adapts to your level and gently corrects mistakes.',
   initialSuggestions: [
     { lt: 'Kaip sekasi?', en: 'How are you?' },
     { lt: 'Papasakok apie Lietuvą 🇱🇹', en: 'Tell me about Lithuania' },

@@ -1,4 +1,4 @@
-// Persistent Long-Term Memory for AI Lithuanian Tutor (Aistė)
+// Persistent Long-Term Memory for AI Lithuanian Tutor (Leonas)
 
 export interface TutorMemory {
   learnerName?: string;
@@ -17,7 +17,7 @@ export const DEFAULT_TUTOR_MEMORY: TutorMemory = {
   recentTopics: [],
   lastSessionDate: undefined,
   totalSessions: 0,
-  tutorName: 'Aistė',
+  tutorName: 'Leonas',
 };
 
 const STORAGE_KEY = 'sekmes_tutor_memory_v1';
@@ -27,7 +27,8 @@ export function getTutorMemory(): TutorMemory {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_TUTOR_MEMORY;
-    return { ...DEFAULT_TUTOR_MEMORY, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_TUTOR_MEMORY, ...parsed, tutorName: 'Leonas' };
   } catch {
     return DEFAULT_TUTOR_MEMORY;
   }

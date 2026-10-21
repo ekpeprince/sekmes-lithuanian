@@ -21,7 +21,7 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
   },
   {
     href: '/tutor',
-    label: 'Aistė AI',
+    label: 'Leonas AI',
     icon: Sparkles,
     matches: (pathname: string) => pathname.startsWith('/tutor'),
   },

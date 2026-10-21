@@ -82,7 +82,7 @@ export const DEFAULT_PROGRESS: UserProgress = {
   lastActiveDate: getLocalDateString(),
   soundEnabled: true,
   gems: 120,
-  voiceGender: 'female',
+  voiceGender: 'male',
   mistakesBank: [],
   quests: DEFAULT_QUESTS,
   leagueTier: 'Geležis',
