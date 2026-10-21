@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Volume2, Sparkles, CheckCircle2, RotateCcw, VolumeX } from 'lucide-react';
 import { SpeakingPronounceExercise } from '@/types/lesson';
 import { sounds } from '@/lib/audio';
+import { evaluateHybridPronunciation, normalizeLt } from '@/lib/speechValidation';
 
 interface SpeakingPronounceProps {
   exercise: SpeakingPronounceExercise;
@@ -13,52 +14,6 @@ interface SpeakingPronounceProps {
   isCorrect: boolean | null;
 }
 
-// Clean text for phonetics comparison
-function normalizeLt(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'’]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-// Compute word matching details
-function computeWordMatch(target: string, actual: string) {
-  const normTarget = normalizeLt(target);
-  const normActual = normalizeLt(actual);
-
-  if (!normTarget || !normActual) {
-    return { similarity: 0, wordStatus: [] as boolean[] };
-  }
-
-  const targetWords = normTarget.split(' ');
-  const actualWords = normActual.split(' ');
-
-  let matches = 0;
-  const wordStatus = targetWords.map((word) => {
-    if (actualWords.includes(word)) {
-      matches += 1;
-      return true;
-    }
-    const hasClose = actualWords.some(
-      (act) => act.startsWith(word.slice(0, -1)) || word.startsWith(act.slice(0, -1))
-    );
-    if (hasClose) {
-      matches += 0.75;
-      return true;
-    }
-    return false;
-  });
-
-  return {
-    similarity: Math.min(1.0, matches / targetWords.length),
-    wordStatus,
-  };
-}
-
-function computeSimilarity(target: string, actual: string): number {
-  return computeWordMatch(target, actual).similarity;
-}
 
 interface SpeechRecognitionEventLike {
   results: {
@@ -110,9 +65,30 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   const [cantSpeakNow, setCantSpeakNow] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(10);
 
+  // Hybrid Validation & Guardrail states
+  const [glitchMessage, setGlitchMessage] = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState<number>(0);
+  const [fallbackMode, setFallbackMode] = useState<'voice' | 'tap_words' | 'text_verify'>('voice');
+  const [assembledWordTiles, setAssembledWordTiles] = useState<string[]>([]);
+
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Scrambled word tiles for Guardrail 3 interactive tap order
+  const scrambledWordTiles = React.useMemo(() => {
+    const rawWords = exercise.targetPhrase.split(/\s+/).filter(Boolean);
+    const tiles = rawWords.map((word, i) => ({ id: `${word}-${i}`, word }));
+    return tiles.slice().reverse();
+  }, [exercise.targetPhrase]);
+
+  // Reset tracking when exercise changes
+  useEffect(() => {
+    setFailedAttempts(0);
+    setGlitchMessage(null);
+    setFallbackMode('voice');
+    setAssembledWordTiles([]);
+  }, [exercise.id]);
 
   useEffect(() => {
     return () => {
@@ -133,6 +109,15 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
       slow,
       onEnd: () => setIsPlayingModelAudio(null),
     });
+  };
+
+  const handleBypassRound = () => {
+    sounds.playSuccess();
+    setFailedAttempts(0);
+    setGlitchMessage(null);
+    setFallbackMode('voice');
+    setAssembledWordTiles([]);
+    onSpoken(exercise.targetPhrase, true);
   };
 
   const clearAllTimers = () => {
@@ -179,7 +164,11 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
       setIsRecording(true);
       setTranscript('');
       setScore(null);
+      setGlitchMessage(null);
       setTimeLeft(10);
+
+      let passedThisSession = false;
+      let glitchCaught = false;
 
       // 10-second comfortable countdown timer for learner breathing room
       clearAllTimers();
@@ -201,24 +190,46 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
         }
         setTranscript(currentTranscript);
 
-        // Evaluate similarity score and word-level matches
-        const { similarity, wordStatus } = computeWordMatch(exercise.targetPhrase, currentTranscript);
-        const currentScore = Math.round(similarity * 100);
-        setScore(currentScore);
-        setMatchedWords(wordStatus);
-
-        // If >= 70% match or variation matches, register passing
-        const passes = similarity >= 0.7 || (exercise.acceptableVariations || []).some(
-          v => computeSimilarity(v, currentTranscript) >= 0.7
+        // Guardrail 1 & 2: Hybrid Evaluation
+        const validation = evaluateHybridPronunciation(
+          exercise.targetPhrase,
+          currentTranscript,
+          exercise.acceptableVariations || []
         );
 
-        onSpoken(currentTranscript, passes);
+        // Guardrail 1: Repetition / loop glitch filter
+        if (validation.isGlitch) {
+          glitchCaught = true;
+          setGlitchMessage(
+            validation.glitchMessage ||
+              "The microphone caught some interference. Let's try saying it one more time clearly!"
+          );
+          setScore(0);
+          setMatchedWords([]);
+          setFailedAttempts((prev) => prev + 1);
+          onSpoken(currentTranscript, false); // Explicitly overrides "Phrase Recognized" state!
+          stopListening();
+          return;
+        }
 
-        // Reset silence debounce: if learner pauses after speaking, give 3.5s before gently completing
+        setGlitchMessage(null);
+        setScore(validation.similarity);
+        setMatchedWords(validation.wordStatus);
+
+        // Guardrail 2: Accepts high match or moderate (50–70%) with core keywords
+        if (validation.passes) {
+          passedThisSession = true;
+          setFailedAttempts(0);
+          onSpoken(currentTranscript, true);
+        } else {
+          onSpoken(currentTranscript, false);
+        }
+
+        // Reset silence debounce: if learner pauses after speaking, give generous breathing room
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
           stopListening();
-        }, passes ? 1800 : 3500);
+        }, validation.passes ? 1800 : 3500);
       };
 
       recognition.onerror = () => {
@@ -228,6 +239,9 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
       recognition.onend = () => {
         clearAllTimers();
         setIsRecording(false);
+        if (!passedThisSession && !glitchCaught) {
+          setFailedAttempts((prev) => prev + 1);
+        }
       };
 
       recognition.start();
@@ -242,6 +256,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     setTranscript('');
     setScore(null);
     setMatchedWords([]);
+    setGlitchMessage(null);
     setTimeLeft(10);
     onSpoken('', false);
   };
@@ -461,12 +476,22 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
                   Tap mic when finished
                 </span>
               </div>
+            ) : glitchMessage ? (
+              <span className="text-amber-700 font-extrabold">Interference detected • Try again clearly</span>
             ) : spokenText ? (
               <span className="text-emerald-600 font-bold">Phrase recognized!</span>
             ) : (
               <span>Tap mic and speak clearly</span>
             )}
           </div>
+
+          {/* Guardrail 1: Soft retry banner on speech engine glitch */}
+          {glitchMessage && (
+            <div className="mt-2 w-full max-w-md p-3 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2 animate-fadeIn shadow-2xs text-left">
+              <span className="text-base shrink-0">⚠️</span>
+              <span className="leading-snug">{glitchMessage}</span>
+            </div>
+          )}
 
           {/* Transcript Display */}
           {(transcript || spokenText) && (
@@ -494,6 +519,137 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               <span>Try Again</span>
             </button>
           )}
+
+          {/* Guardrail 3: Intelligent Fallback UI after 2 consecutive failed attempts */}
+          {failedAttempts >= 2 && !spokenText && !isChecked && (
+            <div className="mt-3 w-full max-w-md p-4 rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 text-left shadow-xs animate-pop">
+              <div className="flex items-start gap-2.5 mb-2">
+                <span className="text-xl shrink-0">🎙️</span>
+                <div>
+                  <h4 className="text-sm font-black uppercase tracking-wider text-amber-950">
+                    Having microphone trouble?
+                  </h4>
+                  <p className="text-xs text-amber-900/80 leading-snug mt-0.5">
+                    Browser audio input can encounter noise loops or accent friction. Use an escape hatch below so you&apos;re never blocked:
+                  </p>
+                </div>
+              </div>
+
+              {fallbackMode === 'tap_words' ? (
+                <div className="mt-2 pt-2 border-t border-amber-200/80">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-900 block mb-1.5">
+                    🧩 Tap words in correct order:
+                  </span>
+
+                  {/* Assembled slots */}
+                  <div className="min-h-10 p-2 rounded-2xl bg-white border-2 border-amber-300 flex flex-wrap gap-1.5 mb-2">
+                    {assembledWordTiles.length === 0 ? (
+                      <span className="text-xs text-slate-400 italic px-1 self-center">
+                        Tap words below in order...
+                      </span>
+                    ) : (
+                      assembledWordTiles.map((tileId) => {
+                        const tile = scrambledWordTiles.find((t) => t.id === tileId);
+                        if (!tile) return null;
+                        return (
+                          <button
+                            key={tile.id}
+                            type="button"
+                            onClick={() => {
+                              sounds.playClick();
+                              setAssembledWordTiles((prev) => prev.filter((id) => id !== tile.id));
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-2xs active:scale-95 cursor-pointer"
+                          >
+                            {tile.word}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Available word tiles */}
+                  <div className="flex flex-wrap gap-1.5 mb-2.5">
+                    {scrambledWordTiles
+                      .filter((tile) => !assembledWordTiles.includes(tile.id))
+                      .map((tile) => (
+                        <button
+                          key={tile.id}
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            const nextAssembled = [...assembledWordTiles, tile.id];
+                            setAssembledWordTiles(nextAssembled);
+                            if (nextAssembled.length === scrambledWordTiles.length) {
+                              const assembledWords = nextAssembled.map(
+                                (id) => scrambledWordTiles.find((t) => t.id === id)?.word || ''
+                              );
+                              const targetWords = exercise.targetPhrase.split(/\s+/).filter(Boolean);
+                              const isCorrect =
+                                normalizeLt(assembledWords.join(' ')) ===
+                                normalizeLt(targetWords.join(' '));
+                              if (isCorrect) {
+                                sounds.playSuccess();
+                                setFailedAttempts(0);
+                                setFallbackMode('voice');
+                                onSpoken(exercise.targetPhrase, true);
+                              } else {
+                                sounds.playError();
+                              }
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 hover:border-amber-400 font-bold text-xs text-slate-800 shadow-2xs active:scale-95 cursor-pointer"
+                        >
+                          {tile.word}
+                        </button>
+                      ))}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFallbackMode('voice');
+                        setAssembledWordTiles([]);
+                      }}
+                      className="text-amber-800 font-bold hover:underline cursor-pointer"
+                    >
+                      ← Back to Mic
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBypassRound}
+                      className="text-amber-950 font-black hover:underline cursor-pointer"
+                    >
+                      Bypass Round →
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setFallbackMode('tap_words');
+                      setAssembledWordTiles([]);
+                    }}
+                    className="btn-tactile w-full py-2.5 px-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                  >
+                    <span>🧩 Tap words to order</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBypassRound}
+                    className="w-full py-2 px-3 rounded-2xl bg-white hover:bg-amber-100/60 border border-amber-300 text-amber-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 transition"
+                  >
+                    <span>✓ Continue via text verification</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
 
           {!speechSupported && (
             <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">

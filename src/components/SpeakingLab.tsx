@@ -17,6 +17,7 @@ import { SPEAKING_DRILLS, SpeakingDrillItem } from '@/data/speakingDrills';
 import { SYLLABLE_STRESS_DRILLS, SyllableStressItem } from '@/data/syllableStressDrills';
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
+import { evaluateHybridPronunciation } from '@/lib/speechValidation';
 
 // Normalize Lithuanian text for lenient comparison
 function normalizeLt(str: string): string {
@@ -142,6 +143,12 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
   const [timeLeft, setTimeLeft] = useState<number>(10);
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Hybrid Validation & Escape Hatch States
+  const [glitchMessage, setGlitchMessage] = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState<number>(0);
+  const [fallbackMode, setFallbackMode] = useState<'voice' | 'tap_words' | 'text_verify'>('voice');
+  const [assembledWordTiles, setAssembledWordTiles] = useState<string[]>([]);
+
   // --- SYLLABLE STRESS TRAINER STATE ---
   const [stressCategory, setStressCategory] = useState<string>('all');
   const [stressIndex, setStressIndex] = useState(0);
@@ -174,6 +181,22 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
 
   const currentItem: SpeakingDrillItem = filteredDrills[currentIndex] || SPEAKING_DRILLS[0];
   const isMastered = masteredIds.includes(currentItem.id);
+
+  // Scrambled word tiles for Guardrail 3 fallback interactive ordering
+  const scrambledWordTiles = React.useMemo(() => {
+    const rawWords = currentItem.phrase.split(/\s+/).filter(Boolean);
+    const tiles = rawWords.map((word, i) => ({ id: `${word}-${i}`, word }));
+    return tiles.slice().reverse();
+  }, [currentItem.phrase]);
+
+  const handleBypassRound = () => {
+    sounds.playSuccess();
+    recordMastered(currentItem.id);
+    setFailedAttempts(0);
+    setGlitchMessage(null);
+    setFallbackMode('voice');
+    setAssembledWordTiles([]);
+  };
 
   // Filtered syllable stress items
   const filteredStressDrills = React.useMemo(() => {
@@ -258,6 +281,7 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
     setTranscript('');
     setScore(null);
     setMatchedWords([]);
+    setGlitchMessage(null);
     setTimeLeft(10);
     setIsRecording(true);
 
@@ -269,6 +293,9 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
       rec.continuous = false;
       rec.maxAlternatives = 3;
 
+      let passedThisSession = false;
+      let glitchCaught = false;
+
       rec.onresult = (event: SpeechRecognitionEventLike) => {
         let finalTranscript = '';
         for (let i = 0; i < event.results.length; i++) {
@@ -277,28 +304,38 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
 
         setTranscript(finalTranscript);
 
-        let bestScore = 0;
-        let bestWords: boolean[] = [];
-
-        const targetPhraseList = [
+        // Hybrid Validation: Guardrail 1 & 2
+        const validation = evaluateHybridPronunciation(
           currentItem.phrase,
-          ...(currentItem.acceptableVariations || []),
-        ];
+          finalTranscript,
+          currentItem.acceptableVariations || []
+        );
 
-        targetPhraseList.forEach((target) => {
-          const { score: testScore, wordStatus } = computeMatchDetails(target, finalTranscript);
-          if (testScore > bestScore) {
-            bestScore = testScore;
-            bestWords = wordStatus;
-          }
-        });
+        // Guardrail 1: Catch repetitive browser speech loops
+        if (validation.isGlitch) {
+          glitchCaught = true;
+          setGlitchMessage(
+            validation.glitchMessage ||
+              "The microphone caught some interference. Let's try saying it one more time clearly!"
+          );
+          setScore(0);
+          setMatchedWords([]);
+          setFailedAttempts((prev) => prev + 1);
+          stopListening();
+          return;
+        }
 
-        setScore(bestScore);
-        setMatchedWords(bestWords);
+        setGlitchMessage(null);
+        setScore(validation.similarity);
+        setMatchedWords(validation.wordStatus);
 
-        if (bestScore >= 70) {
+        // Guardrail 2: Accepts high match (>=70%) or moderate (50–70%) with core keywords
+        if (validation.passes) {
+          passedThisSession = true;
           sounds.playSuccess();
           recordMastered(currentItem.id);
+          setFailedAttempts(0);
+          setFallbackMode('voice');
           stopListening();
         }
       };
@@ -310,6 +347,9 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
       rec.onend = () => {
         setIsRecording(false);
         clearAllTimers();
+        if (!passedThisSession && !glitchCaught && !isMastered) {
+          setFailedAttempts((prev) => prev + 1);
+        }
       };
 
       rec.start();
@@ -333,6 +373,10 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
     setTranscript('');
     setScore(null);
     setMatchedWords([]);
+    setGlitchMessage(null);
+    setFailedAttempts(0);
+    setFallbackMode('voice');
+    setAssembledWordTiles([]);
     setCurrentIndex((prev) => (prev + 1) % filteredDrills.length);
   };
 
@@ -341,6 +385,10 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
     setTranscript('');
     setScore(null);
     setMatchedWords([]);
+    setGlitchMessage(null);
+    setFailedAttempts(0);
+    setFallbackMode('voice');
+    setAssembledWordTiles([]);
     setCurrentIndex((prev) => (prev - 1 + filteredDrills.length) % filteredDrills.length);
   };
 
@@ -469,6 +517,10 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
                 onClick={() => {
                   setSelectedCategory(cat.id);
                   setCurrentIndex(0);
+                  setFailedAttempts(0);
+                  setGlitchMessage(null);
+                  setFallbackMode('voice');
+                  setAssembledWordTiles([]);
                   stopListening();
                 }}
                 className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
@@ -661,6 +713,8 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
                   ? 'Speech recognition not supported in this browser'
                   : isRecording
                   ? `Listening... (${timeLeft}s left)`
+                  : glitchMessage
+                  ? "Interference caught • Let's try again"
                   : score !== null && score >= 70
                   ? `Great pronunciation! (${score}% accuracy)`
                   : transcript
@@ -669,10 +723,148 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
               </p>
             </div>
 
+            {/* Guardrail 1: Soft retry banner on speech engine glitch */}
+            {glitchMessage && (
+              <div className="w-full max-w-sm px-3.5 py-2.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2 animate-fadeIn shadow-2xs">
+                <span className="text-base shrink-0">⚠️</span>
+                <span className="leading-snug">{glitchMessage}</span>
+              </div>
+            )}
+
             {/* Transcript if spoken */}
             {transcript && (
               <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium max-w-xs">
                 &ldquo;{transcript}&rdquo;
+              </div>
+            )}
+
+            {/* Guardrail 3: Mic Failure Fallback / Escape Hatch after 2 consecutive failed attempts */}
+            {failedAttempts >= 2 && !isMastered && (
+              <div className="w-full max-w-sm my-2 p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 text-left shadow-xs animate-pop">
+                <div className="flex items-start gap-2 mb-2">
+                  <span className="text-lg shrink-0">🎙️</span>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-amber-950">
+                      Having microphone trouble?
+                    </h4>
+                    <p className="text-[11px] text-amber-900/80 leading-snug mt-0.5">
+                      Speech recognition can mishear accents or device inputs. Choose an escape hatch below so you&apos;re never stuck:
+                    </p>
+                  </div>
+                </div>
+
+                {fallbackMode === 'tap_words' ? (
+                  <div className="mt-2 pt-2 border-t border-amber-200/80">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block mb-1.5">
+                      🧩 Tap words in correct order:
+                    </span>
+
+                    {/* Assembled slots */}
+                    <div className="min-h-9 p-1.5 rounded-xl bg-white border border-amber-300 flex flex-wrap gap-1.5 mb-2">
+                      {assembledWordTiles.length === 0 ? (
+                        <span className="text-[11px] text-slate-400 italic px-1 self-center">
+                          Tap words below in order...
+                        </span>
+                      ) : (
+                        assembledWordTiles.map((tileId) => {
+                          const tile = scrambledWordTiles.find((t) => t.id === tileId);
+                          if (!tile) return null;
+                          return (
+                            <button
+                              key={tile.id}
+                              type="button"
+                              onClick={() => {
+                                sounds.playClick();
+                                setAssembledWordTiles((prev) => prev.filter((id) => id !== tile.id));
+                              }}
+                              className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-2xs active:scale-95 cursor-pointer"
+                            >
+                              {tile.word}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Available word tiles */}
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {scrambledWordTiles
+                        .filter((tile) => !assembledWordTiles.includes(tile.id))
+                        .map((tile) => (
+                          <button
+                            key={tile.id}
+                            type="button"
+                            onClick={() => {
+                              sounds.playClick();
+                              const nextAssembled = [...assembledWordTiles, tile.id];
+                              setAssembledWordTiles(nextAssembled);
+                              if (nextAssembled.length === scrambledWordTiles.length) {
+                                const assembledWords = nextAssembled.map(
+                                  (id) => scrambledWordTiles.find((t) => t.id === id)?.word || ''
+                                );
+                                const targetWords = currentItem.phrase.split(/\s+/).filter(Boolean);
+                                const isCorrect =
+                                  normalizeLt(assembledWords.join(' ')) ===
+                                  normalizeLt(targetWords.join(' '));
+                                if (isCorrect) {
+                                  sounds.playSuccess();
+                                  recordMastered(currentItem.id);
+                                  setFailedAttempts(0);
+                                  setFallbackMode('voice');
+                                } else {
+                                  sounds.playError();
+                                }
+                              }
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-white border border-slate-300 hover:border-amber-400 font-bold text-xs text-slate-800 shadow-2xs active:scale-95 cursor-pointer"
+                          >
+                            {tile.word}
+                          </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFallbackMode('voice');
+                          setAssembledWordTiles([]);
+                        }}
+                        className="text-amber-800 font-bold hover:underline cursor-pointer"
+                      >
+                        ← Back to Microphone
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleBypassRound}
+                        className="text-amber-900 font-extrabold hover:underline cursor-pointer"
+                      >
+                        Bypass Round →
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setFallbackMode('tap_words');
+                        setAssembledWordTiles([]);
+                      }}
+                      className="btn-tactile w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <span>🧩 Tap words to order</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBypassRound}
+                      className="w-full py-1.5 px-3 rounded-xl bg-white hover:bg-amber-100/60 border border-amber-300 text-amber-900 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 transition"
+                    >
+                      <span>✓ Continue via text verification</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

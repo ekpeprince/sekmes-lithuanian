@@ -129,6 +129,19 @@ export const SPEAKING_DRILLS: SpeakingDrillItem[] = [
   // 2. CAFÉ & DINING
   {
     id: 'spk-10',
+    phrase: 'Labas! Kava, prašom!',
+    english: 'Hello! Coffee, please!',
+    phonetic: 'LAH-bahs! KAH-vah, PRAH-shohm!',
+    syllables: 'LA-bas! KA-va, PRA-šom!',
+    accentedPhrase: 'Lãbas! Kavà, prašõm!',
+    stressRule: 'First syllable on LA-bas and PRA-šom, final short "a" on ka-VÀ.',
+    category: 'dining',
+    categoryLabel: 'Café & Food',
+    tip: 'The iconic café order: polite greeting, item name, and please.',
+    acceptableVariations: ['Labas, kava, prašau', 'Kava, prašom', 'Labas, kavos, prašom'],
+  },
+  {
+    id: 'spk-10b',
     phrase: 'Norėčiau kavos su pienu',
     english: 'I would like coffee with milk',
     phonetic: 'noh-RAY-chaw kah-VOHS soo PYEH-noo',
