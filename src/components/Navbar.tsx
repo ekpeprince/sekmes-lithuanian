@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { sounds } from '@/lib/audio';
 import { AuthModal } from '@/components/AuthModal';
 import { NotificationModal } from '@/components/NotificationModal';
-import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
+import { LabasAppLogo } from '@/components/LabasAppLogo';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -42,7 +42,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between w-full px-3 py-2 max-w-7xl mx-auto">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-2.5 group select-none shrink-0">
-            <LithuanianFlagEmblem size="md" className="group-hover:scale-105 group-hover:rotate-3 transition-transform duration-200" />
+            <LabasAppLogo size="md" priority className="group-hover:scale-105 group-hover:rotate-1 transition-transform duration-200" />
             <div className="flex flex-col notranslate justify-center" translate="no">
               <div className="flex items-center text-lg sm:text-xl font-black tracking-tight leading-none">
                 <span className="text-slate-900 group-hover:text-emerald-700 transition-colors">Labas</span>

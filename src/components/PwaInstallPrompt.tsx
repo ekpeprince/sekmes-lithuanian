@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Download, X, Share } from 'lucide-react';
 import { autoPromptNotificationsOnAuth } from '@/lib/notifications';
-import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
+import { LabasAppLogo } from '@/components/LabasAppLogo';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -139,7 +139,7 @@ export const PwaInstallPrompt: React.FC = () => {
       <aside aria-label="Install LabasApp" className="md:hidden fixed bottom-20 left-4 right-4 z-50 animate-pop">
         <div className="rounded-2xl bg-slate-900/95 backdrop-blur-md p-4 text-white shadow-2xl border border-slate-700/60 flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            <LithuanianFlagEmblem size="lg" />
+            <LabasAppLogo size="lg" className="rounded-2xl shadow-md shrink-0" />
             <div className="min-w-0 flex-1">
               <h4 className="text-sm font-bold tracking-tight text-white leading-tight">
                 Install <span className="notranslate" translate="no">LabasApp</span>
