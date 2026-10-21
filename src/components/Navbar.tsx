@@ -49,7 +49,18 @@ export const Navbar: React.FC = () => {
                 <span className="text-emerald-600 font-extrabold">App</span>
                 <span className="ml-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title="Baltic Amber" />
               </div>
-              <span className="text-[10px] sm:text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-1">
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  color: '#059669',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  lineHeight: '1.2',
+                  marginTop: '2px',
+                }}
+              >
                 Learn Lithuanian
               </span>
             </div>

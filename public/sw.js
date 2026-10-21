@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'labasapp-sw-v8';
+const CACHE_VERSION = 'labasapp-sw-v10';
 const CACHE_STATIC = `labasapp-static-${CACHE_VERSION}`;
 const CACHE_AUDIO = `labasapp-audio-${CACHE_VERSION}`;
 
@@ -55,6 +55,11 @@ self.addEventListener('fetch', (event) => {
 
   // 2. Ignore all cross-origin requests (Firebase, Supabase, Google Fonts, etc.)
   if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // 2b. Bypass static asset caching on localhost so development changes load instantly
+  if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
     return;
   }
 
