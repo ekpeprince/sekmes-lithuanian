@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google-cloud/speech": "^8.2.0",
     "@google/genai": "^2.27.0",
     "canvas-confetti": "^1.9.4",
     "firebase": "^12.19.0",

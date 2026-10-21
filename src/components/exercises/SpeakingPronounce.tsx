@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, Sparkles, CheckCircle2, RotateCcw, VolumeX } from 'lucide-react';
+import { Mic, MicOff, Volume2, Sparkles, CheckCircle2, RotateCcw, VolumeX, Loader2 } from 'lucide-react';
 import { SpeakingPronounceExercise } from '@/types/lesson';
 import { sounds } from '@/lib/audio';
 import { evaluateHybridPronunciation, normalizeLt } from '@/lib/speechValidation';
@@ -14,42 +14,6 @@ interface SpeakingPronounceProps {
   isCorrect: boolean | null;
 }
 
-
-interface SpeechRecognitionEventLike {
-  results: {
-    length: number;
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-    };
-  };
-}
-
-interface SpeechRecognitionInstance {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  maxAlternatives: number;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-}
-
-type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
-
-function getSpeechRecognitionClass(): SpeechRecognitionCtor | null {
-  if (typeof window === 'undefined') return null;
-  const win = window as unknown as {
-    SpeechRecognition?: SpeechRecognitionCtor;
-    webkitSpeechRecognition?: SpeechRecognitionCtor;
-  };
-  return win.SpeechRecognition || win.webkitSpeechRecognition || null;
-}
-
 export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   exercise,
   spokenText,
@@ -57,11 +21,12 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   isChecked,
 }) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isPlayingModelAudio, setIsPlayingModelAudio] = useState<'normal' | 'slow' | null>(null);
   const [transcript, setTranscript] = useState<string>('');
   const [score, setScore] = useState<number | null>(null);
   const [matchedWords, setMatchedWords] = useState<boolean[]>([]);
-  const [speechSupported, setSpeechSupported] = useState<boolean>(() => Boolean(getSpeechRecognitionClass()));
+  const [speechSupported, setSpeechSupported] = useState<boolean>(true);
   const [cantSpeakNow, setCantSpeakNow] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(10);
 
@@ -71,9 +36,10 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   const [fallbackMode, setFallbackMode] = useState<'voice' | 'tap_words' | 'text_verify'>('voice');
   const [assembledWordTiles, setAssembledWordTiles] = useState<string[]>([]);
 
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Scrambled word tiles for Guardrail 3 interactive tap order
   const scrambledWordTiles = React.useMemo(() => {
@@ -92,13 +58,15 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
 
   useEffect(() => {
     return () => {
-      // Clean up any active timers and speech recognition on unmount
+      // Clean up any active timers, media stream, and recorder on unmount
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (recognitionRef.current) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         try {
-          recognitionRef.current.abort();
+          mediaRecorderRef.current.stop();
         } catch {}
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
@@ -125,52 +93,135 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
   };
 
   const stopListening = () => {
     clearAllTimers();
-    if (recognitionRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
-        recognitionRef.current.stop();
+        mediaRecorderRef.current.stop();
       } catch {}
     }
     setIsRecording(false);
   };
 
-  const startListening = () => {
-    if (isChecked || isRecording) return;
+  const startListening = async () => {
+    if (isChecked || isRecording || isTranscribing) return;
     sounds.playClick();
 
-    const SpeechRecognition = getSpeechRecognitionClass();
-
-    if (!SpeechRecognition) {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setSpeechSupported(false);
       return;
     }
 
+    setTranscript('');
+    setScore(null);
+    setMatchedWords([]);
+    setGlitchMessage(null);
+    setTimeLeft(10);
+    setIsRecording(true);
+    setIsTranscribing(false);
+    audioChunksRef.current = [];
+
     try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'lt-LT';
-      // Continuous mode gives learners generous time without cutting off on pauses
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 3;
-      recognitionRef.current = recognition;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-      setIsRecording(true);
-      setTranscript('');
-      setScore(null);
-      setGlitchMessage(null);
-      setTimeLeft(10);
+      let mimeType = 'audio/webm;codecs=opus';
+      if (typeof MediaRecorder !== 'undefined') {
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : MediaRecorder.isTypeSupported('audio/mp4')
+            ? 'audio/mp4'
+            : '';
+        }
+      }
 
-      let passedThisSession = false;
-      let glitchCaught = false;
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
 
-      // 10-second comfortable countdown timer for learner breathing room
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        setIsRecording(false);
+        clearAllTimers();
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+        }
+
+        if (audioChunksRef.current.length === 0) return;
+
+        setIsTranscribing(true);
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: mimeType || 'audio/webm',
+          });
+          const formData = new FormData();
+          formData.append('audio', audioBlob);
+
+          const res = await fetch('/api/stt', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Speech recognition failed');
+          }
+
+          const finalTranscript = data.transcript || '';
+          setTranscript(finalTranscript);
+
+          // Guardrail 1 & 2: Hybrid Evaluation
+          const validation = evaluateHybridPronunciation(
+            exercise.targetPhrase,
+            finalTranscript,
+            exercise.acceptableVariations || []
+          );
+
+          // Guardrail 1: Catch repetitive speech loops
+          if (validation.isGlitch) {
+            setGlitchMessage(
+              validation.glitchMessage ||
+                "The microphone caught some interference. Let's try saying it one more time clearly!"
+            );
+            setScore(0);
+            setMatchedWords([]);
+            setFailedAttempts((prev) => prev + 1);
+            onSpoken(finalTranscript, false);
+            return;
+          }
+
+          setGlitchMessage(null);
+          setScore(validation.similarity);
+          setMatchedWords(validation.wordStatus);
+
+          // Guardrail 2: Accepts high match or moderate (50–70%) with core keywords
+          if (validation.passes) {
+            setFailedAttempts(0);
+            onSpoken(finalTranscript, true);
+          } else {
+            setFailedAttempts((prev) => prev + 1);
+            onSpoken(finalTranscript, false);
+          }
+        } catch (err) {
+          console.error('Speaking validation error:', err);
+          setGlitchMessage("We couldn't connect to speech recognition. Please try again or use the options below.");
+          setFailedAttempts((prev) => prev + 1);
+          onSpoken('', false);
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      recorder.start();
+
+      // 10-second comfortable countdown timer
       clearAllTimers();
       let remainingSeconds = 10;
       timerIntervalRef.current = setInterval(() => {
@@ -182,71 +233,10 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           setTimeLeft(remainingSeconds);
         }
       }, 1000);
-
-      recognition.onresult = (event: SpeechRecognitionEventLike) => {
-        let currentTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
-          currentTranscript += event.results[i][0].transcript;
-        }
-        setTranscript(currentTranscript);
-
-        // Guardrail 1 & 2: Hybrid Evaluation
-        const validation = evaluateHybridPronunciation(
-          exercise.targetPhrase,
-          currentTranscript,
-          exercise.acceptableVariations || []
-        );
-
-        // Guardrail 1: Repetition / loop glitch filter
-        if (validation.isGlitch) {
-          glitchCaught = true;
-          setGlitchMessage(
-            validation.glitchMessage ||
-              "The microphone caught some interference. Let's try saying it one more time clearly!"
-          );
-          setScore(0);
-          setMatchedWords([]);
-          setFailedAttempts((prev) => prev + 1);
-          onSpoken(currentTranscript, false); // Explicitly overrides "Phrase Recognized" state!
-          stopListening();
-          return;
-        }
-
-        setGlitchMessage(null);
-        setScore(validation.similarity);
-        setMatchedWords(validation.wordStatus);
-
-        // Guardrail 2: Accepts high match or moderate (50–70%) with core keywords
-        if (validation.passes) {
-          passedThisSession = true;
-          setFailedAttempts(0);
-          onSpoken(currentTranscript, true);
-        } else {
-          onSpoken(currentTranscript, false);
-        }
-
-        // Reset silence debounce: if learner pauses after speaking, give generous breathing room
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = setTimeout(() => {
-          stopListening();
-        }, validation.passes ? 1800 : 3500);
-      };
-
-      recognition.onerror = () => {
-        stopListening();
-      };
-
-      recognition.onend = () => {
-        clearAllTimers();
-        setIsRecording(false);
-        if (!passedThisSession && !glitchCaught) {
-          setFailedAttempts((prev) => prev + 1);
-        }
-      };
-
-      recognition.start();
-    } catch {
+    } catch (err) {
+      console.error('Mic access error:', err);
       stopListening();
+      setSpeechSupported(false);
     }
   };
 
@@ -430,16 +420,20 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             <button
               type="button"
               onClick={isRecording ? stopListening : startListening}
-              disabled={isChecked}
+              disabled={isChecked || isTranscribing}
               className={`relative btn-tactile flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full font-black shadow-lg transition-transform active:scale-95 cursor-pointer ${
-                isRecording
+                isTranscribing
+                  ? 'bg-amber-500 text-white border-b-4 border-amber-700'
+                  : isRecording
                   ? 'bg-rose-500 text-white ring-4 ring-rose-200 border-b-4 border-rose-700'
                   : spokenText
                   ? 'bg-emerald-500 text-white border-b-4 border-emerald-700'
                   : 'bg-sky-500 hover:bg-sky-400 text-white border-b-4 border-sky-700'
               }`}
             >
-              {isRecording ? (
+              {isTranscribing ? (
+                <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 animate-spin" />
+              ) : isRecording ? (
                 <MicOff className="w-7 h-7 sm:w-8 sm:h-8 animate-bounce" />
               ) : spokenText ? (
                 <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8" />
@@ -467,7 +461,12 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
 
           {/* Status Label */}
           <div className="text-sm font-bold text-slate-600 text-center">
-            {isRecording ? (
+            {isTranscribing ? (
+              <span className="text-amber-600 font-extrabold flex items-center justify-center gap-1.5 animate-pulse">
+                <Sparkles className="w-4 h-4 animate-spin text-amber-500" />
+                Transcribing with Google Speech-to-Text...
+              </span>
+            ) : isRecording ? (
               <div className="flex flex-col items-center gap-0.5">
                 <span className="text-rose-600 font-extrabold animate-pulse">
                   Listening... Speak at your own pace

@@ -78,42 +78,8 @@ function parseSyllables(syllablesStr?: string) {
   });
 }
 
-interface SpeechRecognitionEventLike {
-  results: {
-    length: number;
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-    };
-  };
-}
-
-interface SpeechRecognitionInstance {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  maxAlternatives: number;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-}
-
-type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
-
-function getSpeechRecognitionClass(): SpeechRecognitionCtor | null {
-  if (typeof window === 'undefined') return null;
-  const win = window as unknown as {
-    SpeechRecognition?: SpeechRecognitionCtor;
-    webkitSpeechRecognition?: SpeechRecognitionCtor;
-  };
-  return win.SpeechRecognition || win.webkitSpeechRecognition || null;
-}
-
 const STORAGE_KEY_MASTERED = 'sekmes_speaking_mastered_ids';
+
 
 export interface SpeakingLabProps {
   onBack?: () => void;
@@ -133,13 +99,12 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<'normal' | 'slow' | null>(null);
   const [transcript, setTranscript] = useState<string>('');
   const [score, setScore] = useState<number | null>(null);
   const [matchedWords, setMatchedWords] = useState<boolean[]>([]);
-  const [speechSupported, setSpeechSupported] = useState<boolean>(() =>
-    Boolean(getSpeechRecognitionClass())
-  );
+  const [speechSupported, setSpeechSupported] = useState<boolean>(true);
   const [timeLeft, setTimeLeft] = useState<number>(10);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -169,9 +134,10 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
     }
   });
 
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Filtered drills based on category
   const filteredDrills = React.useMemo(() => {
@@ -207,15 +173,17 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
   const currentStressItem: SyllableStressItem =
     filteredStressDrills[stressIndex] || SYLLABLE_STRESS_DRILLS[0];
 
-  // Clean up timers & recognition
+  // Clean up timers & media stream
   useEffect(() => {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (recognitionRef.current) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         try {
-          recognitionRef.current.abort();
+          mediaRecorderRef.current.stop();
         } catch {}
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
@@ -255,25 +223,20 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
   };
 
   const stopListening = () => {
     clearAllTimers();
-    if (recognitionRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
-        recognitionRef.current.stop();
+        mediaRecorderRef.current.stop();
       } catch {}
     }
     setIsRecording(false);
   };
 
-  const startListening = () => {
-    const Ctor = getSpeechRecognitionClass();
-    if (!Ctor) {
+  const startListening = async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setSpeechSupported(false);
       return;
     }
@@ -284,75 +247,107 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
     setGlitchMessage(null);
     setTimeLeft(10);
     setIsRecording(true);
+    setIsTranscribing(false);
+    audioChunksRef.current = [];
 
     try {
-      const rec = new Ctor();
-      recognitionRef.current = rec;
-      rec.lang = 'lt-LT';
-      rec.interimResults = true;
-      rec.continuous = false;
-      rec.maxAlternatives = 3;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-      let passedThisSession = false;
-      let glitchCaught = false;
-
-      rec.onresult = (event: SpeechRecognitionEventLike) => {
-        let finalTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          finalTranscript += event.results[i][0].transcript;
+      let mimeType = 'audio/webm;codecs=opus';
+      if (typeof MediaRecorder !== 'undefined') {
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : MediaRecorder.isTypeSupported('audio/mp4')
+            ? 'audio/mp4'
+            : '';
         }
+      }
 
-        setTranscript(finalTranscript);
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
 
-        // Hybrid Validation: Guardrail 1 & 2
-        const validation = evaluateHybridPronunciation(
-          currentItem.phrase,
-          finalTranscript,
-          currentItem.acceptableVariations || []
-        );
-
-        // Guardrail 1: Catch repetitive browser speech loops
-        if (validation.isGlitch) {
-          glitchCaught = true;
-          setGlitchMessage(
-            validation.glitchMessage ||
-              "The microphone caught some interference. Let's try saying it one more time clearly!"
-          );
-          setScore(0);
-          setMatchedWords([]);
-          setFailedAttempts((prev) => prev + 1);
-          stopListening();
-          return;
-        }
-
-        setGlitchMessage(null);
-        setScore(validation.similarity);
-        setMatchedWords(validation.wordStatus);
-
-        // Guardrail 2: Accepts high match (>=70%) or moderate (50–70%) with core keywords
-        if (validation.passes) {
-          passedThisSession = true;
-          sounds.playSuccess();
-          recordMastered(currentItem.id);
-          setFailedAttempts(0);
-          setFallbackMode('voice');
-          stopListening();
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
       };
 
-      rec.onerror = () => {
-        stopListening();
-      };
-
-      rec.onend = () => {
+      recorder.onstop = async () => {
         setIsRecording(false);
         clearAllTimers();
-        if (!passedThisSession && !glitchCaught && !isMastered) {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+        }
+
+        if (audioChunksRef.current.length === 0) return;
+
+        setIsTranscribing(true);
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: mimeType || 'audio/webm',
+          });
+          const formData = new FormData();
+          formData.append('audio', audioBlob);
+
+          const res = await fetch('/api/stt', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Speech recognition failed');
+          }
+
+          const finalTranscript = data.transcript || '';
+          setTranscript(finalTranscript);
+
+          // Hybrid Validation: Guardrail 1 & 2
+          const validation = evaluateHybridPronunciation(
+            currentItem.phrase,
+            finalTranscript,
+            currentItem.acceptableVariations || []
+          );
+
+          // Guardrail 1: Catch repetitive speech loops
+          if (validation.isGlitch) {
+            setGlitchMessage(
+              validation.glitchMessage ||
+                "The microphone caught some interference. Let's try saying it one more time clearly!"
+            );
+            setScore(0);
+            setMatchedWords([]);
+            setFailedAttempts((prev) => prev + 1);
+            return;
+          }
+
+          setGlitchMessage(null);
+          setScore(validation.similarity);
+          setMatchedWords(validation.wordStatus);
+
+          // Guardrail 2: Accepts high match (>=70%) or moderate (50–70%) with core keywords
+          if (validation.passes) {
+            sounds.playSuccess();
+            recordMastered(currentItem.id);
+            setFailedAttempts(0);
+            setFallbackMode('voice');
+          } else {
+            if (!isMastered) {
+              setFailedAttempts((prev) => prev + 1);
+            }
+          }
+        } catch (err) {
+          console.error('Google STT client error:', err);
+          setGlitchMessage("The microphone audio couldn't be transcribed. Please try again or use the fallback below.");
           setFailedAttempts((prev) => prev + 1);
+        } finally {
+          setIsTranscribing(false);
         }
       };
 
-      rec.start();
+      recorder.start();
 
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prev) => {
@@ -363,8 +358,11 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
           return prev - 1;
         });
       }, 1000);
-    } catch {
+    } catch (err) {
+      console.error('Microphone access denied or unavailable:', err);
       setIsRecording(false);
+      setSpeechSupported(false);
+      setFailedAttempts((prev) => prev + 1);
     }
   };
 
@@ -689,15 +687,20 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
                 <button
                   type="button"
                   onClick={isRecording ? stopListening : startListening}
+                  disabled={isTranscribing}
                   className={`relative btn-tactile flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-full font-black shadow-lg transition-transform active:scale-95 cursor-pointer ${
-                    isRecording
+                    isTranscribing
+                      ? 'bg-amber-500 text-white animate-pulse'
+                      : isRecording
                       ? 'bg-rose-500 text-white ring-4 ring-rose-200 border-b-4 border-rose-700'
                       : score !== null && score >= 70
                       ? 'bg-emerald-500 text-white border-b-4 border-emerald-700'
                       : 'bg-sky-500 hover:bg-sky-400 text-white border-b-4 border-sky-700'
                   }`}
                 >
-                  {isRecording ? (
+                  {isTranscribing ? (
+                    <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 animate-spin" />
+                  ) : isRecording ? (
                     <MicOff className="w-7 h-7 sm:w-8 sm:h-8 animate-bounce" />
                   ) : score !== null && score >= 70 ? (
                     <CheckCircle2 className="w-8 h-8 sm:w-9 sm:h-9" />
@@ -710,16 +713,18 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
               {/* Status Caption */}
               <p className="text-xs font-semibold text-slate-500">
                 {!speechSupported
-                  ? 'Speech recognition not supported in this browser'
+                  ? 'Microphone access is unavailable or denied in this browser'
+                  : isTranscribing
+                  ? 'Transcribing with Google Speech-to-Text...'
                   : isRecording
-                  ? `Listening... (${timeLeft}s left)`
+                  ? `Listening... (${timeLeft}s left) • Tap mic to finish`
                   : glitchMessage
                   ? "Interference caught • Let's try again"
                   : score !== null && score >= 70
                   ? `Great pronunciation! (${score}% accuracy)`
                   : transcript
                   ? `${score}% accuracy • Tap mic to retry`
-                  : 'Tap to check pronunciation'}
+                  : 'Tap to record with Google Cloud STT'}
               </p>
             </div>
 
