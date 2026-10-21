@@ -715,7 +715,7 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
                 {!speechSupported
                   ? 'Microphone access is unavailable or denied in this browser'
                   : isTranscribing
-                  ? 'Transcribing with Google Speech-to-Text...'
+                  ? 'Analyzing pronunciation...'
                   : isRecording
                   ? `Listening... (${timeLeft}s left) • Tap mic to finish`
                   : glitchMessage
@@ -724,7 +724,7 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
                   ? `Great pronunciation! (${score}% accuracy)`
                   : transcript
                   ? `${score}% accuracy • Tap mic to retry`
-                  : 'Tap to record with Google Cloud STT'}
+                  : 'Tap to speak'}
               </p>
             </div>
 

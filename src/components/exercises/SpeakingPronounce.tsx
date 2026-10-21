@@ -464,7 +464,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             {isTranscribing ? (
               <span className="text-amber-600 font-extrabold flex items-center justify-center gap-1.5 animate-pulse">
                 <Sparkles className="w-4 h-4 animate-spin text-amber-500" />
-                Transcribing with Google Speech-to-Text...
+                Analyzing pronunciation...
               </span>
             ) : isRecording ? (
               <div className="flex flex-col items-center gap-0.5">
