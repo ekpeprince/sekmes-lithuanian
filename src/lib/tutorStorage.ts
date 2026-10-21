@@ -1,6 +1,6 @@
 export interface TutorMessage {
   id: string;
-  sender: 'user' | 'aiste' | 'leonas';
+  sender: 'user' | 'leonas';
   text: string;
   translation?: string;
   suggestions?: string[];
@@ -22,10 +22,6 @@ export const INITIAL_LEONAS_GREETING =
   'Labas! Aš esu Leonas. Apie ką norėtum pasikalbėti šiandien?';
 export const INITIAL_LEONAS_TRANSLATION =
   "Hi! I'm Leonas. What would you like to talk about today?";
-
-// Backward compatibility aliases
-export const INITIAL_AISTE_GREETING = INITIAL_LEONAS_GREETING;
-export const INITIAL_AISTE_TRANSLATION = INITIAL_LEONAS_TRANSLATION;
 
 export function getTimestampNow(): number {
   return Date.now();

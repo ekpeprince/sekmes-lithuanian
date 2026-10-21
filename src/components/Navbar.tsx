@@ -127,19 +127,17 @@ export const Navbar: React.FC = () => {
               <Bell className="h-5 w-5" />
             </button>
 
-            {/* Native Speaker Voice Switcher (Desktop & Tablet) */}
+            {/* Native Speaker Voice (Leonas) */}
             <button
               type="button"
               onClick={() => {
-                const nextGender = progress.voiceGender === 'male' ? 'female' : 'male';
-                setVoiceGender(nextGender);
-                sounds.speak(nextGender === 'male' ? 'Labas, aš esu Leonas!' : 'Labas, aš esu Rūta!');
+                sounds.speak('Labas, aš esu Leonas!');
               }}
-              title={`Native Speaker Voice: ${progress.voiceGender === 'male' ? 'Leonas (Male)' : 'Rūta (Female)'}. Click to switch voice.`}
+              title="Native Speaker Voice: Leonas (Male). Click to test audio."
               className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-xs font-bold text-slate-700 hover:text-emerald-700 transition-all cursor-pointer shadow-2xs active:scale-95"
             >
-              <span className="text-sm">{progress.voiceGender === 'male' ? '👨' : '👩'}</span>
-              <span>{progress.voiceGender === 'male' ? 'Leonas' : 'Rūta'}</span>
+              <span className="text-sm">👨</span>
+              <span>Leonas</span>
             </button>
 
             {/* User Account / Sign In */}

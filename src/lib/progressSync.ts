@@ -22,7 +22,7 @@ export async function saveProgressToCloud(userId: string, progress: UserProgress
           lastActiveDate: progress.lastActiveDate,
           gems: progress.gems,
           leagueTier: progress.leagueTier || 'Geležis',
-          voiceGender: progress.voiceGender || 'female',
+          voiceGender: progress.voiceGender || 'male',
         },
         updatedAt: serverTimestamp(),
       },
