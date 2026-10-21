@@ -1,11 +1,11 @@
 import { Unit, Lesson } from '@/types/lesson';
 
 export const UNITS: Unit[] = [
-  // UNIT 1: START YOUR FIRST LESSON
+  // UNIT 1: START YOUR FIRST LESSON IN LITHUANIA
   {
     id: 'unit-1',
     number: 1,
-    title: 'Start your first lesson',
+    title: 'Start your first lesson in Lithuania',
     subtitle: 'Introductions & Alphabet',
     description: 'Master the Lithuanian alphabet, pronunciation, introductions, the verb "būti / nebūti" (to be), and countries with nationalities.',
     color: '#059669',

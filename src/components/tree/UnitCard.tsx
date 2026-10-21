@@ -24,10 +24,10 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons, acti
     return pattern[index % pattern.length];
   };
 
-  // Derive clean action/title (e.g. Unit 1 -> "Start your first lesson")
+  // Derive clean action/title (e.g. Unit 1 -> "Start your first lesson in Lithuania")
   const displayTitle = (
     unit.number === 1
-      ? 'Start your first lesson'
+      ? 'Start your first lesson in Lithuania'
       : unit.title.replace(/^(Unit\s*\d+:?|\d+\s*skyrius:?)\s*/i, '')
   );
 
