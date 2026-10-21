@@ -40,39 +40,44 @@ export async function POST(req: Request) {
 
     // 1. PRIMARY: Google Cloud Speech-to-Text API
     if (speechClient) {
-      let encoding: 'WEBM_OPUS' | 'LINEAR16' | 'OGG_OPUS' | 'MP3' = 'WEBM_OPUS';
-      if (mimeType.includes('wav')) {
-        encoding = 'LINEAR16';
-      } else if (mimeType.includes('ogg')) {
-        encoding = 'OGG_OPUS';
-      } else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) {
-        encoding = 'MP3';
+      try {
+        let encoding: 'WEBM_OPUS' | 'LINEAR16' | 'OGG_OPUS' | 'MP3' = 'WEBM_OPUS';
+        if (mimeType.includes('wav')) {
+          encoding = 'LINEAR16';
+        } else if (mimeType.includes('ogg')) {
+          encoding = 'OGG_OPUS';
+        } else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) {
+          encoding = 'MP3';
+        }
+
+        const audio = {
+          content: buffer.toString('base64'),
+        };
+
+        const config = {
+          encoding,
+          languageCode: 'lt-LT', // Target language: Lithuanian
+          enableAutomaticPunctuation: true,
+          model: 'command_and_search', // Optimized for short phrases and commands
+          ...(encoding === 'WEBM_OPUS' ? { sampleRateHertz: 48000 } : {}),
+        };
+
+        const [response] = await speechClient.recognize({ audio, config });
+        const transcription =
+          response.results
+            ?.map((result) => result.alternatives?.[0]?.transcript)
+            .filter(Boolean)
+            .join(' ')
+            .trim() || '';
+
+        return NextResponse.json({
+          transcript: transcription,
+          provider: 'google-cloud-stt',
+        });
+      } catch (gError) {
+        console.warn('Google Cloud STT call failed, attempting fallback:', gError instanceof Error ? gError.message : gError);
+        // Fall through to Gemini AI fallback
       }
-
-      const audio = {
-        content: buffer.toString('base64'),
-      };
-
-      const config = {
-        encoding,
-        languageCode: 'lt-LT', // Target language: Lithuanian
-        enableAutomaticPunctuation: true,
-        model: 'command_and_search', // Optimized for short phrases and commands
-        ...(encoding === 'WEBM_OPUS' ? { sampleRateHertz: 48000 } : {}),
-      };
-
-      const [response] = await speechClient.recognize({ audio, config });
-      const transcription =
-        response.results
-          ?.map((result) => result.alternatives?.[0]?.transcript)
-          .filter(Boolean)
-          .join(' ')
-          .trim() || '';
-
-      return NextResponse.json({
-        transcript: transcription,
-        provider: 'google-cloud-stt',
-      });
     }
 
     // 2. FALLBACK: Google Gemini AI Multimodal Audio (when service account key is not yet configured)
