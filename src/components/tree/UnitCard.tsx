@@ -39,11 +39,11 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, completedLessons, acti
               <span className="text-xs font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full">
                 Unit {unit.number}
               </span>
-              <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-100/90">
+              <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase text-white/95">
                 {unit.subtitle}
               </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mt-0.5">
+            <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mt-1 text-white">
               {unit.title}
             </h3>
             <p className="mt-1 text-xs line-clamp-2 leading-relaxed text-emerald-50/90 max-w-xl font-medium">

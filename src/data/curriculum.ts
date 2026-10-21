@@ -1,12 +1,12 @@
 import { Unit, Lesson } from '@/types/lesson';
 
 export const UNITS: Unit[] = [
-  // 1 SKYRIUS: KOKS JŪSŲ VARDAS?
+  // UNIT 1: PRADĖKITE SAVO PIRMĄJĄ PAMOKĄ
   {
     id: 'unit-1',
     number: 1,
-    title: '1 skyrius: Koks jūsų vardas?',
-    subtitle: 'What is your name? • Pasisveikinimai ir susipažinimas',
+    title: 'Unit 1: Pradėkite savo pirmąją pamoką',
+    subtitle: 'Start your first lesson • Pasisveikinimai ir susipažinimas',
     description: 'Master the Lithuanian alphabet, pronunciation, introductions, the verb "būti / nebūti" (to be), and countries with nationalities.',
     color: '#059669',
     accentColor: '#10b981',
@@ -213,11 +213,11 @@ export const UNITS: Unit[] = [
     ]
   },
 
-  // 2 SKYRIUS: ČIA MANO DRAUGAS
+  // UNIT 2: ČIA MANO DRAUGAS
   {
     id: 'unit-2',
     number: 2,
-    title: '2 skyrius: Čia mano draugas',
+    title: 'Unit 2: Čia mano draugas',
     subtitle: 'Wellbeing, Origin, Languages & Vocative • Savijauta ir kilmė',
     description: 'Ask "Kaip sekasi?", express origin with "iš + Genitive", languages ending in "-iškai", and call friends with the Vocative case (Tomai!).',
     color: '#0284c7',
@@ -427,11 +427,11 @@ export const UNITS: Unit[] = [
     ]
   },
 
-  // 3 SKYRIUS: KOKS TAVO ADRESAS?
+  // UNIT 3: KOKS TAVO ADRESAS?
   {
     id: 'unit-3',
     number: 3,
-    title: '3 skyrius: Koks tavo adresas?',
+    title: 'Unit 3: Koks tavo adresas?',
     subtitle: 'City, Living, Locative Case & Numbers • Miestas ir vietininkas',
     description: 'Say where you live in the Locative case (Vilniuje, Kaune), express places near each other with "prie + Genitive", and count 0–300.',
     color: '#d97706',
@@ -644,11 +644,11 @@ export const UNITS: Unit[] = [
     ]
   },
 
-  // 4 SKYRIUS: KADA IR KUR SUSITINKAME?
+  // UNIT 4: KADA IR KUR SUSITINKAME?
   {
     id: 'unit-4',
     number: 4,
-    title: '4 skyrius: Kada ir kur susitinkame?',
+    title: 'Unit 4: Kada ir kur susitinkame?',
     subtitle: 'Meetings, Time, Days of the Week & Directions • Laikas ir susitikimai',
     description: 'Set meetings using days in the Accusative case, express half-hours ("pusę aštuntos"), and choose between "į" (places) vs "pas" (people).',
     color: '#6366f1',
@@ -866,11 +866,11 @@ export const UNITS: Unit[] = [
     ]
   },
 
-  // 5 SKYRIUS: KAVINĖJE IR RESTORANE
+  // UNIT 5: KAVINĖJE IR RESTORANE
   {
     id: 'unit-5',
     number: 5,
-    title: '5 skyrius: Kavinėje ir restorane',
+    title: 'Unit 5: Kavinėje ir restorane',
     subtitle: 'Food, Drinks, Ordering & Paying • Maistas ir užsakymai',
     description: 'Master ordering traditional Lithuanian food (cepelinai, šaltibarščiai), asking prices, and paying by card or cash.',
     color: '#d97706',
@@ -1036,11 +1036,11 @@ export const UNITS: Unit[] = [
     ]
   },
 
-  // 6 SKYRIUS: MIESTO ORIENTACIJA IR KELIONĖS
+  // UNIT 6: MIESTO ORIENTACIJA IR KELIONĖS
   {
     id: 'unit-6',
     number: 6,
-    title: '6 skyrius: Miesto orientacija ir kelionės',
+    title: 'Unit 6: Miesto orientacija ir kelionės',
     subtitle: 'Directions, Public Transit & Vilnius Landmarks • Miestas ir kelionės',
     description: 'Learn to ask for directions (tiesiai, į kairę, į dešinę), use public transport (autobusas, troleibusas), and explore Vilnius landmarks.',
     color: '#0891b2',
