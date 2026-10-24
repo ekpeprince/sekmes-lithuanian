@@ -21,6 +21,7 @@ import { haptics } from '@/lib/haptics';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { registerHostBattlePush } from '@/lib/pushSubscription';
+import { logEvent } from '@/lib/telemetry';
 import {
   BattleRoomDoc,
   BattleRoomPlayer,
@@ -823,6 +824,15 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
         if (res.success) setPushSubscribed(true);
       });
     }
+    logEvent({
+      eventType: 'WHATSAPP_LEAD_CLICK',
+      path: '/battle',
+      metadata: {
+        action: 'share_battle_room',
+        roomId,
+        isHost,
+      },
+    });
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + activeUrl)}`;
     if (typeof window !== 'undefined') {
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
@@ -1514,6 +1524,14 @@ export const RealtimeBattleModal: React.FC<RealtimeBattleModalProps> = ({
                         onClick={() => {
                           const activeUrl = getActiveShareUrl();
                           const nudgeText = `Hey! I just joined your Lithuanian Battle room (#${roomId}) on LabasApp and I'm ready! Jump in: ${activeUrl}`;
+                          logEvent({
+                            eventType: 'WHATSAPP_LEAD_CLICK',
+                            path: '/battle',
+                            metadata: {
+                              action: 'nudge_host_battle_room',
+                              roomId,
+                            },
+                          });
                           const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(nudgeText)}`;
                           if (typeof window !== 'undefined') {
                             window.open(whatsappUrl, '_blank', 'noopener,noreferrer');

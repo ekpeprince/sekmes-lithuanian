@@ -6,6 +6,7 @@ import { GameProvider } from '@/context/GameContext';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
+import { TelemetryTracker } from '@/components/TelemetryTracker';
 // import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
 // import { IosZoomLock } from '@/components/IosZoomLock';
 
@@ -127,6 +128,7 @@ export default function RootLayout({
       <body className={`${plusJakartaSans.variable} font-sans min-h-screen bg-[#f7fafc] text-slate-800 flex flex-col antialiased`}>
         <AuthProvider>
           <GameProvider>
+            <TelemetryTracker />
             {/* Guarded for iOS WebKit stability */}
             {/* <IosZoomLock /> */}
             <Navbar />

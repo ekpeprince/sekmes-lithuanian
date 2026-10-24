@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllLessons } from '@/data/curriculum';
-import { Heart, RotateCcw, Sparkles, BellRing, ChevronRight, Settings, X } from 'lucide-react';
+import { Heart, RotateCcw, Sparkles, BellRing, ChevronRight, Settings, X, MessageCircle } from 'lucide-react';
 import { sounds } from '@/lib/audio';
+import { logEvent } from '@/lib/telemetry';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { NotificationModal } from '@/components/NotificationModal';
 import { LEAGUE_TIERS, LeagueTier, getLeagueTierByXp } from '@/lib/league';
@@ -322,6 +323,39 @@ export default function ProfilePage() {
 
           <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
         </button>
+
+        {/* WhatsApp Community & Learner Support Card */}
+        <a
+          href="https://api.whatsapp.com/send?text=Labas!%20I%20am%20learning%20Lithuanian%20on%20LabasApp%20and%20would%20like%20to%20connect%20with%20other%20learners!"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => {
+            logEvent({
+              eventType: 'WHATSAPP_LEAD_CLICK',
+              path: '/profile',
+              metadata: {
+                placement: 'profile_community_card',
+              },
+            });
+          }}
+          className="bg-white border-2 border-emerald-200/90 rounded-2xl px-3.5 py-2.5 flex items-center justify-between shadow-2xs hover:border-emerald-400 hover:shadow-xs transition-all text-left cursor-pointer group w-full"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm shrink-0 group-hover:scale-105 transition-transform">
+              <MessageCircle className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-slate-800">
+                Join Lithuanian Learners on WhatsApp
+              </h3>
+              <p className="text-[10px] text-emerald-700 font-bold">
+                Connect with native speakers & fellow learners
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:text-emerald-700 transition-colors shrink-0" />
+        </a>
 
         {/* Notification Modal Pop-up */}
         <NotificationModal

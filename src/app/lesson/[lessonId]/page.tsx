@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 import { X, Heart, AlertCircle, RefreshCw, Lightbulb } from 'lucide-react';
@@ -18,6 +18,7 @@ import { LessonFeedbackBar } from '@/components/LessonFeedbackBar';
 import { LessonCompleteModal } from '@/components/LessonCompleteModal';
 import { sounds } from '@/lib/audio';
 import { useActiveTimer } from '@/hooks/useActiveTimer';
+import { logEvent } from '@/lib/telemetry';
 
 
 interface LessonPageProps {
@@ -34,6 +35,23 @@ export default function LessonPage({ params }: LessonPageProps) {
 
   // Track active study seconds during lesson
   useActiveTimer(!isLessonFinished);
+
+  // Track LESSON_START telemetry event
+  useEffect(() => {
+    if (lesson) {
+      logEvent({
+        eventType: 'LESSON_START',
+        path: `/lesson/${lesson.id}`,
+        metadata: {
+          lessonId: lesson.id,
+          title: lesson.title,
+          unitId: lesson.unitId,
+          exercisesCount: lesson.exercises.length,
+          xpReward: lesson.xpReward,
+        },
+      });
+    }
+  }, [lesson?.id]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -135,6 +153,20 @@ export default function LessonPage({ params }: LessonPageProps) {
     setIsChecked(true);
     setIsCorrect(correct);
 
+    // Track EXERCISE_ANSWER telemetry event
+    logEvent({
+      eventType: 'EXERCISE_ANSWER',
+      path: `/lesson/${lesson.id}`,
+      metadata: {
+        lessonId: lesson.id,
+        exerciseId: currentExercise.id,
+        exerciseType: currentExercise.type,
+        isCorrect: correct,
+        currentIndex,
+        totalExercises: lesson.exercises.length,
+      },
+    });
+
     if (correct) {
       sounds.playSuccess();
     } else {
@@ -178,6 +210,18 @@ export default function LessonPage({ params }: LessonPageProps) {
       // Finished all exercises!
       finishLesson(lesson.id, lesson.xpReward);
       setIsLessonFinished(true);
+
+      // Track LESSON_COMPLETE telemetry event
+      logEvent({
+        eventType: 'LESSON_COMPLETE',
+        path: `/lesson/${lesson.id}`,
+        metadata: {
+          lessonId: lesson.id,
+          xpEarned: lesson.xpReward,
+          mistakesCount,
+          accuracyPercent: Math.round(((lesson.exercises.length) / (lesson.exercises.length + mistakesCount)) * 100),
+        },
+      });
     }
   };
 

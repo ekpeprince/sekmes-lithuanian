@@ -1,6 +1,12 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  Firestore,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,23 +24,42 @@ export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey.length > 5
 );
 
-let app: FirebaseApp | null = null;
+let app: FirebaseApp;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
+
+// Initialize Firestore with offline cache persistence for bulletproof offline syncing
+let db: Firestore;
+try {
+  if (typeof window !== 'undefined') {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } else {
+    db = getFirestore(app);
+  }
+} catch {
+  // If already initialized (e.g. Next.js fast refresh or server context)
+  db = getFirestore(app);
+}
+
 let auth: Auth | null = null;
-let db: Firestore | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
 if (typeof window !== 'undefined' || isFirebaseConfigured) {
   try {
-    if (isFirebaseConfigured) {
-      app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-      googleProvider = new GoogleAuthProvider();
-      googleProvider.setCustomParameters({ prompt: 'select_account' });
-    }
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
   } catch (error) {
-    console.warn('Firebase initialization notice:', error);
+    console.warn('Firebase Auth initialization notice:', error);
   }
 }
 
 export { app, auth, db, googleProvider };
+

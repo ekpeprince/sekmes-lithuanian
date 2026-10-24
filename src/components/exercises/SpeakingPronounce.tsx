@@ -5,6 +5,7 @@ import { Mic, MicOff, Volume2, Sparkles, CheckCircle2, RotateCcw, VolumeX, Loade
 import { SpeakingPronounceExercise } from '@/types/lesson';
 import { sounds } from '@/lib/audio';
 import { evaluateHybridPronunciation, normalizeLt } from '@/lib/speechValidation';
+import { logEvent } from '@/lib/telemetry';
 
 interface SpeakingPronounceProps {
   exercise: SpeakingPronounceExercise;
@@ -109,6 +110,15 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     if (isChecked || isRecording || isTranscribing) return;
     sounds.playClick();
 
+    logEvent({
+      eventType: 'PRONUNCIATION_CLICK',
+      metadata: {
+        targetPhrase: exercise.targetPhrase,
+        exerciseId: exercise.id,
+        context: 'lesson_exercise',
+      },
+    });
+
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setSpeechSupported(false);
       return;
@@ -205,6 +215,15 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           if (validation.passes) {
             setFailedAttempts(0);
             onSpoken(finalTranscript, true);
+            logEvent({
+              eventType: 'PRONUNCIATION_SUCCESS',
+              metadata: {
+                targetPhrase: exercise.targetPhrase,
+                exerciseId: exercise.id,
+                score: validation.similarity,
+                context: 'lesson_exercise',
+              },
+            });
           } else {
             setFailedAttempts((prev) => prev + 1);
             onSpoken(finalTranscript, false);

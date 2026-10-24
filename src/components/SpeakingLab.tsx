@@ -18,6 +18,7 @@ import { SYLLABLE_STRESS_DRILLS, SyllableStressItem } from '@/data/syllableStres
 import { sounds } from '@/lib/audio';
 import { useGame } from '@/context/GameContext';
 import { evaluateHybridPronunciation } from '@/lib/speechValidation';
+import { logEvent } from '@/lib/telemetry';
 
 // Normalize Lithuanian text for lenient comparison
 function normalizeLt(str: string): string {
@@ -236,6 +237,17 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
   };
 
   const startListening = async () => {
+    logEvent({
+      eventType: 'PRONUNCIATION_CLICK',
+      path: '/practice',
+      metadata: {
+        phraseId: currentItem.id,
+        phrase: currentItem.phrase,
+        category: currentItem.category,
+        context: 'speaking_lab',
+      },
+    });
+
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setSpeechSupported(false);
       return;
@@ -333,6 +345,17 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
             recordMastered(currentItem.id);
             setFailedAttempts(0);
             setFallbackMode('voice');
+            logEvent({
+              eventType: 'PRONUNCIATION_SUCCESS',
+              path: '/practice',
+              metadata: {
+                phraseId: currentItem.id,
+                phrase: currentItem.phrase,
+                score: validation.similarity,
+                category: currentItem.category,
+                context: 'speaking_lab',
+              },
+            });
           } else {
             if (!isMastered) {
               setFailedAttempts((prev) => prev + 1);

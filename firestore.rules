@@ -58,6 +58,12 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // 5. User Telemetry Events: Unauthenticated create for non-blocking client telemetry, authenticated-only for read/update/delete
+    match /user_events/{eventId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
     // Default deny all other paths
     match /{document=**} {
       allow read, write: if false;
