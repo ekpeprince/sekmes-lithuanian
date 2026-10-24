@@ -23,9 +23,15 @@ export const metadata: Metadata = {
     template: '%s • LabasApp',
   },
   description:
-    'Master Lithuanian with interactive gamified lessons, AI speaking tutor, grammar cases, speed drills, and multiplayer challenges. Learn from beginner to fluency.',
+    'Master Lithuanian online with gamified lessons, AI speaking tutor Leonas, noun cases, alphabet pronunciation, and essential vocabulary for global learners.',
   keywords: [
+    // Language Learning & Courses
     'learn Lithuanian',
+    'Lithuanian for beginners',
+    'Lithuanian lessons',
+    'Lithuanian alphabet',
+    'Lithuanian cases',
+    'AI Lithuanian speaking tutor',
     'Lithuanian language learning',
     'Lithuanian app',
     'speak Lithuanian',
@@ -35,6 +41,19 @@ export const metadata: Metadata = {
     'Lithuanian AI tutor',
     'Duolingo Lithuanian alternative',
     'learn Lithuanian online',
+
+    // Translations & Dictionaries context
+    'Lithuanian dictionary phrases',
+    'translate to Lithuanian practice',
+
+    // Basic Vocabulary & Phrases
+    'Labas Lithuanian greeting',
+    'Lithuanian basic vocabulary numbers',
+    'essential Lithuanian phrases',
+
+    // Linguistic Facts & History
+    'oldest language in Europe Lithuanian',
+    'Baltic languages grammar',
   ],
   authors: [{ name: 'LabasApp' }],
   creator: 'LabasApp',
@@ -44,9 +63,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://www.labasapp.com',
     siteName: 'LabasApp',
-    title: 'LabasApp – Learn Lithuanian: Gamified Lessons, AI Speaking & Grammar',
+    title: 'LabasApp – Learn Lithuanian Online',
     description:
-      'The modern, interactive way to learn Lithuanian. Gamified daily lessons, real-time AI speaking tutor, comprehensive grammar guides, and multiplayer battles.',
+      'Gamified lessons, AI speaking practice, and grammar for anyone wanting to master Lithuanian.',
     images: [
       {
         url: '/icons/icon-512.png',
@@ -58,9 +77,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LabasApp – Learn Lithuanian: Gamified Lessons, AI Speaking & Grammar',
+    title: 'LabasApp – Learn Lithuanian Online',
     description:
-      'Master Lithuanian with interactive gamified lessons, AI speaking tutor, grammar cases, and multiplayer challenges.',
+      'Gamified lessons, AI speaking practice, and grammar for anyone wanting to master Lithuanian.',
     images: ['/icons/icon-512.png'],
   },
   alternates: {
