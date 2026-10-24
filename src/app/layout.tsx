@@ -19,11 +19,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.labasapp.com'),
   title: {
-    default: 'LabasApp – Learn Lithuanian: Gamified Lessons, AI Speaking & Grammar',
+    default: 'LabasApp – Learn Lithuanian Online: AI Speaking & Lessons',
     template: '%s • LabasApp',
   },
   description:
-    'Master Lithuanian online with gamified lessons, AI speaking tutor Leonas, noun cases, alphabet pronunciation, and essential vocabulary for global learners.',
+    'Learn Lithuanian online with gamified lessons, AI speaking tutor Leonas, noun cases, native audio, and essential vocabulary for global learners.',
   keywords: [
     // Language Learning & Courses
     'learn Lithuanian',
@@ -109,6 +109,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: 'LabasApp',
+  alternateName: 'LabasApp – Learn Lithuanian Online',
   applicationCategory: 'EducationalApplication',
   operatingSystem: 'All',
   offers: {
