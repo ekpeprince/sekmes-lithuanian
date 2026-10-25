@@ -17,6 +17,9 @@ export interface HybridValidationResult {
   isValid: boolean;
   isGlitch: boolean;
   glitchMessage?: string;
+  isPartial?: boolean;
+  partialPrompt?: string;
+  missingWords?: string[];
   similarity: number; // 0 to 100
   keywordMatchCount: number;
   keywordTotal: number;
@@ -124,13 +127,25 @@ export function isTokenMatch(kw: string, candidate: string): boolean {
   const plainCand = stripDiacritics(normCand);
   if (plainKw === plainCand) return true;
 
-  // Lithuanian root / stem match (e.g. "kavos"/"kavą" -> "kava"; "prašau" -> "prašom")
+  // Length difference guard: words varying by more than 2 characters cannot be the same root/stem
+  const lenDiff = Math.abs(plainKw.length - plainCand.length);
+  if (lenDiff > 2) return false;
+
   const minLen = Math.min(plainKw.length, plainCand.length);
-  if (minLen >= 4 && (plainKw.startsWith(plainCand.slice(0, minLen - 1)) || plainCand.startsWith(plainKw.slice(0, minLen - 1)))) {
-    return true;
+
+  // Lithuanian root / stem match (e.g. "kavos"/"kavą" -> "kava"; "prašau" -> "prašom")
+  if (minLen >= 4) {
+    const commonPrefixLen = Math.min(4, minLen - 1);
+    if (plainKw.slice(0, commonPrefixLen) === plainCand.slice(0, commonPrefixLen)) {
+      return true;
+    }
   }
-  if (minLen === 3 && plainKw.startsWith(plainCand.slice(0, 2)) && plainCand.startsWith(plainKw.slice(0, 2))) {
-    return true;
+
+  // Short 3-letter tokens: must match 2 leading characters and have equal length (e.g. "jau" / "jau")
+  if (minLen === 3 && lenDiff <= 1) {
+    if (plainKw.slice(0, 2) === plainCand.slice(0, 2) && plainKw.length === plainCand.length) {
+      return true;
+    }
   }
 
   return false;
@@ -149,8 +164,9 @@ export function extractCoreKeywords(targetPhrase: string): string[] {
 }
 
 /**
- * Guardrail 2: Phonetic / Keyword Similarity Validation
- * Evaluates speech transcript against target phrase using hybrid accuracy & keyword presence
+ * Guardrail 2: Phonetic / Keyword Similarity Validation & Strict Sentence Completion
+ * Evaluates speech transcript against target phrase using hybrid accuracy, keyword presence,
+ * and strict utterance completion checks (preventing premature passes on partial phrases).
  */
 export function evaluateHybridPronunciation(
   targetPhrase: string,
@@ -170,7 +186,28 @@ export function evaluateHybridPronunciation(
       matchedKeywords: [],
       wordStatus: [],
       passes: false,
+      isPartial: false,
+      missingWords: [],
       reason: 'glitch',
+    };
+  }
+
+  const normActual = normalizeLt(transcript);
+  const actualWords = normActual.split(/\s+/).filter(Boolean);
+
+  const defaultWords = normalizeLt(targetPhrase).split(/\s+/).filter(Boolean);
+  if (actualWords.length === 0 || defaultWords.length === 0) {
+    return {
+      isValid: true,
+      isGlitch: false,
+      similarity: 0,
+      keywordMatchCount: 0,
+      keywordTotal: defaultWords.length,
+      matchedKeywords: [],
+      wordStatus: defaultWords.map(() => false),
+      passes: false,
+      isPartial: false,
+      missingWords: defaultWords,
     };
   }
 
@@ -180,50 +217,75 @@ export function evaluateHybridPronunciation(
 
   for (const target of candidateTargets) {
     const normTarget = normalizeLt(target);
-    const normActual = normalizeLt(transcript);
-
     const targetWords = normTarget.split(/\s+/).filter(Boolean);
-    const actualWords = normActual.split(/\s+/).filter(Boolean);
-
-    if (targetWords.length === 0 || actualWords.length === 0) {
-      continue;
-    }
+    if (targetWords.length === 0) continue;
 
     const coreKeywords = extractCoreKeywords(target);
     const keywordTotal = coreKeywords.length;
 
-    const matchedKeywords: string[] = [];
-    coreKeywords.forEach((kw) => {
-      const found = actualWords.some((act) => isTokenMatch(kw, act));
-      if (found) matchedKeywords.push(kw);
-    });
-
-    const keywordMatchCount = matchedKeywords.length;
-
-    // Word-by-word matching status
+    // Track 1-to-1 token consumption so a single spoken word cannot match multiple target words
+    const usedActualIndices = new Set<number>();
     let matches = 0;
     const wordStatus = targetWords.map((tw) => {
-      const matched = actualWords.some((act) => isTokenMatch(tw, act));
-      if (matched) {
+      const foundIdx = actualWords.findIndex(
+        (act, idx) => !usedActualIndices.has(idx) && isTokenMatch(tw, act)
+      );
+      if (foundIdx !== -1) {
+        usedActualIndices.add(foundIdx);
         matches += 1;
         return true;
       }
       return false;
     });
 
+    const usedActualForKw = new Set<number>();
+    const matchedKeywords: string[] = [];
+    coreKeywords.forEach((kw) => {
+      const foundIdx = actualWords.findIndex(
+        (act, idx) => !usedActualForKw.has(idx) && isTokenMatch(kw, act)
+      );
+      if (foundIdx !== -1) {
+        usedActualForKw.add(foundIdx);
+        matchedKeywords.push(kw);
+      }
+    });
+
+    const keywordMatchCount = matchedKeywords.length;
     const baseSimilarity = Math.round((matches / targetWords.length) * 100);
 
-    // Required keyword threshold:
-    // e.g. for "Labas! Kava, prašom!" (3 keywords), require >= 2 out of 3 (confidence > 55%).
-    const requiredKeywords =
-      keywordTotal >= 3 ? Math.max(2, Math.ceil(keywordTotal * 0.6)) : Math.max(1, keywordTotal);
-    const meetsKeywordRequirement = keywordMatchCount >= requiredKeywords;
+    // Identify which words were missed
+    const missingWords: string[] = [];
+    targetWords.forEach((tw, idx) => {
+      if (!wordStatus[idx]) missingWords.push(tw);
+    });
 
-    // Acceptance rule:
-    // 1. High similarity (>= 70%) -> passes
-    // 2. Moderate confidence (>= 50%) AND core keywords present -> passes gracefully
-    const passes = baseSimilarity >= 70 || (baseSimilarity >= 50 && meetsKeywordRequirement);
-    const finalScore = passes && baseSimilarity < 75 ? Math.max(baseSimilarity, 78) : baseSimilarity;
+    // Detect partial / incomplete utterances:
+    // User spoke some words, but missed subsequent keywords or the sentence ending
+    const isEndingMissing = targetWords.length > 2 && !wordStatus[targetWords.length - 1];
+    const isLengthShort = actualWords.length < targetWords.length;
+    const isPartial =
+      matches > 0 &&
+      missingWords.length > 0 &&
+      (isEndingMissing || isLengthShort || keywordMatchCount < keywordTotal);
+
+    let partialPrompt: string | undefined = undefined;
+    if (isPartial) {
+      const missingSnippet = missingWords.slice(0, 3).join(' ');
+      const spokenSnippet = actualWords.join(' ');
+      partialPrompt = `Keep going! You said: "${spokenSnippet}..." — complete the phrase: "...${missingSnippet}"`;
+    }
+
+    // Strict pass requirements:
+    // 1. Must NOT be an incomplete partial utterance
+    // 2. Base similarity must be at least 75%
+    // 3. Keyword requirement: all core keywords required for <= 4 words, at least (keywordTotal - 1) for >= 5 words
+    const minRequiredKeywords = keywordTotal >= 5 ? keywordTotal - 1 : keywordTotal;
+    const meetsKeywordRequirement = keywordMatchCount >= minRequiredKeywords;
+
+    const passes = !isPartial && baseSimilarity >= 75 && meetsKeywordRequirement;
+
+    // Accuracy score: on partial sentences, cap score proportionally without false 100% inflation
+    const finalScore = isPartial ? Math.min(baseSimilarity, 65) : baseSimilarity;
 
     const candidateResult: HybridValidationResult = {
       isValid: true,
@@ -234,26 +296,32 @@ export function evaluateHybridPronunciation(
       matchedKeywords,
       wordStatus,
       passes,
+      isPartial,
+      partialPrompt,
+      missingWords,
     };
 
-    if (!bestResult || candidateResult.similarity > bestResult.similarity) {
+    if (
+      !bestResult ||
+      (candidateResult.passes && !bestResult.passes) ||
+      (!bestResult.passes && candidateResult.similarity > bestResult.similarity)
+    ) {
       bestResult = candidateResult;
     }
   }
 
-  if (bestResult) {
-    return bestResult;
-  }
-
-  const defaultWords = normalizeLt(targetPhrase).split(/\s+/).filter(Boolean);
-  return {
-    isValid: true,
-    isGlitch: false,
-    similarity: 0,
-    keywordMatchCount: 0,
-    keywordTotal: defaultWords.length,
-    matchedKeywords: [],
-    wordStatus: defaultWords.map(() => false),
-    passes: false,
-  };
+  return (
+    bestResult || {
+      isValid: true,
+      isGlitch: false,
+      similarity: 0,
+      keywordMatchCount: 0,
+      keywordTotal: defaultWords.length,
+      matchedKeywords: [],
+      wordStatus: defaultWords.map(() => false),
+      passes: false,
+      isPartial: false,
+      missingWords: defaultWords,
+    }
+  );
 }

@@ -29,7 +29,10 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   const [matchedWords, setMatchedWords] = useState<boolean[]>([]);
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
   const [cantSpeakNow, setCantSpeakNow] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(10);
+  const [timeLeft, setTimeLeft] = useState<number>(15);
+  const [audioLevel, setAudioLevel] = useState<number>(0);
+  const [partialNotice, setPartialNotice] = useState<string | null>(null);
+  const [, setMissingWordList] = useState<string[]>([]);
 
   // Hybrid Validation & Guardrail states
   const [glitchMessage, setGlitchMessage] = useState<string | null>(null);
@@ -41,6 +44,12 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasSpokenRef = useRef<boolean>(false);
+  const isRecordingRef = useRef<boolean>(false);
 
   // Scrambled word tiles for Guardrail 3 interactive tap order
   const scrambledWordTiles = React.useMemo(() => {
@@ -53,14 +62,23 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   useEffect(() => {
     setFailedAttempts(0);
     setGlitchMessage(null);
+    setPartialNotice(null);
+    setMissingWordList([]);
     setFallbackMode('voice');
     setAssembledWordTiles([]);
   }, [exercise.id]);
 
   useEffect(() => {
     return () => {
-      // Clean up any active timers, media stream, and recorder on unmount
+      // Clean up active timers, media stream, audio context, and recorder on unmount
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try {
+          audioContextRef.current.close();
+        } catch {}
+      }
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         try {
           mediaRecorderRef.current.stop();
@@ -84,6 +102,8 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     sounds.playSuccess();
     setFailedAttempts(0);
     setGlitchMessage(null);
+    setPartialNotice(null);
+    setMissingWordList([]);
     setFallbackMode('voice');
     setAssembledWordTiles([]);
     onSpoken(exercise.targetPhrase, true);
@@ -97,13 +117,29 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
   };
 
   const stopListening = () => {
+    isRecordingRef.current = false;
     clearAllTimers();
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      try {
+        audioContextRef.current.close();
+      } catch {}
+      audioContextRef.current = null;
+    }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
         mediaRecorderRef.current.stop();
       } catch {}
     }
     setIsRecording(false);
+    setAudioLevel(0);
   };
 
   const startListening = async () => {
@@ -128,14 +164,69 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     setScore(null);
     setMatchedWords([]);
     setGlitchMessage(null);
-    setTimeLeft(10);
+    setPartialNotice(null);
+    setMissingWordList([]);
+    setTimeLeft(15);
     setIsRecording(true);
+    isRecordingRef.current = true;
+    hasSpokenRef.current = false;
     setIsTranscribing(false);
     audioChunksRef.current = [];
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+
+      // Initialize Web Audio API Analyser for real-time waveform & pause threshold
+      try {
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          const audioCtx = new AudioCtx();
+          audioContextRef.current = audioCtx;
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          analyserRef.current = analyser;
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          const monitorAudio = () => {
+            if (!isRecordingRef.current) return;
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i];
+            }
+            const average = sum / dataArray.length;
+            const level = Math.min(100, Math.round((average / 128) * 100));
+            setAudioLevel(level);
+
+            // Voice activity detection threshold
+            if (average > 10) {
+              hasSpokenRef.current = true;
+              // Reset pause / silence timer while speech is active
+              if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = null;
+              }
+            } else if (hasSpokenRef.current && !silenceTimerRef.current) {
+              // User has spoken words and paused: allow a generous 2.8 second pause before auto-stopping
+              silenceTimerRef.current = setTimeout(() => {
+                if (isRecordingRef.current) {
+                  stopListening();
+                }
+              }, 2800);
+            }
+
+            animFrameRef.current = requestAnimationFrame(monitorAudio);
+          };
+          animFrameRef.current = requestAnimationFrame(monitorAudio);
+        }
+      } catch (audioErr) {
+        console.warn('Web Audio Analyser initialization notice:', audioErr);
+      }
 
       let mimeType = 'audio/webm;codecs=opus';
       if (typeof MediaRecorder !== 'undefined') {
@@ -159,7 +250,23 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
 
       recorder.onstop = async () => {
         setIsRecording(false);
+        isRecordingRef.current = false;
+        setAudioLevel(0);
         clearAllTimers();
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = null;
+        }
+        if (animFrameRef.current) {
+          cancelAnimationFrame(animFrameRef.current);
+          animFrameRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          try {
+            audioContextRef.current.close();
+          } catch {}
+          audioContextRef.current = null;
+        }
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
         }
@@ -187,7 +294,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           const finalTranscript = data.transcript || '';
           setTranscript(finalTranscript);
 
-          // Guardrail 1 & 2: Hybrid Evaluation
+          // Guardrail 1 & 2: Strict Sentence Completion & Hybrid Evaluation
           const validation = evaluateHybridPronunciation(
             exercise.targetPhrase,
             finalTranscript,
@@ -200,6 +307,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               validation.glitchMessage ||
                 "The microphone caught some interference. Let's try saying it one more time clearly!"
             );
+            setPartialNotice(null);
             setScore(0);
             setMatchedWords([]);
             setFailedAttempts((prev) => prev + 1);
@@ -210,8 +318,22 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
           setGlitchMessage(null);
           setScore(validation.similarity);
           setMatchedWords(validation.wordStatus);
+          setMissingWordList(validation.missingWords || []);
 
-          // Guardrail 2: Accepts high match or moderate (50–70%) with core keywords
+          // Guardrail: Partial sentence spoken (e.g. only "Man taip pat" of full sentence)
+          if (validation.isPartial) {
+            setPartialNotice(
+              validation.partialPrompt ||
+                'Keep going! Say the full sentence to complete the exercise.'
+            );
+            setFailedAttempts((prev) => prev + 1);
+            onSpoken(finalTranscript, false);
+            return;
+          }
+
+          setPartialNotice(null);
+
+          // Full complete phrase passing check
           if (validation.passes) {
             setFailedAttempts(0);
             onSpoken(finalTranscript, true);
@@ -240,9 +362,9 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
 
       recorder.start();
 
-      // 10-second comfortable countdown timer
+      // Extended 15-second countdown timer for full sentences
       clearAllTimers();
-      let remainingSeconds = 10;
+      let remainingSeconds = 15;
       timerIntervalRef.current = setInterval(() => {
         remainingSeconds -= 1;
         if (remainingSeconds <= 0) {
@@ -266,7 +388,9 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
     setScore(null);
     setMatchedWords([]);
     setGlitchMessage(null);
-    setTimeLeft(10);
+    setPartialNotice(null);
+    setMissingWordList([]);
+    setTimeLeft(15);
     onSpoken('', false);
   };
 
@@ -396,12 +520,15 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           {targetWords.map((word, idx) => {
             const isMatched = matchedWords[idx];
+            const isMissingAfterPartial = !isMatched && Boolean(partialNotice);
             return (
               <span
                 key={idx}
                 className={`px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black border transition-all ${
                   isMatched
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
+                    : isMissingAfterPartial
+                    ? 'bg-amber-50 text-amber-900 border-2 border-dashed border-amber-400 animate-pulse'
                     : isRecording
                     ? 'bg-slate-100 text-slate-500 border-slate-200'
                     : transcript
@@ -420,14 +547,40 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
       {/* Recording Feedback & Microphone Button */}
       {!cantSpeakNow ? (
         <div className="flex flex-col items-center gap-2 my-1">
-          {/* Animated Sound Wave Equalizer while recording */}
+          {/* Animated Dynamic Sound Wave Equalizer while recording */}
           {isRecording && (
-            <div className="flex items-center gap-1.5 justify-center mb-1 h-5">
-              <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1.5 h-3 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1.5 h-6 bg-rose-600 rounded-full animate-bounce" />
-              <span className="w-1.5 h-2.5 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.2s]" />
-              <span className="w-1.5 h-4 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.35s]" />
+            <div className="flex items-center gap-1.5 justify-center mb-1 h-6">
+              <span
+                className="w-1.5 rounded-full bg-rose-500 transition-all duration-75"
+                style={{ height: `${Math.max(6, Math.min(24, 6 + audioLevel * 0.45))}px` }}
+              />
+              <span
+                className="w-1.5 rounded-full bg-rose-400 transition-all duration-75"
+                style={{ height: `${Math.max(8, Math.min(24, 8 + audioLevel * 0.7))}px` }}
+              />
+              <span
+                className="w-1.5 rounded-full bg-rose-600 transition-all duration-75"
+                style={{ height: `${Math.max(10, Math.min(24, 10 + audioLevel * 0.95))}px` }}
+              />
+              <span
+                className="w-1.5 rounded-full bg-rose-400 transition-all duration-75"
+                style={{ height: `${Math.max(8, Math.min(24, 8 + audioLevel * 0.65))}px` }}
+              />
+              <span
+                className="w-1.5 rounded-full bg-rose-500 transition-all duration-75"
+                style={{ height: `${Math.max(6, Math.min(24, 6 + audioLevel * 0.4))}px` }}
+              />
+            </div>
+          )}
+
+          {/* Active Processing Indicator while transcribing */}
+          {isTranscribing && (
+            <div className="flex items-center gap-1.5 justify-center mb-1 h-6">
+              <span className="w-1.5 h-3.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="w-1.5 h-5 rounded-full bg-amber-600 animate-pulse [animation-delay:-0.15s]" />
+              <span className="w-1.5 h-6 rounded-full bg-amber-500 animate-pulse [animation-delay:-0.3s]" />
+              <span className="w-1.5 h-5 rounded-full bg-amber-600 animate-pulse [animation-delay:-0.15s]" />
+              <span className="w-1.5 h-3.5 rounded-full bg-amber-500 animate-pulse" />
             </div>
           )}
 
@@ -472,7 +625,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               <div className="w-36 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-rose-500 transition-all duration-1000 ease-linear rounded-full"
-                  style={{ width: `${(timeLeft / 10) * 100}%` }}
+                  style={{ width: `${(timeLeft / 15) * 100}%` }}
                 />
               </div>
             </div>
@@ -483,7 +636,7 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
             {isTranscribing ? (
               <span className="text-amber-600 font-extrabold flex items-center justify-center gap-1.5 animate-pulse">
                 <Sparkles className="w-4 h-4 animate-spin text-amber-500" />
-                Analyzing pronunciation...
+                Analyzing full phrase...
               </span>
             ) : isRecording ? (
               <div className="flex flex-col items-center gap-0.5">
@@ -491,9 +644,11 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
                   Listening... Speak at your own pace
                 </span>
                 <span className="text-xs font-medium text-slate-400">
-                  Tap mic when finished
+                  Natural pauses allowed • Tap mic when finished
                 </span>
               </div>
+            ) : partialNotice ? (
+              <span className="text-amber-700 font-extrabold">Sentence incomplete • Say full phrase</span>
             ) : glitchMessage ? (
               <span className="text-amber-700 font-extrabold">Interference detected • Try again clearly</span>
             ) : spokenText ? (
@@ -502,6 +657,17 @@ export const SpeakingPronounce: React.FC<SpeakingPronounceProps> = ({
               <span>Tap mic and speak clearly</span>
             )}
           </div>
+
+          {/* Partial utterance prompt */}
+          {partialNotice && !isRecording && !isTranscribing && (
+            <div className="mt-2 w-full max-w-md p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2.5 animate-fadeIn shadow-2xs text-left">
+              <span className="text-lg shrink-0">⏳</span>
+              <div className="flex-1">
+                <span className="font-black text-amber-950 block mb-0.5">Sentence incomplete</span>
+                <span className="leading-snug text-amber-900/90">{partialNotice}</span>
+              </div>
+            </div>
+          )}
 
           {/* Guardrail 1: Soft retry banner on speech engine glitch */}
           {glitchMessage && (

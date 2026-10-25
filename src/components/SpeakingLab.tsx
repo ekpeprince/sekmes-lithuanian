@@ -106,11 +106,12 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
   const [score, setScore] = useState<number | null>(null);
   const [matchedWords, setMatchedWords] = useState<boolean[]>([]);
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
-  const [timeLeft, setTimeLeft] = useState<number>(10);
+  const [timeLeft, setTimeLeft] = useState<number>(15);
   const [showCelebration, setShowCelebration] = useState(false);
 
   // Hybrid Validation & Escape Hatch States
   const [glitchMessage, setGlitchMessage] = useState<string | null>(null);
+  const [partialNotice, setPartialNotice] = useState<string | null>(null);
   const [failedAttempts, setFailedAttempts] = useState<number>(0);
   const [fallbackMode, setFallbackMode] = useState<'voice' | 'tap_words' | 'text_verify'>('voice');
   const [assembledWordTiles, setAssembledWordTiles] = useState<string[]>([]);
@@ -331,6 +332,7 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
             );
             setScore(0);
             setMatchedWords([]);
+            setPartialNotice(null);
             setFailedAttempts((prev) => prev + 1);
             return;
           }
@@ -339,7 +341,21 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
           setScore(validation.similarity);
           setMatchedWords(validation.wordStatus);
 
-          // Guardrail 2: Accepts high match (>=70%) or moderate (50–70%) with core keywords
+          // Guardrail: Partial phrase spoken
+          if (validation.isPartial) {
+            setPartialNotice(
+              validation.partialPrompt ||
+                'Keep going! Say the full phrase to master this card.'
+            );
+            if (!isMastered) {
+              setFailedAttempts((prev) => prev + 1);
+            }
+            return;
+          }
+
+          setPartialNotice(null);
+
+          // Guardrail 2: Full complete sentence passing check
           if (validation.passes) {
             sounds.playSuccess();
             recordMastered(currentItem.id);
@@ -741,6 +757,8 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
                   ? 'Analyzing pronunciation...'
                   : isRecording
                   ? `Listening... (${timeLeft}s left) • Tap mic to finish`
+                  : partialNotice
+                  ? 'Sentence incomplete • Say full phrase'
                   : glitchMessage
                   ? "Interference caught • Let's try again"
                   : score !== null && score >= 70
@@ -750,6 +768,14 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
                   : 'Tap to speak'}
               </p>
             </div>
+
+            {/* Partial utterance banner */}
+            {partialNotice && !isRecording && !isTranscribing && (
+              <div className="w-full max-w-sm px-3.5 py-2.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2 animate-fadeIn shadow-2xs">
+                <span className="text-base shrink-0">⏳</span>
+                <span className="leading-snug">{partialNotice}</span>
+              </div>
+            )}
 
             {/* Guardrail 1: Soft retry banner on speech engine glitch */}
             {glitchMessage && (

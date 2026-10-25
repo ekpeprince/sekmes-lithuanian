@@ -58,8 +58,8 @@ export async function POST(req: Request) {
           encoding,
           languageCode: 'lt-LT', // Target language: Lithuanian
           enableAutomaticPunctuation: true,
-          model: 'command_and_search', // Optimized for short phrases and commands
-          ...(encoding === 'WEBM_OPUS' ? { sampleRateHertz: 48000 } : {}),
+          model: 'default', // Captures full conversational sentences across natural pauses
+          ...(encoding === 'LINEAR16' ? { sampleRateHertz: 16000 } : {}),
         };
 
         const [response] = await speechClient.recognize({ audio, config });
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
                 },
               },
               {
-                text: 'Transcribe this Lithuanian speech verbatim. Output ONLY the recognized Lithuanian text, with no commentary, quotation marks, or explanations.',
+                text: 'Transcribe this Lithuanian speech verbatim from start to finish. Capture the entire sentence spoken across any pauses. Output ONLY the recognized Lithuanian text, with no commentary, quotation marks, or explanations.',
               },
             ],
           },
