@@ -14,6 +14,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  getDoc,
   query,
   orderBy,
 } from 'firebase/firestore';
@@ -27,22 +28,52 @@ interface BlogPostRecord {
   publishedAt: string;
 }
 
-// Define authorized admin emails here
-const ADMIN_EMAILS: string[] = [
+// Fallback authorized admin emails if settings/admins document is initializing
+const DEFAULT_ADMIN_EMAILS: string[] = [
   'sadman@labasapp.com',
   'ekpeprinceesor@gmail.com',
   'your-email@labasapp.com',
 ];
 
-function isAuthorizedAdmin(email?: string | null): boolean {
+async function verifyAdminAuthorization(email?: string | null): Promise<boolean> {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
+
+  // Pre-configured fallback admins
   const envAdmins = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
     .split(',')
     .map((e) => e.toLowerCase().trim())
     .filter(Boolean);
-  const allowed = [...ADMIN_EMAILS.map((e) => e.toLowerCase().trim()), ...envAdmins];
-  return allowed.includes(normalized);
+  const fallbackAdmins = [
+    ...DEFAULT_ADMIN_EMAILS.map((e) => e.toLowerCase().trim()),
+    ...envAdmins,
+  ];
+
+  // Dynamically check the Firestore admin whitelist document: settings/admins
+  if (db) {
+    try {
+      const adminDocRef = doc(db, 'settings', 'admins');
+      const adminSnap = await getDoc(adminDocRef);
+
+      if (adminSnap.exists()) {
+        const data = adminSnap.data();
+        const allowedEmails: string[] = Array.isArray(data?.allowedEmails)
+          ? data.allowedEmails.map((e: unknown) => String(e).toLowerCase().trim())
+          : [];
+
+        // Check against Firestore whitelist (with fallback safety)
+        if (allowedEmails.includes(normalized) || fallbackAdmins.includes(normalized)) {
+          return true;
+        }
+        return false;
+      }
+    } catch (err) {
+      console.warn('Notice verifying admin status from Firestore settings/admins:', err);
+    }
+  }
+
+  // Fallback if settings/admins document is not yet found in Firestore
+  return fallbackAdmins.includes(normalized);
 }
 
 export default function AdminPage() {
@@ -91,22 +122,36 @@ export default function AdminPage() {
       return;
     }
     const unsubscribe = onAuthStateChanged(currentAuth, async (currentUser) => {
-      setAuthLoading(false);
       if (currentUser) {
-        if (isAuthorizedAdmin(currentUser.email)) {
-          setUser(currentUser); // Allow access
-          fetchExistingPosts();
-        } else {
-          // Regular app user tried to access admin! Sign them out immediately.
+        try {
+          const isAllowed = await verifyAdminAuthorization(currentUser.email);
+          if (isAllowed) {
+            setUser(currentUser); // Allow access
+            fetchExistingPosts();
+          } else {
+            // Regular app user tried to access admin! Sign them out immediately.
+            try {
+              await signOut(currentAuth);
+            } catch {}
+            setUser(null);
+            setError('Access Denied: You do not have administrator permissions.');
+            alert('Access Denied: You do not have administrator permissions.');
+          }
+        } catch (err: unknown) {
+          console.error('Error verifying admin status:', err);
           try {
             await signOut(currentAuth);
           } catch {}
           setUser(null);
-          setError('Access Denied: You do not have administrator permissions.');
-          alert('Access Denied: You do not have administrator permissions.');
+          setError(
+            'Verification error: ' + (err instanceof Error ? err.message : 'Unknown error')
+          );
+        } finally {
+          setAuthLoading(false);
         }
       } else {
         setUser(null);
+        setAuthLoading(false);
       }
     });
     return () => unsubscribe();
@@ -138,7 +183,8 @@ export default function AdminPage() {
     }
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      if (!isAuthorizedAdmin(cred.user.email)) {
+      const isAllowed = await verifyAdminAuthorization(cred.user.email);
+      if (!isAllowed) {
         await signOut(auth);
         setUser(null);
         setError('Access Denied: You do not have administrator permissions.');
@@ -156,7 +202,8 @@ export default function AdminPage() {
     setSuccessMsg('');
     setError('');
 
-    if (!user || !isAuthorizedAdmin(user.email)) {
+    const isAllowed = await verifyAdminAuthorization(user?.email);
+    if (!user || !isAllowed) {
       setError('Access Denied: You do not have administrator permissions.');
       setLoading(false);
       return;
@@ -204,7 +251,8 @@ export default function AdminPage() {
   };
 
   const handleDelete = async (postId: string, postTitle: string) => {
-    if (!user || !isAuthorizedAdmin(user.email)) {
+    const isAllowed = await verifyAdminAuthorization(user?.email);
+    if (!user || !isAllowed) {
       alert('Access Denied: You do not have administrator permissions.');
       return;
     }
