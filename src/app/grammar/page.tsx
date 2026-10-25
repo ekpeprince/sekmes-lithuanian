@@ -101,23 +101,22 @@ export default function GrammarPage() {
         {/* Title Header */}
         <div className="mb-6 px-1">
           {/* Small Category Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 text-xs font-semibold tracking-wide uppercase mb-3">
-            <BookOpen className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs font-semibold tracking-wide uppercase mb-3">
             <span>Lietuvių Kalbos Žinynas</span>
-            <span className="w-1 h-1 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+            <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
             <span>Grammar Reference</span>
           </div>
 
-          {/* Clean Main Title */}
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-1">
+          {/* Main Title - Forced Dark/High Contrast */}
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
             Gramatikos ir Žodyno Gidas
           </h1>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
+          <p className="text-sm font-semibold text-slate-700 mb-3">
             Grammar &amp; Vocabulary Guide
           </p>
 
-          {/* Concise Subtitle / Summary */}
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
+          {/* Subtitle Description */}
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
             Industry-standard curriculum: 7 noun cases, syllable stress, diacritics, and interactive audio drills.
           </p>
         </div>
