@@ -27,11 +27,29 @@ interface BlogPostRecord {
   publishedAt: string;
 }
 
+// Define authorized admin emails here
+const ADMIN_EMAILS: string[] = [
+  'sadman@labasapp.com',
+  'ekpeprinceesor@gmail.com',
+  'your-email@labasapp.com',
+];
+
+function isAuthorizedAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  const envAdmins = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.toLowerCase().trim())
+    .filter(Boolean);
+  const allowed = [...ADMIN_EMAILS.map((e) => e.toLowerCase().trim()), ...envAdmins];
+  return allowed.includes(normalized);
+}
+
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(() => Boolean(auth));
   const [error, setError] = useState('');
 
   // Post Form State
@@ -46,22 +64,7 @@ export default function AdminPage() {
   const [posts, setPosts] = useState<BlogPostRecord[]>([]);
   const [fetchingPosts, setFetchingPosts] = useState(false);
 
-  useEffect(() => {
-    if (!auth) {
-      setAuthLoading(false);
-      return;
-    }
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setAuthLoading(false);
-      if (currentUser) {
-        fetchExistingPosts();
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const fetchExistingPosts = async () => {
+  const fetchExistingPosts = React.useCallback(async () => {
     if (!db) return;
     setFetchingPosts(true);
     try {
@@ -80,7 +83,34 @@ export default function AdminPage() {
     } finally {
       setFetchingPosts(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const currentAuth = auth;
+    if (!currentAuth) {
+      return;
+    }
+    const unsubscribe = onAuthStateChanged(currentAuth, async (currentUser) => {
+      setAuthLoading(false);
+      if (currentUser) {
+        if (isAuthorizedAdmin(currentUser.email)) {
+          setUser(currentUser); // Allow access
+          fetchExistingPosts();
+        } else {
+          // Regular app user tried to access admin! Sign them out immediately.
+          try {
+            await signOut(currentAuth);
+          } catch {}
+          setUser(null);
+          setError('Access Denied: You do not have administrator permissions.');
+          alert('Access Denied: You do not have administrator permissions.');
+        }
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsubscribe();
+  }, [fetchExistingPosts]);
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
@@ -107,7 +137,13 @@ export default function AdminPage() {
       return;
     }
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      if (!isAuthorizedAdmin(cred.user.email)) {
+        await signOut(auth);
+        setUser(null);
+        setError('Access Denied: You do not have administrator permissions.');
+        alert('Access Denied: You do not have administrator permissions.');
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
@@ -119,6 +155,12 @@ export default function AdminPage() {
     setLoading(true);
     setSuccessMsg('');
     setError('');
+
+    if (!user || !isAuthorizedAdmin(user.email)) {
+      setError('Access Denied: You do not have administrator permissions.');
+      setLoading(false);
+      return;
+    }
 
     if (!db) {
       setError('Firestore is not initialized.');
@@ -162,6 +204,10 @@ export default function AdminPage() {
   };
 
   const handleDelete = async (postId: string, postTitle: string) => {
+    if (!user || !isAuthorizedAdmin(user.email)) {
+      alert('Access Denied: You do not have administrator permissions.');
+      return;
+    }
     if (!db) return;
     if (!confirm(`Are you sure you want to delete "${postTitle}"?`)) return;
     try {
