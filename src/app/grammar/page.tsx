@@ -99,23 +99,26 @@ export default function GrammarPage() {
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-8 pb-24">
       <div className="mx-auto max-w-4xl">
         {/* Title Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-              <BookOpen className="h-5 w-5" />
-            </span>
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-600">
-              Lithuanian Grammar & Curriculum Reference • Žinynas
-            </span>
+        <div className="mb-6 px-1">
+          {/* Small Category Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 text-xs font-semibold tracking-wide uppercase mb-3">
+            <BookOpen className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Lietuvių Kalbos Žinynas</span>
+            <span className="w-1 h-1 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+            <span>Grammar Reference</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Gramatikos ir Žodyno Gidas • Grammar & Vocabulary Guide
+
+          {/* Clean Main Title */}
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-1">
+            Gramatikos ir Žodyno Gidas
           </h1>
-          <p className="mt-2 text-base text-slate-600 max-w-2xl font-medium">
-            Akademinė lietuvių kalbos programa: 7 linksniai, skiemenų kirtčiavimas, rašyba, nosinės ir interaktyvus tarimas.
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
+            Grammar &amp; Vocabulary Guide
           </p>
-          <p className="mt-0.5 text-xs text-slate-400 font-medium italic">
-            Industry-standard Lithuanian grammar: 7 noun cases, syllable stress, diacritics rules, verb conjugations, and dual-speed audio.
+
+          {/* Concise Subtitle / Summary */}
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
+            Industry-standard curriculum: 7 noun cases, syllable stress, diacritics, and interactive audio drills.
           </p>
         </div>
 
