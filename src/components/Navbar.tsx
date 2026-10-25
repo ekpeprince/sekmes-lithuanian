@@ -31,8 +31,8 @@ export const Navbar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // During active lesson, hide global Navbar to maximize mobile screen space
-  if (pathname.startsWith('/lesson/')) {
+  // During active lesson or isolated full-page views (/admin, /blog), hide global Navbar
+  if (pathname.startsWith('/lesson/') || pathname.startsWith('/admin') || pathname.startsWith('/blog')) {
     return null;
   }
 

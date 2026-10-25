@@ -43,8 +43,8 @@ const DESKTOP_NAV_ITEMS = [
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
 
-  // If in active lesson runner, don't show sidebar/bottom bar to maximize focus
-  if (pathname.startsWith('/lesson/')) {
+  // If in active lesson runner or isolated full-page views (/admin, /blog), don't show sidebar/bottom bar
+  if (pathname.startsWith('/lesson/') || pathname.startsWith('/admin') || pathname.startsWith('/blog')) {
     return null;
   }
 
