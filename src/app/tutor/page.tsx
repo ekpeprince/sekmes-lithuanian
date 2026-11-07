@@ -300,7 +300,7 @@ function formatSessionDate(timestamp: number): string {
 }
 
 export default function TutorPage() {
-  const { addXp } = useGame();
+  const { recordVoiceDrill } = useGame();
   useActiveTimer(true);
   const [scenario, setScenario] = useState<ScenarioType>('free-chat');
   const [messages, setMessages] = useState<Message[]>(() => [
@@ -812,8 +812,8 @@ export default function TutorPage() {
         setEditingLearnerName(updated.learnerName || '');
       }
 
-      // Reward XP for active practice!
-      addXp(5);
+      // Reward XP & track voice drill progress for active AI tutor practice!
+      recordVoiceDrill(5, `tutor_${scenario}`);
     } catch (err) {
       console.error('Error fetching tutor response:', err);
     } finally {

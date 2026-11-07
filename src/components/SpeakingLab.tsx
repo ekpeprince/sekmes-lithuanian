@@ -443,7 +443,7 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
       setStressStreak((prev) => prev + 1);
       if (!stressMasteredIds.includes(currentStressItem.id)) {
         setStressMasteredIds((prev) => [...prev, currentStressItem.id]);
-        addXp(10);
+        recordVoiceDrill(10, currentStressItem.id);
       }
     } else {
       setStressAnswerStatus('incorrect');
