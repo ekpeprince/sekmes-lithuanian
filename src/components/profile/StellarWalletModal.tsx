@@ -1,19 +1,32 @@
 // components/profile/StellarWalletModal.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wallet, ShieldCheck, X, AlertCircle, Sparkles } from 'lucide-react';
 
 interface StellarWalletModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (publicKey: string) => Promise<void>;
+  initialAddress?: string | null;
 }
 
-export default function StellarWalletModal({ isOpen, onClose, onSave }: StellarWalletModalProps) {
-  const [address, setAddress] = useState('');
+export default function StellarWalletModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialAddress,
+}: StellarWalletModalProps) {
+  const [address, setAddress] = useState(initialAddress || '');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setAddress(initialAddress || '');
+      setError('');
+    }
+  }, [isOpen, initialAddress]);
 
   if (!isOpen) return null;
 

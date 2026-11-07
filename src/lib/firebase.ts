@@ -5,6 +5,7 @@ import {
   getFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
+  setLogLevel,
   Firestore,
 } from 'firebase/firestore';
 
@@ -34,6 +35,7 @@ if (getApps().length === 0) {
 // Initialize Firestore with offline cache persistence for bulletproof offline syncing
 let db: Firestore;
 try {
+  setLogLevel('silent');
   if (typeof window !== 'undefined') {
     db = initializeFirestore(app, {
       localCache: persistentLocalCache({

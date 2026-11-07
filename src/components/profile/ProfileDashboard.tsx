@@ -825,6 +825,7 @@ export const ProfileDashboard: React.FC = () => {
         isOpen={showWalletModal}
         onClose={() => setShowWalletModal(false)}
         onSave={handleSaveWalletAddress}
+        initialAddress={linkedWallet}
       />
 
       {/* Settings Modal */}

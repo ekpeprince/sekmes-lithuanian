@@ -677,6 +677,7 @@ export const RewardsDashboard: React.FC = () => {
         isOpen={showWalletModal}
         onClose={() => setShowWalletModal(false)}
         onSave={handleSaveWalletAddress}
+        initialAddress={linkedWallet}
       />
 
       {/* Firebase Auth Modal if user clicks claim while logged out */}
