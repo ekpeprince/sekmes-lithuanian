@@ -240,6 +240,10 @@ async function acquireFirestoreClaimLock(params: {
   });
 
   if (!res.ok) {
+    // If Firestore (default) database has not been created yet (404), fall back to in-memory lock
+    if (res.status === 404) {
+      return { acquired: true };
+    }
     return { acquired: false };
   }
 

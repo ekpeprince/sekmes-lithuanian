@@ -118,8 +118,12 @@ export const PwaInstallPrompt: React.FC = () => {
     sessionStorage.setItem('sekmes_pwa_dismissed', 'true');
   };
 
-  // Hide prompt during active lessons to avoid blocking exercises or check buttons
-  if (pathname.startsWith('/lesson/')) {
+  // Hide prompt during active lessons or on profile/rewards to avoid blocking modals and action buttons
+  if (
+    pathname.startsWith('/lesson/') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/rewards')
+  ) {
     return null;
   }
 
@@ -136,7 +140,7 @@ export const PwaInstallPrompt: React.FC = () => {
   return (
     <>
       {/* Floating Bottom PWA Install Banner (Mobile only - hidden on desktop viewports) */}
-      <aside aria-label="Install LabasApp" className="md:hidden fixed bottom-20 left-4 right-4 z-50 animate-pop">
+      <aside aria-label="Install LabasApp" className="md:hidden fixed bottom-20 left-4 right-4 z-30 animate-pop">
         <div className="rounded-2xl bg-slate-900/95 backdrop-blur-md p-4 text-white shadow-2xl border border-slate-700/60 flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3 min-w-0">
             <LabasAppLogo size="lg" className="rounded-2xl shadow-md shrink-0" />

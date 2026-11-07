@@ -74,12 +74,16 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [progress, setProgress] = useState<UserProgress>(() => {
-    if (typeof window !== 'undefined') {
-      return getStoredProgress();
+  const [progress, setProgress] = useState<UserProgress>(DEFAULT_PROGRESS);
+
+  useEffect(() => {
+    const stored = getStoredProgress();
+    setProgress(stored);
+    sounds.setSoundEnabled(stored.soundEnabled);
+    if (stored.voiceGender) {
+      sounds.setVoiceGender(stored.voiceGender);
     }
-    return DEFAULT_PROGRESS;
-  });
+  }, []);
 
   useEffect(() => {
     sounds.setSoundEnabled(progress.soundEnabled);
@@ -326,8 +330,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updated = setStellarWalletStorage(stellarPublicKey);
     setProgress(updated);
     if (user?.uid) {
-      await saveStellarWalletToCloud(user.uid, stellarPublicKey, user.email);
-      await saveProgressToCloud(user.uid, updated, user.email);
+      void saveStellarWalletToCloud(user.uid, stellarPublicKey, user.email);
+      void saveProgressToCloud(user.uid, updated, user.email);
     }
   };
 

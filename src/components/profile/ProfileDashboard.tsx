@@ -642,9 +642,9 @@ export const ProfileDashboard: React.FC = () => {
   const handleSaveWalletAddress = async (publicKey: string) => {
     const cleaned = publicKey.trim().toUpperCase();
     await setStellarWallet(cleaned);
-    await checkWalletTrustline(cleaned);
     sounds.playSuccess();
     setClaimError(null);
+    void checkWalletTrustline(cleaned);
   };
 
   const handleClaimTokens = async () => {
@@ -671,7 +671,7 @@ export const ProfileDashboard: React.FC = () => {
 
     setIsClaiming(true);
     try {
-      await saveProgressToCloud(user.uid, progress, user.email);
+      void saveProgressToCloud(user.uid, progress, user.email);
 
       const idToken = await user.getIdToken();
       const response = await fetch('/api/rewards/claim-xp', {

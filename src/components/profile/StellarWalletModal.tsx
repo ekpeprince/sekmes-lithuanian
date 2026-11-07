@@ -19,7 +19,7 @@ export default function StellarWalletModal({ isOpen, onClose, onSave }: StellarW
 
   const handleSave = async () => {
     setError('');
-    const trimmed = address.trim();
+    const trimmed = address.trim().toUpperCase();
 
     // Stellar public key validation: must start with 'G' and be 56 chars
     if (!trimmed.startsWith('G') || trimmed.length !== 56) {
@@ -39,7 +39,7 @@ export default function StellarWalletModal({ isOpen, onClose, onSave }: StellarW
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
       <div className="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl space-y-5">
         
         {/* Header */}
@@ -122,3 +122,4 @@ export default function StellarWalletModal({ isOpen, onClose, onSave }: StellarW
     </div>
   );
 }
+

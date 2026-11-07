@@ -196,9 +196,9 @@ export const RewardsDashboard: React.FC = () => {
   const handleSaveWalletAddress = async (publicKey: string) => {
     const cleaned = publicKey.trim().toUpperCase();
     await setStellarWallet(cleaned);
-    await checkWalletTrustline(cleaned);
     sounds.playSuccess();
     setClaimError(null);
+    void checkWalletTrustline(cleaned);
   };
 
   const handleClaimTokens = async () => {
@@ -225,8 +225,8 @@ export const RewardsDashboard: React.FC = () => {
 
     setIsClaiming(true);
     try {
-      // Ensure latest local XP and wallet are synced to Firestore before server verification
-      await saveProgressToCloud(user.uid, progress, user.email);
+      // Sync latest local XP and wallet to Firestore in background without blocking
+      void saveProgressToCloud(user.uid, progress, user.email);
 
       const idToken = await user.getIdToken();
       const response = await fetch('/api/rewards/claim-xp', {
