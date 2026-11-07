@@ -35,6 +35,11 @@ In the **Environment Variables** section during import, add the following keys f
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `844007390724` |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | `1:844007390724:web:92b1857ffff33a3c11ff51` |
 | `GEMINI_API_KEY` *(Optional)* | *(Your Gemini API key if using custom model generation)* |
+| `NEXT_PUBLIC_STELLAR_NETWORK` | `PUBLIC` |
+| `STELLAR_SERVER_URL` | `https://horizon.stellar.org` |
+| `ISSUER_PUBLIC_KEY` | `<G_MAINNET_ISSUER_PUBLIC_KEY>` *(Your Stellar Mainnet $LABAS Issuer Public Key)* |
+| `ISSUER_SECRET_KEY` | `<S_MAINNET_ISSUER_SECRET_KEY>` *(Server-only Stellar Mainnet $LABAS Issuer Secret Key)* |
+| `ASSET_CODE` | `LABAS` |
 
 ### Step 4: Click Deploy!
 - Click **Deploy**. Within 60 seconds, your site is live with a permanent public URL (e.g. `https://sekmes-lithuanian.vercel.app`).

@@ -142,6 +142,29 @@ export interface MistakeItem {
 
 export type LeagueTier = 'Geležis' | 'Bronza' | 'Sidabras' | 'Auksas' | 'Gintaras' | 'Deimantas';
 
+export interface TokenClaimRecord {
+  id: string;
+  uid: string;
+  email?: string;
+  stellarPublicKey: string;
+  xpClaimed: number;
+  tokenAmount: number;
+  assetCode: string;
+  transactionHash: string;
+  ledger?: number;
+  explorerUrl: string;
+  timestamp: string; // ISO-8601
+}
+
+export interface LearningLogEntry {
+  id?: string;
+  uid: string;
+  activityType: 'lesson' | 'voice_drill' | 'speed_drill' | 'battle' | 'mistake_resolved';
+  xpEarned: number;
+  referenceId?: string;
+  timestamp: string; // ISO-8601
+}
+
 export interface UserProgress {
   xp: number;
   hearts: number;
@@ -168,5 +191,14 @@ export interface UserProgress {
   lastQuestResetDate?: string;
   duelsWonCount?: number;
   wordsMasteredCount?: number;
+  // Stellar Mainnet ($LABAS Token) & XP Conversion Engine fields
+  stellarPublicKey?: string | null;
+  xpBalance?: number;
+  lifetimeXpEarned?: number;
+  streakDays?: number;
+  lastClaimTimestamp?: string | null;
+  totalLabasClaimed?: number;
+  voiceDrillsCompleted?: number;
+  claimHistory?: TokenClaimRecord[];
 }
 

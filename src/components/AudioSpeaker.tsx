@@ -70,18 +70,16 @@ export const AudioSpeaker: React.FC<AudioSpeakerProps> = ({
     onClick: (e: React.MouseEvent) => handlePlay(e, false),
     onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(e, false),
     title: `Listen to natural pronunciation: "${text}"`,
-    className: `inline-flex items-center gap-1.5 rounded-full border-2 border-sky-300 bg-sky-50 text-sky-600 transition-all hover:bg-sky-100 hover:scale-105 active:scale-95 shadow-xs cursor-pointer select-none ${sizeClasses[size]} ${
-      isPlaying ? 'ring-2 ring-sky-400 bg-sky-200' : ''
-    } ${className}`,
+    className: `inline-flex items-center gap-1.5 rounded-full border-2 border-sky-300 bg-sky-50 text-sky-600 transition-all hover:bg-sky-100 hover:scale-105 active:scale-95 shadow-xs cursor-pointer select-none ${sizeClasses[size]} ${isPlaying ? 'ring-2 ring-sky-400 bg-sky-200' : ''
+      } ${className}`,
   };
 
   const slowButtonProps = {
     onClick: (e: React.MouseEvent) => handlePlay(e, true),
     onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(e, true),
     title: `Listen slowly and clearly: "${text}"`,
-    className: `inline-flex items-center gap-1 rounded-full border-2 border-amber-300 bg-amber-50 text-amber-700 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95 shadow-xs cursor-pointer select-none ${sizeClasses[size]} ${
-      isSlowPlaying ? 'ring-2 ring-amber-400 bg-amber-200' : ''
-    }`,
+    className: `inline-flex items-center gap-1 rounded-full border-2 border-amber-300 bg-amber-50 text-amber-700 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95 shadow-xs cursor-pointer select-none ${sizeClasses[size]} ${isSlowPlaying ? 'ring-2 ring-amber-400 bg-amber-200' : ''
+      }`,
   };
 
   const speakerButton = as === 'span' ? (

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserProgress } from '@/types/lesson';
+import { UserProgress, TokenClaimRecord } from '@/types/lesson';
 import {
   getStoredProgress,
   saveProgress,
@@ -17,6 +17,9 @@ import {
   recordDuelWin as recordDuelWinStorage,
   addXpStorage,
   recordBattleResult as recordBattleResultStorage,
+  setStellarWalletStorage,
+  applyXpClaimToStorage,
+  recordVoiceDrillStorage,
   formatTimeLearned,
   DEFAULT_PROGRESS,
   getLocalDateString,
@@ -25,7 +28,12 @@ import {
 import { getAllLessons } from '@/data/curriculum';
 import { sounds } from '@/lib/audio';
 import { useAuth } from '@/contexts/AuthContext';
-import { saveProgressToCloud, loadProgressFromCloud } from '@/lib/progressSync';
+import {
+  saveProgressToCloud,
+  loadProgressFromCloud,
+  saveStellarWalletToCloud,
+  logLearningAchievementToCloud,
+} from '@/lib/progressSync';
 import { checkDailyNotifications } from '@/lib/notifications';
 
 interface GameContextType {
@@ -52,6 +60,14 @@ interface GameContextType {
   claimMysteryChestReward: () => { xp: number; gems: number; streakFreeze: boolean };
   saveSpeedDrillScoreVal: (score: number) => void;
   addXp: (amount: number) => void;
+  setStellarWallet: (stellarPublicKey: string | null) => Promise<void>;
+  applyXpClaim: (params: {
+    newXpBalance: number;
+    tokensIssued: number;
+    claimRecord: TokenClaimRecord;
+    stellarPublicKey: string;
+  }) => void;
+  recordVoiceDrill: (xpEarned?: number, phraseId?: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -92,31 +108,60 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (!user) return;
 
-        loadProgressFromCloud(user.uid).then((cloudProg) => {
+    loadProgressFromCloud(user.uid).then((cloudProg) => {
       if (cloudProg) {
         setProgress((prev) => {
-          const mergedXp = Math.max(prev.xp, cloudProg.xp || 0);
+          // If cloud has a recorded claim timestamp newer or equal, respect cloud xpBalance; otherwise take max
+          const hasCloudClaim = Boolean(cloudProg.lastClaimTimestamp);
+          const mergedXpBalance = hasCloudClaim && typeof cloudProg.xpBalance === 'number'
+            ? cloudProg.xpBalance
+            : Math.max(prev.xpBalance ?? prev.xp, cloudProg.xpBalance ?? cloudProg.xp ?? 0);
+
+          const mergedLifetimeXp = Math.max(
+            prev.lifetimeXpEarned ?? prev.xp,
+            cloudProg.lifetimeXpEarned ?? cloudProg.xp ?? 0,
+            mergedXpBalance
+          );
+
+          const mergedStreak = Math.max(prev.streak, cloudProg.streak || 0);
           const merged: UserProgress = {
             ...prev,
             ...cloudProg,
-            xp: mergedXp,
+            xp: mergedXpBalance,
+            xpBalance: mergedXpBalance,
+            lifetimeXpEarned: mergedLifetimeXp,
+            stellarPublicKey: cloudProg.stellarPublicKey ?? prev.stellarPublicKey ?? null,
+            lastClaimTimestamp: cloudProg.lastClaimTimestamp ?? prev.lastClaimTimestamp ?? null,
+            totalLabasClaimed: Math.max(prev.totalLabasClaimed || 0, cloudProg.totalLabasClaimed || 0),
+            voiceDrillsCompleted: Math.max(
+              prev.voiceDrillsCompleted || 0,
+              cloudProg.voiceDrillsCompleted || 0
+            ),
             gems: Math.max(prev.gems || 0, cloudProg.gems || 0),
             duelsWonCount: Math.max(prev.duelsWonCount || 0, cloudProg.duelsWonCount || 0),
-            totalPracticeSeconds: Math.max(prev.totalPracticeSeconds || 0, cloudProg.totalPracticeSeconds || 0),
-            wordsMasteredCount: Math.max(prev.wordsMasteredCount || 0, cloudProg.wordsMasteredCount || 0),
-            leagueTier: getLeagueTierByXp(mergedXp),
-            streak: Math.max(prev.streak, cloudProg.streak || 0),
+            totalPracticeSeconds: Math.max(
+              prev.totalPracticeSeconds || 0,
+              cloudProg.totalPracticeSeconds || 0
+            ),
+            wordsMasteredCount: Math.max(
+              prev.wordsMasteredCount || 0,
+              cloudProg.wordsMasteredCount || 0
+            ),
+            leagueTier: getLeagueTierByXp(mergedLifetimeXp),
+            streak: mergedStreak,
+            streakDays: mergedStreak,
             completedLessons: Array.from(
               new Set([...prev.completedLessons, ...(cloudProg.completedLessons || [])])
             ),
           };
           saveProgress(merged);
+          saveProgressToCloud(user.uid, merged, user.email);
           return merged;
         });
       } else {
         // Save existing local progress to fresh cloud user account
         const current = getStoredProgress();
-        saveProgressToCloud(user.uid, current);
+        saveProgressToCloud(user.uid, current, user.email);
       }
     });
   }, [user]);
@@ -136,7 +181,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const syncToCloudIfUser = (updatedProg: UserProgress) => {
     if (user?.uid) {
-      saveProgressToCloud(user.uid, updatedProg);
+      saveProgressToCloud(user.uid, updatedProg, user.email);
     }
   };
 
@@ -159,6 +204,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updated = completeLessonStorage(lessonId, xpReward);
     setProgress(updated);
     syncToCloudIfUser(updated);
+    if (user?.uid) {
+      void logLearningAchievementToCloud({
+        uid: user.uid,
+        activityType: 'lesson',
+        xpEarned: xpReward,
+        referenceId: lessonId,
+      });
+    }
   };
 
   const toggleSound = () => {
@@ -200,6 +253,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProgress(updatedProg);
     sounds.playSuccess();
     syncToCloudIfUser(updatedProg);
+    if (user?.uid) {
+      void logLearningAchievementToCloud({
+        uid: user.uid,
+        activityType: 'mistake_resolved',
+        xpEarned: 5,
+        referenceId: id,
+      });
+    }
   };
 
   const claimQuestRewardById = (questId: string) => {
@@ -221,6 +282,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updatedProg = recordSpeedDrillScore(score);
     setProgress(updatedProg);
     syncToCloudIfUser(updatedProg);
+    if (user?.uid) {
+      void logLearningAchievementToCloud({
+        uid: user.uid,
+        activityType: 'speed_drill',
+        xpEarned: Math.round(score / 2),
+      });
+    }
   };
 
   const addActivePracticeTime = (seconds: number) => {
@@ -239,12 +307,54 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updated = recordBattleResultStorage(earnedXp, isWin);
     setProgress(updated);
     syncToCloudIfUser(updated);
+    if (user?.uid) {
+      void logLearningAchievementToCloud({
+        uid: user.uid,
+        activityType: 'battle',
+        xpEarned: earnedXp,
+      });
+    }
   };
 
   const addXp = (amount: number) => {
     const updated = addXpStorage(amount);
     setProgress(updated);
     syncToCloudIfUser(updated);
+  };
+
+  const setStellarWallet = async (stellarPublicKey: string | null) => {
+    const updated = setStellarWalletStorage(stellarPublicKey);
+    setProgress(updated);
+    if (user?.uid) {
+      await saveStellarWalletToCloud(user.uid, stellarPublicKey, user.email);
+      await saveProgressToCloud(user.uid, updated, user.email);
+    }
+  };
+
+  const applyXpClaim = (params: {
+    newXpBalance: number;
+    tokensIssued: number;
+    claimRecord: TokenClaimRecord;
+    stellarPublicKey: string;
+  }) => {
+    const updated = applyXpClaimToStorage(params);
+    setProgress(updated);
+    sounds.playLevelComplete();
+    syncToCloudIfUser(updated);
+  };
+
+  const recordVoiceDrill = (xpEarned: number = 15, phraseId?: string) => {
+    const updated = recordVoiceDrillStorage(xpEarned);
+    setProgress(updated);
+    syncToCloudIfUser(updated);
+    if (user?.uid) {
+      void logLearningAchievementToCloud({
+        uid: user.uid,
+        activityType: 'voice_drill',
+        xpEarned,
+        referenceId: phraseId,
+      });
+    }
   };
 
   const today = typeof window !== 'undefined' ? getLocalDateString() : '';
@@ -287,12 +397,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         claimMysteryChestReward,
         saveSpeedDrillScoreVal,
         addXp,
+        setStellarWallet,
+        applyXpClaim,
+        recordVoiceDrill,
       }}
     >
       {children}
     </GameContext.Provider>
   );
-
 };
 
 export const useGame = (): GameContextType => {

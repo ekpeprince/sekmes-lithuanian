@@ -9,6 +9,7 @@ import { sounds } from '@/lib/audio';
 import { logEvent } from '@/lib/telemetry';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { NotificationModal } from '@/components/NotificationModal';
+import { RewardsDashboard } from '@/components/RewardsDashboard';
 import { LEAGUE_TIERS, LeagueTier, getLeagueTierByXp } from '@/lib/league';
 
 export default function ProfilePage() {
@@ -148,6 +149,9 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Stellar Mainnet ($LABAS Token) Micro-Reward & XP Conversion Dashboard */}
+        <RewardsDashboard />
 
         {/* Total Immersion Dashboard */}
         <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-3 sm:p-3.5 shadow-xs mb-2">

@@ -1,4 +1,4 @@
-import { UserProgress, MistakeItem, Quest, LeagueTier } from '@/types/lesson';
+import { UserProgress, MistakeItem, Quest, LeagueTier, TokenClaimRecord } from '@/types/lesson';
 
 const STORAGE_KEY = 'sekmes_user_progress_v1';
 
@@ -99,6 +99,14 @@ export const DEFAULT_PROGRESS: UserProgress = {
   lastQuestResetDate: getLocalDateString(),
   duelsWonCount: 0,
   wordsMasteredCount: 0,
+  stellarPublicKey: null,
+  xpBalance: 0,
+  lifetimeXpEarned: 0,
+  streakDays: 1,
+  lastClaimTimestamp: null,
+  totalLabasClaimed: 0,
+  voiceDrillsCompleted: 0,
+  claimHistory: [],
 };
 
 export function getStoredProgress(): UserProgress {
@@ -177,6 +185,18 @@ export function getStoredProgress(): UserProgress {
       lastQuestResetDate: today,
       duelsWonCount: parsed.duelsWonCount || 0,
       wordsMasteredCount: parsed.wordsMasteredCount || 0,
+      stellarPublicKey: parsed.stellarPublicKey ?? null,
+      xpBalance: typeof parsed.xpBalance === 'number' ? parsed.xpBalance : (parsed.xp || 0),
+      lifetimeXpEarned: Math.max(
+        parsed.lifetimeXpEarned || 0,
+        typeof parsed.xpBalance === 'number' ? parsed.xpBalance : (parsed.xp || 0),
+        parsed.xp || 0
+      ),
+      streakDays: streakToUse,
+      lastClaimTimestamp: parsed.lastClaimTimestamp ?? null,
+      totalLabasClaimed: parsed.totalLabasClaimed || 0,
+      voiceDrillsCompleted: parsed.voiceDrillsCompleted || 0,
+      claimHistory: Array.isArray(parsed.claimHistory) ? parsed.claimHistory : [],
     };
 
     // Ensure state is persisted to localStorage whenever a new calendar day arrives OR if
@@ -285,15 +305,18 @@ export function completeLesson(lessonId: string, xpEarned: number): UserProgress
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + xpEarned,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + xpEarned,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
     gems: (current.gems || 0) + 15,
     streak: Math.max(1, newStreak),
+    streakDays: Math.max(1, newStreak),
     streakFreezes: remainingFreezes,
     completedLessons,
     lastActiveDate: today,
     quests: updatedQuests,
-    leagueTier: getLeagueTierByXp(nextXp),
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
   };
 
   saveProgress(updated);
@@ -352,9 +375,11 @@ export function resolveMistake(id: string): UserProgress {
     mistakesBank: updatedBank,
     quests: updatedQuests,
     xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + earnedXp,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + earnedXp,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
-    leagueTier: getLeagueTierByXp(nextXp),
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
   };
 
   saveProgress(updated);
@@ -388,9 +413,11 @@ export function recordSpeedDrillScore(score: number): UserProgress {
     speedDrillHighScore: nextHigh,
     quests: updatedQuests,
     xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + earnedXp,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + earnedXp,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
-    leagueTier: getLeagueTierByXp(nextXp),
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
   };
 
   saveProgress(updated);
@@ -412,12 +439,15 @@ export function claimQuestReward(questId: string): UserProgress {
     return q;
   });
 
+  const nextXp = current.xp + xpToAdd;
   const updated: UserProgress = {
     ...current,
-    xp: current.xp + xpToAdd,
+    xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + xpToAdd,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + xpToAdd,
     gems: current.gems + gemsToAdd,
     quests: updatedQuests,
-    leagueTier: getLeagueTierByXp(current.xp + xpToAdd),
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
   };
 
   saveProgress(updated);
@@ -434,14 +464,17 @@ export function claimMysteryChest(): {
   const bonusXp = 50;
   const bonusGems = 25;
   const streakFreezeAwarded = true;
+  const nextXp = current.xp + bonusXp;
 
   const updated: UserProgress = {
     ...current,
-    xp: current.xp + bonusXp,
+    xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + bonusXp,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + bonusXp,
     gems: current.gems + bonusGems,
     streakFreezes: (current.streakFreezes ?? 1) + 1,
     mysteryChestClaimedDate: today,
-    leagueTier: getLeagueTierByXp(current.xp + bonusXp),
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
   };
 
   saveProgress(updated);
@@ -491,10 +524,12 @@ export function addXpStorage(amount: number): UserProgress {
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + amount,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + amount,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
     quests: updatedQuests,
-    leagueTier: getLeagueTierByXp(nextXp),
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
   };
 
   saveProgress(updated);
@@ -520,13 +555,68 @@ export function recordBattleResult(earnedXp: number, isWin: boolean): UserProgre
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + earnedXp,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + earnedXp,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
     quests: updatedQuests,
-    leagueTier: getLeagueTierByXp(nextXp),
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
     duelsWonCount: isWin ? (current.duelsWonCount || 0) + 1 : (current.duelsWonCount || 0),
   };
 
+  saveProgress(updated);
+  return updated;
+}
+
+export function setStellarWalletStorage(stellarPublicKey: string | null): UserProgress {
+  const current = getStoredProgress();
+  const updated: UserProgress = {
+    ...current,
+    stellarPublicKey: stellarPublicKey ? stellarPublicKey.trim() : null,
+  };
+  saveProgress(updated);
+  return updated;
+}
+
+export function applyXpClaimToStorage(params: {
+  newXpBalance: number;
+  tokensIssued: number;
+  claimRecord: TokenClaimRecord;
+  stellarPublicKey: string;
+}): UserProgress {
+  const current = getStoredProgress();
+  const existingHistory = Array.isArray(current.claimHistory) ? current.claimHistory : [];
+  const updated: UserProgress = {
+    ...current,
+    xp: params.newXpBalance,
+    xpBalance: params.newXpBalance,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp),
+    stellarPublicKey: params.stellarPublicKey,
+    lastClaimTimestamp: params.claimRecord.timestamp,
+    totalLabasClaimed: Number(((current.totalLabasClaimed || 0) + params.tokensIssued).toFixed(4)),
+    claimHistory: [params.claimRecord, ...existingHistory].slice(0, 25),
+  };
+  saveProgress(updated);
+  return updated;
+}
+
+export function recordVoiceDrillStorage(xpEarned: number = 15): UserProgress {
+  const current = getStoredProgress();
+  const today = getLocalDateString();
+  const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
+  const nextXp = current.xp + xpEarned;
+  const nextDailyXp = currentDailyXp + xpEarned;
+
+  const updated: UserProgress = {
+    ...current,
+    xp: nextXp,
+    xpBalance: (current.xpBalance ?? current.xp) + xpEarned,
+    lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + xpEarned,
+    dailyXp: nextDailyXp,
+    dailyXpDate: today,
+    voiceDrillsCompleted: (current.voiceDrillsCompleted || 0) + 1,
+    leagueTier: getLeagueTierByXp(Math.max(current.lifetimeXpEarned ?? current.xp, nextXp)),
+  };
   saveProgress(updated);
   return updated;
 }

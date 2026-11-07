@@ -25,7 +25,7 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
 
-      // Subcollections under user (e.g. mistakes, history)
+      // Subcollections under user (e.g. mistakes, history, token_claims)
       match /{allSubcollections=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
@@ -62,6 +62,27 @@ service cloud.firestore {
     match /user_events/{eventId} {
       allow create: if true;
       allow read, update, delete: if request.auth != null;
+    }
+
+    // 6. Stellar Mainnet ($LABAS Token) Claims Audit Trail
+    match /token_claims/{claimId} {
+      allow read: if request.auth != null && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.transactionHash is string
+                    && request.resource.data.transactionHash.size() > 0
+                    && request.resource.data.transactionHash.size() <= 128
+                    && request.resource.data.xpClaimed is int
+                    && request.resource.data.xpClaimed >= 500;
+      allow update, delete: if false;
+    }
+
+    // 7. Learning Logs for XP & Micro-Reward Verification
+    match /learning_logs/{logId} {
+      allow read: if request.auth != null && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
     }
 
     // Default deny all other paths

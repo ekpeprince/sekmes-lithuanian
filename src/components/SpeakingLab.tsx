@@ -91,7 +91,7 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
   onBack,
   initialMode = 'phrases',
 }) => {
-  const { addXp } = useGame();
+  const { addXp, recordVoiceDrill } = useGame();
 
   // Mode: Full phrase speech recognition studio VS Syllable stress trainer
   const [labMode, setLabMode] = useState<'phrases' | 'syllables'>(initialMode);
@@ -198,7 +198,7 @@ export const SpeakingLab: React.FC<SpeakingLabProps> = ({
       try {
         localStorage.setItem(STORAGE_KEY_MASTERED, JSON.stringify(updated));
       } catch {}
-      addXp(15);
+      recordVoiceDrill(15, id);
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 3000);
     }
