@@ -8,9 +8,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
-  Flame,
-  BookOpen,
-  Mic,
   ArrowUpRight,
   ShieldCheck,
   Copy,
@@ -22,9 +19,7 @@ import {
   Heart,
   RotateCcw,
   MessageCircle,
-  ChevronRight,
   Sparkles,
-  Lock,
 } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,9 +50,6 @@ interface TrustlineCheckState {
   message: string | null;
 }
 
-/**
- * Crisp custom SVG emblem for Stellar Network
- */
 const StellarMark: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg
     viewBox="0 0 24 24"
@@ -77,7 +69,7 @@ const StellarMark: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }
 );
 
 /* ============================================================================
- * A. HERO PROFILE CARD (ProfileHeader)
+ * 1. CLEAN PROFILE CARD (Identity, Curriculum Progress & 4 Core Stats)
  * ========================================================================== */
 interface ProfileHeaderProps {
   displayName: string;
@@ -86,6 +78,13 @@ interface ProfileHeaderProps {
   completedCount: number;
   totalCount: number;
   completionPercent: number;
+  tierName: string;
+  tierIcon: string;
+  streakDays: number;
+  timeLearnedFormatted: string;
+  wordsMasteredCount: number;
+  duelsWonCount: number;
+  onOpenNotifications: () => void;
   onOpenSettings: () => void;
 }
 
@@ -96,63 +95,109 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   completedCount,
   totalCount,
   completionPercent,
+  tierName,
+  tierIcon,
+  streakDays,
+  timeLearnedFormatted,
+  wordsMasteredCount,
+  duelsWonCount,
+  onOpenNotifications,
   onOpenSettings,
 }) => {
   return (
-    <div className="flex items-center gap-3.5 sm:gap-4 p-4 sm:p-5 rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs">
-      {/* Avatar with Lithuanian Tricolor Emblem & Level Pill */}
-      <div className="relative shrink-0">
-        <div className="w-16 h-16 rounded-2xl p-0.5 bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 shadow-md shadow-emerald-600/15">
-          <div className="w-full h-full rounded-[14px] bg-slate-900 flex items-center justify-center">
-            <LithuanianFlagEmblem size="md" />
+    <div className="rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-6 shadow-2xs">
+      {/* Top Identity Row */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center">
+              <LithuanianFlagEmblem size="md" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 rounded-full bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 border-2 border-white">
+              L{level}
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate">
+              {displayName}
+            </h1>
+            <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mt-0.5">
+              <span>{tierIcon}</span>
+              <span>{tierName}</span>
+              <span>•</span>
+              <span className="text-amber-600 font-bold inline-flex items-center gap-1">
+                <Sparkles className="w-3 h-3 fill-amber-500 text-amber-500" />
+                {gems} Gems
+              </span>
+            </p>
           </div>
         </div>
-        <div className="absolute -bottom-1.5 -right-1.5 inline-flex items-center justify-center rounded-full bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 border-2 border-white shadow-xs">
-          Lvl {level}
+
+        {/* Utility Icons (Reminders & Settings) */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={onOpenNotifications}
+            className="flex items-center justify-center h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-600 transition-colors cursor-pointer"
+            title="Study Reminders & Notifications"
+            aria-label="Notifications"
+          >
+            <BellRing className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex items-center justify-center h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-600 transition-colors cursor-pointer"
+            title="Settings & Audio"
+            aria-label="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
-      {/* User Details & Curriculum Bar */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-base sm:text-xl font-black text-slate-900 tracking-tight truncate">
-            {displayName}
-          </h1>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 font-extrabold text-xs px-2.5 py-1 rounded-xl tabular-nums">
-              <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-              <span>{gems}</span>
-              <span className="hidden sm:inline">Amber Gems</span>
-            </span>
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="flex items-center justify-center h-8 w-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
-              title="Settings & Preferences"
-              aria-label="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <p className="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider mt-0.5 mb-2">
-          Lithuanian Learner • Level {level}
-        </p>
-
+      {/* Curriculum Progress Bar */}
+      <div className="mt-5">
         <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-1.5">
           <span>Curriculum Progress</span>
           <span className="text-slate-800 font-bold tabular-nums">
             {completedCount} / {totalCount} Lessons ({completionPercent}%)
           </span>
         </div>
-
-        <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/70">
+        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
+            className="h-full rounded-full bg-emerald-500 transition-all duration-300"
             style={{ width: `${Math.max(completionPercent, completedCount > 0 ? 4 : 0)}%` }}
           />
+        </div>
+      </div>
+
+      {/* Clean 4-Metric Summary Divider Row */}
+      <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-4 gap-2 text-center">
+        <div>
+          <div className="text-base sm:text-lg font-black text-slate-900 tabular-nums">
+            {streakDays}d
+          </div>
+          <div className="text-[11px] font-medium text-slate-400">Streak</div>
+        </div>
+        <div>
+          <div className="text-base sm:text-lg font-black text-slate-900 tabular-nums">
+            {timeLearnedFormatted}
+          </div>
+          <div className="text-[11px] font-medium text-slate-400">Time Learned</div>
+        </div>
+        <div>
+          <div className="text-base sm:text-lg font-black text-slate-900 tabular-nums">
+            {wordsMasteredCount}
+          </div>
+          <div className="text-[11px] font-medium text-slate-400">Words</div>
+        </div>
+        <div>
+          <div className="text-base sm:text-lg font-black text-slate-900 tabular-nums">
+            {duelsWonCount}
+          </div>
+          <div className="text-[11px] font-medium text-slate-400">Duels Won</div>
         </div>
       </div>
     </div>
@@ -160,18 +205,15 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 };
 
 /* ============================================================================
- * B. STELLAR MAINNET FINTECH CARD (StellarRewardsCard)
+ * 2. SIMPLE, UNCLUTTERED STELLAR $LABAS REWARDS CARD
  * ========================================================================== */
 interface StellarRewardsCardProps {
   xpBalance: number;
-  lifetimeXp: number;
   claimableLabasTokens: number;
   convertibleXp: number;
   canMeetMinThreshold: boolean;
   thresholdProgressPercent: number;
-  totalLabasClaimed: number;
   linkedWallet: string | null;
-  trustlineState: TrustlineCheckState;
   isClaiming: boolean;
   claimError: {
     message: string;
@@ -188,9 +230,6 @@ interface StellarRewardsCardProps {
   } | null;
   claimHistory: TokenClaimRecord[];
   copiedKey: string | null;
-  streakDays: number;
-  wordsMasteredCount: number;
-  voiceDrillsCount: number;
   onOpenWalletModal: () => void;
   onClaimTokens: () => void;
   onDismissError: () => void;
@@ -199,339 +238,144 @@ interface StellarRewardsCardProps {
 
 export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
   xpBalance,
-  lifetimeXp,
   claimableLabasTokens,
   convertibleXp,
   canMeetMinThreshold,
   thresholdProgressPercent,
-  totalLabasClaimed,
   linkedWallet,
-  trustlineState,
   isClaiming,
   claimError,
   claimSuccess,
   claimHistory,
   copiedKey,
-  streakDays,
-  wordsMasteredCount,
-  voiceDrillsCount,
   onOpenWalletModal,
   onClaimTokens,
   onDismissError,
   onCopyText,
 }) => {
   const isButtonEnabled = Boolean(linkedWallet && canMeetMinThreshold && !isClaiming);
-  const streakPercent = Math.min(100, Math.round((streakDays / 7) * 100));
-  const vocabPercent = Math.min(100, Math.round((wordsMasteredCount / 50) * 100));
-  const voicePercent = Math.min(100, Math.round((voiceDrillsCount / 10) * 100));
 
   return (
     <section
-      aria-label="Stellar Mainnet $LABAS Micro-Reward Engine"
-      className="rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs overflow-hidden"
+      aria-label="Stellar Mainnet $LABAS Rewards"
+      className="rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-6 shadow-2xs"
     >
-      {/* Top Executive Fintech Header Banner (Deep Slate-900 Accent Header) */}
-      <div className="bg-slate-900 px-4 py-3.5 sm:px-6 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-            <StellarMark className="w-5 h-5" />
+      {/* Clean Header Row */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600 shrink-0">
+            <StellarMark className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
-                $LABAS Token Vault
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-black text-slate-900">
+                $LABAS Rewards
               </h2>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Stellar Mainnet
+              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                Mainnet
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Fixed conversion rate: <strong className="text-slate-200">100 XP = 1.00 $LABAS</strong> • Minimum payout: <strong className="text-slate-200">500 XP</strong>
+            <p className="text-[11px] text-slate-400 font-medium">
+              100 XP = 1 $LABAS • Min. 500 XP
             </p>
           </div>
         </div>
 
-        {/* Wallet Connection State Pill / Button (Single-line, never wraps awkwardly) */}
-        {linkedWallet ? (
-          <button
-            type="button"
-            onClick={onOpenWalletModal}
-            className="inline-flex items-center gap-2 self-start sm:self-auto whitespace-nowrap rounded-xl bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 px-3.5 py-2 text-xs font-bold text-white transition-all cursor-pointer shrink-0"
-            title="Click to update Stellar Mainnet address"
-          >
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-emerald-300 font-extrabold text-[11px]">Mainnet Linked</span>
-            <span className="font-mono text-[11px] text-slate-300 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-700">
-              {linkedWallet.slice(0, 6)}...{linkedWallet.slice(-4)}
+        <button
+          type="button"
+          onClick={onOpenWalletModal}
+          className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition-colors cursor-pointer shrink-0 ${
+            linkedWallet
+              ? 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-mono'
+              : 'bg-slate-900 hover:bg-slate-800 text-white'
+          }`}
+        >
+          <Wallet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+          {linkedWallet ? (
+            <span>
+              {linkedWallet.slice(0, 5)}...{linkedWallet.slice(-4)}
             </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenWalletModal}
-            className="inline-flex items-center gap-2 self-start sm:self-auto whitespace-nowrap rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 text-xs font-black tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
-          >
-            <Wallet className="h-3.5 w-3.5 shrink-0" />
-            <span>Connect Stellar Wallet</span>
-          </button>
-        )}
+          ) : (
+            <span>Connect Wallet</span>
+          )}
+        </button>
       </div>
 
-      {/* Main Body: 2-Column Institutional Fintech Grid on Desktop */}
-      <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        {/* Left Column (7 cols): Financial Balances, 500 XP Threshold & Conversion CTA */}
-        <div className="lg:col-span-7 flex flex-col justify-between gap-4">
-          {/* 2-Card Balance Row */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Metric 1: Available XP Balance */}
-            <div className="rounded-2xl bg-slate-50 border border-slate-200/90 p-3.5 sm:p-4">
-              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <span>Available XP</span>
-                <span className="text-amber-600 font-black">XP</span>
-              </div>
-              <div className="mt-1.5 flex items-baseline gap-1.5 tabular-nums">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  {xpBalance.toLocaleString()}
-                </span>
-                <span className="text-xs font-extrabold text-slate-400">XP</span>
-              </div>
-              <div className="mt-2 pt-2 border-t border-slate-200/70 flex items-center justify-between text-[11px] font-semibold text-slate-500 tabular-nums">
-                <span>Lifetime Earned</span>
-                <span className="font-bold text-slate-700">{lifetimeXp.toLocaleString()} XP</span>
-              </div>
-            </div>
-
-            {/* Metric 2: Claimable $LABAS Reward */}
-            <div className="rounded-2xl bg-emerald-50/60 border border-emerald-200/90 p-3.5 sm:p-4">
-              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-emerald-800">
-                <span>Claimable</span>
-                <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black text-[10px]">
-                  $LABAS
-                </span>
-              </div>
-              <div className="mt-1.5 flex items-baseline gap-1.5 tabular-nums">
-                <span className="text-2xl sm:text-3xl font-black text-emerald-700 tracking-tight">
-                  {claimableLabasTokens.toFixed(2)}
-                </span>
-                <span className="text-xs font-black text-emerald-600">$LABAS</span>
-              </div>
-              <div className="mt-2 pt-2 border-t border-emerald-200/60 flex items-center justify-between text-[11px] font-semibold text-emerald-800/80 tabular-nums">
-                <span>Total Claimed</span>
-                <span className="font-bold text-emerald-900">
-                  {(totalLabasClaimed || 0).toFixed(2)} $LABAS
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 500 XP Threshold Progress Box */}
-          <div className="rounded-2xl bg-slate-50 border border-slate-200/90 p-3.5 sm:p-4">
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Payout Threshold Progress</span>
-              </span>
-              <span className="font-black text-slate-900 tabular-nums">
-                {Math.min(xpBalance, MIN_CLAIM_XP)} / {MIN_CLAIM_XP} XP ({thresholdProgressPercent}%)
-              </span>
-            </div>
-
-            <div className="h-2.5 w-full bg-slate-200/80 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
-                style={{ width: `${thresholdProgressPercent}%` }}
-              />
-            </div>
-
-            <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-slate-500 font-medium">
-              {canMeetMinThreshold ? (
-                <span className="text-emerald-700 font-bold">
-                  ✓ Ready to convert {convertibleXp} XP &rarr; {claimableLabasTokens} $LABAS on Stellar Mainnet
-                </span>
-              ) : (
-                <span>
-                  Earn <strong className="text-slate-800">{MIN_CLAIM_XP - xpBalance} more XP</strong> to unlock your 5.00 $LABAS Mainnet transfer
-                </span>
-              )}
-              {linkedWallet && trustlineState.checked && (
-                <span
-                  className={`font-bold shrink-0 ${
-                    trustlineState.hasTrustline ? 'text-emerald-600' : 'text-amber-600'
-                  }`}
-                >
-                  {trustlineState.hasTrustline ? '✓ Trustline Active' : '• Add Trustline'}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Primary Action Button */}
-          <div>
-            <button
-              type="button"
-              onClick={onClaimTokens}
-              disabled={!isButtonEnabled}
-              className={`w-full rounded-2xl py-3.5 px-5 text-xs sm:text-sm font-black tracking-wide flex items-center justify-center gap-2 transition-all duration-200 ${
-                isClaiming
-                  ? 'bg-amber-500 text-white cursor-wait'
-                  : isButtonEnabled
-                  ? 'btn-3d btn-green-3d text-white cursor-pointer'
-                  : 'bg-slate-100 border-2 border-slate-200 text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              {isClaiming ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Submitting to Stellar Mainnet Ledger...</span>
-                </>
-              ) : isButtonEnabled ? (
-                <>
-                  <span>Convert {convertibleXp} XP to {claimableLabasTokens} $LABAS</span>
-                  <ArrowUpRight className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  <Lock className="h-3.5 w-3.5" />
-                  <span>
-                    {!linkedWallet
-                      ? 'Connect Stellar Wallet to Convert XP'
-                      : `Reach ${MIN_CLAIM_XP} XP Minimum to Convert ($LABAS)`}
-                  </span>
-                </>
-              )}
-            </button>
-          </div>
+      {/* Simple Balance Summary & Progress */}
+      <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
+        <div>
+          <span className="text-[11px] font-semibold text-slate-400 block">
+            Available XP
+          </span>
+          <span className="text-2xl font-black text-slate-900 tabular-nums">
+            {xpBalance.toLocaleString()}{' '}
+            <span className="text-xs font-bold text-slate-400">XP</span>
+          </span>
         </div>
 
-        {/* Right Column (5 cols): Verified Habit & Performance Multipliers */}
-        <div className="lg:col-span-5 rounded-2xl bg-slate-50 border border-slate-200/90 p-4 flex flex-col justify-between">
-          <div className="mb-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
-              Verified Earning Milestones
-            </h3>
-            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-              Daily habits that generate convertible Mainnet XP
-            </p>
-          </div>
-
-          <div className="space-y-3 my-auto">
-            {/* 1. Consistency Streak */}
-            <div className="bg-white rounded-xl p-3 border border-slate-200/80">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="font-extrabold text-slate-800 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-lg bg-orange-50 border border-orange-200/80 flex items-center justify-center text-orange-500">
-                    <Flame className="h-3.5 w-3.5 fill-orange-500" />
-                  </span>
-                  Consistency Streak
-                </span>
-                <span className="text-[11px] font-black text-orange-600 bg-orange-50 border border-orange-200/60 px-2 py-0.5 rounded-lg tabular-nums">
-                  {streakDays}d / 7d
-                </span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-orange-500 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.max(streakPercent, 6)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* 2. Vocabulary Mastery */}
-            <div className="bg-white rounded-xl p-3 border border-slate-200/80">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="font-extrabold text-slate-800 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-lg bg-sky-50 border border-sky-200/80 flex items-center justify-center text-sky-600">
-                    <BookOpen className="h-3.5 w-3.5" />
-                  </span>
-                  Vocabulary Mastery
-                </span>
-                <span className="text-[11px] font-black text-sky-700 bg-sky-50 border border-sky-200/60 px-2 py-0.5 rounded-lg tabular-nums">
-                  {wordsMasteredCount} / 50
-                </span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-sky-500 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.max(vocabPercent, 4)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* 3. Aistė Voice Drills */}
-            <div className="bg-white rounded-xl p-3 border border-slate-200/80">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="font-extrabold text-slate-800 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-lg bg-teal-50 border border-teal-200/80 flex items-center justify-center text-teal-600">
-                    <Mic className="h-3.5 w-3.5" />
-                  </span>
-                  Aistė Voice Drills
-                </span>
-                <span className="text-[11px] font-black text-teal-700 bg-teal-50 border border-teal-200/60 px-2 py-0.5 rounded-lg tabular-nums">
-                  {voiceDrillsCount} / 10
-                </span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-teal-500 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.max(voicePercent, 4)}%` }}
-                />
-              </div>
-            </div>
-          </div>
+        <div className="text-right">
+          <span className="text-[11px] font-semibold text-slate-400 block">
+            Claimable Reward
+          </span>
+          <span className="text-2xl font-black text-emerald-600 tabular-nums">
+            {claimableLabasTokens.toFixed(2)}{' '}
+            <span className="text-xs font-bold text-emerald-600">$LABAS</span>
+          </span>
         </div>
       </div>
 
-      {/* Actionable Error Feedback Banner */}
+      {/* Single Clean Progress Bar toward 500 XP */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
+          <span>
+            {canMeetMinThreshold
+              ? `Ready to convert ${convertibleXp} XP`
+              : `${MIN_CLAIM_XP - xpBalance} XP needed to unlock payout`}
+          </span>
+          <span className="text-slate-600 font-bold tabular-nums">
+            {Math.min(xpBalance, MIN_CLAIM_XP)} / {MIN_CLAIM_XP} XP
+          </span>
+        </div>
+        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+            style={{ width: `${thresholdProgressPercent}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Error Notice */}
       {claimError && (
         <div
           role="alert"
-          className="mx-4 mb-4 sm:mx-6 sm:mb-6 rounded-2xl bg-rose-50 border-2 border-rose-200 p-4 text-xs text-rose-900 flex items-start gap-3"
+          className="mt-4 rounded-2xl bg-rose-50 border border-rose-200 p-3.5 text-xs text-rose-900 flex items-start gap-2.5"
         >
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0 space-y-1.5">
-            <div className="font-black text-rose-900 flex items-center gap-2 flex-wrap">
-              <span>Stellar Mainnet Notice</span>
-              {claimError.code && (
-                <span className="px-2 py-0.5 rounded-md bg-rose-200/70 text-rose-950 font-mono text-[10px]">
-                  {claimError.code}
-                </span>
+          <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0 space-y-1">
+            <p className="text-rose-800 font-medium">{claimError.message}</p>
+            {(claimError.code === 'op_no_trust' || claimError.code === 'account_not_found') &&
+              claimError.issuerPublicKey && (
+                <button
+                  type="button"
+                  onClick={() => onCopyText(claimError.issuerPublicKey!, 'issuer')}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-rose-200 font-mono text-[10px] font-bold text-rose-800 hover:bg-rose-100 cursor-pointer"
+                >
+                  <span>
+                    Copy Issuer: {claimError.issuerPublicKey.slice(0, 6)}...
+                    {claimError.issuerPublicKey.slice(-4)}
+                  </span>
+                  {copiedKey === 'issuer' ? (
+                    <Check className="w-3 h-3 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
+                </button>
               )}
-            </div>
-            <p className="text-rose-800 font-medium leading-relaxed">{claimError.message}</p>
-
-            {(claimError.code === 'op_no_trust' || claimError.code === 'account_not_found') && (
-              <div className="pt-1 flex flex-wrap items-center gap-2 text-[11px]">
-                <span className="font-bold text-rose-900">
-                  Asset Code:{' '}
-                  <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-rose-200">
-                    {claimError.assetCode || 'LABAS'}
-                  </code>
-                </span>
-                {claimError.issuerPublicKey && (
-                  <button
-                    type="button"
-                    onClick={() => onCopyText(claimError.issuerPublicKey!, 'issuer')}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-rose-200 font-mono text-[10px] font-bold text-rose-800 hover:bg-rose-100 cursor-pointer"
-                  >
-                    <span>
-                      Issuer: {claimError.issuerPublicKey.slice(0, 6)}...
-                      {claimError.issuerPublicKey.slice(-4)}
-                    </span>
-                    {copiedKey === 'issuer' ? (
-                      <Check className="w-3 h-3 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3 h-3" />
-                    )}
-                  </button>
-                )}
-              </div>
-            )}
           </div>
           <button
             type="button"
             onClick={onDismissError}
-            className="text-rose-400 hover:text-rose-700 p-1 cursor-pointer"
+            className="text-rose-400 hover:text-rose-700 p-0.5 cursor-pointer"
             aria-label="Dismiss error"
           >
             <X className="w-4 h-4" />
@@ -539,82 +383,85 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
         </div>
       )}
 
-      {/* Mainnet Transaction Confirmation Banner */}
+      {/* Confirmation Notice */}
       {claimSuccess && (
         <div
           role="status"
-          className="mx-4 mb-4 sm:mx-6 sm:mb-6 rounded-2xl bg-emerald-50 border-2 border-emerald-300 p-4 text-xs text-emerald-950 flex items-start gap-3 animate-in fade-in duration-200"
+          className="mt-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5 text-xs text-emerald-950 flex items-center justify-between gap-3"
         >
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0 space-y-1.5">
-            <h4 className="font-black text-emerald-950 text-sm">
-              +{claimSuccess.issuedTokenAmount} $LABAS Confirmed on Stellar Mainnet!
-            </h4>
-            <p className="text-emerald-800 font-medium">
-              Converted <strong>{claimSuccess.xpClaimed} XP</strong> into{' '}
-              <strong>{claimSuccess.issuedTokenAmount} $LABAS</strong>. Updated balance:{' '}
-              <strong>{claimSuccess.updatedXpBalance} XP</strong>.
-            </p>
-            <div className="pt-1 flex flex-wrap items-center gap-2.5">
-              <a
-                href={claimSuccess.explorerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] transition-colors shadow-2xs"
-              >
-                <span>Verify on Stellar Expert</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-              <span className="font-mono text-[10px] text-emerald-700 truncate max-w-[220px]">
-                TX: {claimSuccess.transactionHash.slice(0, 10)}...
-                {claimSuccess.transactionHash.slice(-8)}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span className="font-bold truncate">
+              Sent +{claimSuccess.issuedTokenAmount} $LABAS to your wallet!
+            </span>
           </div>
+          <a
+            href={claimSuccess.explorerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-900 shrink-0"
+          >
+            <span>Explorer</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
         </div>
       )}
 
-      {/* Recent On-Chain Claim Audit Trail */}
+      {/* Action Button */}
+      <button
+        type="button"
+        onClick={onClaimTokens}
+        disabled={!isButtonEnabled}
+        className={`mt-4 w-full rounded-2xl py-3 px-4 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all ${
+          isClaiming
+            ? 'bg-amber-500 text-white cursor-wait'
+            : isButtonEnabled
+            ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs'
+            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+        }`}
+      >
+        {isClaiming ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Confirming on Stellar Mainnet...</span>
+          </>
+        ) : (
+          <>
+            <span>Convert XP to $LABAS</span>
+            <ArrowUpRight className="h-4 w-4" />
+          </>
+        )}
+      </button>
+
+      {/* Compact Recent Claims (only visible if user has past claims) */}
       {claimHistory.length > 0 && (
-        <div className="px-4 pb-4 sm:px-6 sm:pb-5 pt-2 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
-            <History className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Stellar Mainnet Audit Trail</span>
+        <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <History className="w-3 h-3" />
+            <span>Recent Claims</span>
           </div>
-          <div className="space-y-1.5 max-h-36 overflow-y-auto">
-            {claimHistory.slice(0, 4).map((item) => (
-              <div
-                key={item.id || item.transactionHash}
-                className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs"
+          {claimHistory.slice(0, 2).map((item) => (
+            <div
+              key={item.id || item.transactionHash}
+              className="flex items-center justify-between text-xs text-slate-600"
+            >
+              <span className="font-bold text-emerald-700">
+                +{item.tokenAmount} ${item.assetCode || 'LABAS'} ({item.xpClaimed} XP)
+              </span>
+              <a
+                href={
+                  item.explorerUrl ||
+                  `https://stellar.expert/explorer/public/tx/${item.transactionHash}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-400 hover:text-emerald-600"
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-black text-emerald-700 shrink-0">
-                    +{item.tokenAmount} ${item.assetCode || 'LABAS'}
-                  </span>
-                  <span className="text-[11px] text-slate-500 font-semibold shrink-0">
-                    ({item.xpClaimed} XP)
-                  </span>
-                  <span className="text-[10px] text-slate-400 truncate hidden sm:inline">
-                    {new Date(item.timestamp).toLocaleDateString()}
-                  </span>
-                </div>
-                <a
-                  href={
-                    item.explorerUrl ||
-                    `https://stellar.expert/explorer/public/tx/${item.transactionHash}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 shrink-0"
-                >
-                  <span className="font-mono">
-                    {item.transactionHash.slice(0, 6)}...{item.transactionHash.slice(-4)}
-                  </span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            ))}
-          </div>
+                <span>{item.transactionHash.slice(0, 8)}...</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          ))}
         </div>
       )}
     </section>
@@ -628,7 +475,7 @@ export const MilestonesSection: React.FC<{
 }> = () => null;
 
 /* ============================================================================
- * COMPLETE COHESIVE PROFILE & STELLAR REWARDS SCREEN (ProfileDashboard)
+ * MINIMALIST, CLEAN PROFILE PAGE (ProfileDashboard)
  * ========================================================================== */
 export const ProfileDashboard: React.FC = () => {
   const {
@@ -708,7 +555,6 @@ export const ProfileDashboard: React.FC = () => {
   const tierConfig = LEAGUE_TIERS[userTier] || LEAGUE_TIERS['Geležis'];
 
   const streakDays = progress.streakDays ?? progress.streak ?? 1;
-  const voiceDrillsCount = progress.voiceDrillsCompleted || 0;
   const linkedWallet = progress.stellarPublicKey || null;
 
   const canMeetMinThreshold = xpBalance >= MIN_CLAIM_XP;
@@ -720,53 +566,6 @@ export const ProfileDashboard: React.FC = () => {
     100,
     Math.round((xpBalance / MIN_CLAIM_XP) * 100)
   );
-
-  const achievements = [
-    {
-      id: 'first_lesson',
-      title: 'First Step',
-      desc: 'Complete 1 lesson',
-      isUnlocked: completedCount >= 1,
-      current: Math.min(1, completedCount),
-      max: 1,
-      progressText: `${Math.min(1, completedCount)} / 1`,
-      reward: '+10 💎',
-      icon: '🌱',
-    },
-    {
-      id: 'streak_master',
-      title: 'Lithuanian Flame',
-      desc: 'Active study streak',
-      isUnlocked: streakDays >= 1,
-      current: Math.min(1, streakDays),
-      max: 1,
-      progressText: `${Math.min(1, streakDays)} / 1 day`,
-      reward: '+15 💎',
-      icon: '🔥',
-    },
-    {
-      id: 'xp_warrior',
-      title: 'Centurion',
-      desc: 'Earn 50 XP in journey',
-      isUnlocked: lifetimeXp >= 50,
-      current: Math.min(50, lifetimeXp),
-      max: 50,
-      progressText: `${Math.min(50, lifetimeXp)} / 50 XP`,
-      reward: '+20 💎',
-      icon: '⚡',
-    },
-    {
-      id: 'unit_champion',
-      title: 'Vilnius Expert',
-      desc: 'Complete 3 lessons',
-      isUnlocked: completedCount >= 3,
-      current: Math.min(3, completedCount),
-      max: 3,
-      progressText: `${Math.min(3, completedCount)} / 3`,
-      reward: '+25 💎',
-      icon: '🏰',
-    },
-  ];
 
   useEffect(() => {
     if (progress.stellarPublicKey) {
@@ -854,7 +653,7 @@ export const ProfileDashboard: React.FC = () => {
 
     if (!STELLAR_PUBKEY_REGEX.test(cleaned)) {
       setWalletInputError(
-        'Please enter a valid 56-character Stellar Mainnet public key starting with "G". (Never enter your secret "S" key!)'
+        'Please enter a valid 56-character Stellar Mainnet public key starting with "G".'
       );
       sounds.playError();
       return;
@@ -888,7 +687,7 @@ export const ProfileDashboard: React.FC = () => {
 
     if (!canMeetMinThreshold) {
       setClaimError({
-        message: `Minimum conversion threshold is ${MIN_CLAIM_XP} XP (5 $LABAS). Complete lessons or Aistė voice drills to reach ${MIN_CLAIM_XP} XP!`,
+        message: `Minimum conversion threshold is ${MIN_CLAIM_XP} XP (5 $LABAS).`,
         code: 'insufficient_xp',
       });
       return;
@@ -919,7 +718,7 @@ export const ProfileDashboard: React.FC = () => {
         setClaimError({
           message:
             data.error ||
-            'Could not complete $LABAS token transfer on Stellar Mainnet. Your XP balance remains intact.',
+            'Could not complete $LABAS token transfer on Stellar Mainnet.',
           code: data.errorCode || null,
           issuerPublicKey: data.issuerPublicKey || trustlineState.issuerPublicKey,
           assetCode: data.assetCode || 'LABAS',
@@ -949,8 +748,8 @@ export const ProfileDashboard: React.FC = () => {
 
       try {
         confetti({
-          particleCount: 75,
-          spread: 65,
+          particleCount: 70,
+          spread: 60,
           origin: { y: 0.6 },
         });
       } catch {
@@ -971,9 +770,9 @@ export const ProfileDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-3 sm:p-5 pb-24 md:pb-10">
-      <div className="mx-auto max-w-4xl flex flex-col gap-3.5">
-        {/* 1. Hero Profile Card */}
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 pb-24 md:pb-10">
+      <div className="mx-auto max-w-2xl flex flex-col gap-4">
+        {/* 1. Profile Identity, Progress & Core Stats */}
         <ProfileHeader
           displayName={displayName}
           level={level}
@@ -981,31 +780,35 @@ export const ProfileDashboard: React.FC = () => {
           completedCount={completedCount}
           totalCount={totalCount}
           completionPercent={completionPercent}
+          tierName={tierConfig.englishName}
+          tierIcon={tierConfig.icon}
+          streakDays={streakDays}
+          timeLearnedFormatted={formatTimeLearned(totalPracticeSeconds)}
+          wordsMasteredCount={wordsMasteredCount}
+          duelsWonCount={duelsWonCount}
+          onOpenNotifications={() => {
+            sounds.playClick();
+            setShowNotificationModal(true);
+          }}
           onOpenSettings={() => {
             sounds.playClick();
             setShowSettingsModal(true);
           }}
         />
 
-        {/* 2. Stellar Mainnet ($LABAS) Executive Fintech Vault & Habits Card */}
+        {/* 2. Clean $LABAS Rewards Card */}
         <StellarRewardsCard
           xpBalance={xpBalance}
-          lifetimeXp={lifetimeXp}
           claimableLabasTokens={claimableLabasTokens}
           convertibleXp={convertibleXp}
           canMeetMinThreshold={canMeetMinThreshold}
           thresholdProgressPercent={thresholdProgressPercent}
-          totalLabasClaimed={progress.totalLabasClaimed || 0}
           linkedWallet={linkedWallet}
-          trustlineState={trustlineState}
           isClaiming={isClaiming}
           claimError={claimError}
           claimSuccess={claimSuccess}
           claimHistory={claimHistory}
           copiedKey={copiedKey}
-          streakDays={streakDays}
-          wordsMasteredCount={wordsMasteredCount}
-          voiceDrillsCount={voiceDrillsCount}
           onOpenWalletModal={() => {
             sounds.playClick();
             setWalletInput(linkedWallet || '');
@@ -1017,211 +820,34 @@ export const ProfileDashboard: React.FC = () => {
           onCopyText={handleCopyText}
         />
 
-        {/* 3. Total Immersion Dashboard */}
-        <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-4 shadow-xs">
-          <div className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2.5 flex items-center gap-2">
-            <LithuanianFlagEmblem size="sm" className="!h-4 !w-4 border" />
-            <span>Total Immersion</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
-              <span className="text-lg sm:text-xl mb-0.5">⏱️</span>
-              <span className="text-base sm:text-lg font-black text-slate-900 leading-tight tabular-nums">
-                {formatTimeLearned(totalPracticeSeconds)}
-              </span>
-              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
-                Time Learned
-              </span>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
-              <span className="text-lg sm:text-xl mb-0.5">📚</span>
-              <span className="text-base sm:text-lg font-black text-slate-900 leading-tight tabular-nums">
-                {wordsMasteredCount}
-              </span>
-              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
-                Words Mastered
-              </span>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
-              <span className="text-lg sm:text-xl mb-0.5">⚔️</span>
-              <span className="text-base sm:text-lg font-black text-slate-900 leading-tight tabular-nums">
-                {duelsWonCount}
-              </span>
-              <span className="text-[11px] font-semibold text-slate-500 mt-0.5">
-                Duels Won
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 4. League & Speed Drill Highlights */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2.5 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 border border-amber-300/60 text-xl">
-              {tierConfig.icon}
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block truncate">
-                Current League
-              </span>
-              <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                Rank #{progress.leagueRank || 4} • {tierConfig.englishName}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2.5 p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 border border-indigo-300/60 text-xl">
-              ⏱️
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block truncate">
-                60s Speed Drill
-              </span>
-              <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                Best: {progress.speedDrillHighScore || 0} pts
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 5. Achievements Strip */}
-        <div>
-          <div className="flex items-center gap-1.5 mb-2 text-xs font-black uppercase tracking-wider text-slate-600">
-            <span>🏅</span>
-            <span>Achievements</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {achievements.map((item) => {
-              const progressPercent = Math.min(100, Math.round((item.current / item.max) * 100));
-              return (
-                <div
-                  key={item.id}
-                  className={`p-3 rounded-2xl border-2 flex flex-col justify-between transition-all ${
-                    item.isUnlocked
-                      ? 'bg-gradient-to-b from-amber-50/80 to-white border-amber-300 shadow-2xs'
-                      : 'bg-white border-slate-200/90 opacity-85'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 ${
-                        item.isUnlocked
-                          ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xs ring-2 ring-amber-200'
-                          : 'bg-slate-100 text-slate-400 border border-slate-200'
-                      }`}
-                    >
-                      {item.icon}
-                    </div>
-
-                    <span className="text-[10px] font-black text-amber-700 bg-amber-100/70 px-1.5 py-0.5 rounded-md">
-                      {item.reward}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-black text-slate-900 truncate mt-2">
-                      {item.title}
-                    </h4>
-                    <p className="text-[10px] text-slate-500 font-medium truncate">
-                      {item.desc}
-                    </p>
-                  </div>
-
-                  <div>
-                    {item.isUnlocked ? (
-                      <div className="text-[10px] font-black text-emerald-600 flex items-center gap-1 mt-2">
-                        <span>✓</span>
-                        <span>Unlocked</span>
-                      </div>
-                    ) : (
-                      <div className="mt-2">
-                        <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-amber-500 transition-all duration-300"
-                            style={{ width: `${progressPercent}%` }}
-                          />
-                        </div>
-                        <p className="text-[9px] font-bold text-slate-400 mt-0.5 text-right">
-                          {item.progressText}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 6. Offline Audio Utility Tile */}
+        {/* 3. Simple Utility Footer (Offline Audio + Community) */}
         <OfflineAudioPackCard />
 
-        {/* 7. Notifications & WhatsApp Community Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              setShowNotificationModal(true);
-            }}
-            className="bg-white border-2 border-slate-200/90 rounded-2xl px-4 py-3 flex items-center justify-between shadow-2xs hover:border-indigo-300 transition-all text-left cursor-pointer group w-full"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <BellRing className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-xs font-black text-slate-800">
-                  Notifications & Reminders
-                </h3>
-                <p className="text-[10px] text-slate-500 font-semibold">
-                  Daily study & streak protection alerts
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
-          </button>
-
-          <a
-            href="https://api.whatsapp.com/send?text=Labas!%20I%20am%20learning%20Lithuanian%20on%20LabasApp%20and%20would%20like%20to%20connect%20with%20other%20learners!"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              logEvent({
-                eventType: 'WHATSAPP_LEAD_CLICK',
-                path: '/profile',
-                metadata: { placement: 'profile_community_card' },
-              });
-            }}
-            className="bg-white border-2 border-emerald-200/90 rounded-2xl px-4 py-3 flex items-center justify-between shadow-2xs hover:border-emerald-400 transition-all text-left cursor-pointer group w-full"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <MessageCircle className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-xs font-black text-slate-800">
-                  Lithuanian Learners on WhatsApp
-                </h3>
-                <p className="text-[10px] text-emerald-700 font-bold">
-                  Connect with native speakers & peers
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:text-emerald-700 transition-colors shrink-0" />
-          </a>
-        </div>
+        <a
+          href="https://api.whatsapp.com/send?text=Labas!%20I%20am%20learning%20Lithuanian%20on%20LabasApp%20and%20would%20like%20to%20connect%20with%20other%20learners!"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => {
+            logEvent({
+              eventType: 'WHATSAPP_LEAD_CLICK',
+              path: '/profile',
+              metadata: { placement: 'profile_community_card' },
+            });
+          }}
+          className="rounded-2xl bg-white border border-slate-200/90 px-4 py-3 flex items-center justify-between hover:border-emerald-300 transition-colors text-xs font-bold text-slate-700"
+        >
+          <span className="flex items-center gap-2.5">
+            <MessageCircle className="h-4 w-4 text-emerald-600" />
+            <span>Join Lithuanian Learners on WhatsApp</span>
+          </span>
+          <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+        </a>
       </div>
 
-      {/* Stellar Mainnet Wallet Modal */}
+      {/* Stellar Wallet Modal */}
       {showWalletModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-2xl relative animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
             <button
               type="button"
               onClick={() => setShowWalletModal(false)}
@@ -1231,28 +857,22 @@ export const ProfileDashboard: React.FC = () => {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-emerald-400 shrink-0">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
                 <StellarMark className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="font-black text-slate-900 text-base">
-                  Connect Stellar Mainnet Wallet
+                  Stellar Mainnet Wallet
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Enter your public G... address for instant $LABAS payouts
+                  Enter your public G... address to receive $LABAS
                 </p>
               </div>
             </div>
 
             <form onSubmit={handleSaveWallet} className="space-y-4">
               <div>
-                <label
-                  htmlFor="stellar-mainnet-wallet-input"
-                  className="block text-xs font-extrabold text-slate-700 mb-1.5"
-                >
-                  Stellar Mainnet Public Key (Starts with G)
-                </label>
                 <input
                   id="stellar-mainnet-wallet-input"
                   type="text"
@@ -1264,59 +884,38 @@ export const ProfileDashboard: React.FC = () => {
                   placeholder="G..."
                   autoComplete="off"
                   spellCheck={false}
-                  className="w-full rounded-2xl border-2 border-slate-200 focus:border-emerald-500 focus:outline-none px-3.5 py-2.5 text-xs font-mono text-slate-900 bg-slate-50"
+                  className="w-full rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-none px-3.5 py-2.5 text-xs font-mono text-slate-900 bg-slate-50"
                 />
                 {walletInputError && (
-                  <p className="mt-1.5 text-xs font-bold text-rose-600">
+                  <p className="mt-1.5 text-xs font-semibold text-rose-600">
                     {walletInputError}
                   </p>
                 )}
               </div>
 
-              <div className="rounded-2xl bg-amber-50/90 border border-amber-200 p-3.5 text-[11px] text-amber-950 space-y-1.5">
-                <div className="font-black text-amber-900 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Required: Establish $LABAS Trustline</span>
+              <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3 text-[11px] text-slate-600 space-y-1">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Add the $LABAS Trustline in your wallet</span>
                 </div>
-                <p className="leading-relaxed text-amber-900/90">
-                  Before receiving tokens on the Stellar Public Network, add a trustline for{' '}
-                  <strong>$LABAS</strong> in your wallet (Lobstr, Freighter, xBull). Never enter
-                  your private S... secret seed.
+                <p className="leading-relaxed text-slate-500">
+                  Make sure your Stellar wallet (Lobstr, Freighter, xBull) has a trustline for{' '}
+                  <strong>LABAS</strong>. Never enter your secret S... key.
                 </p>
-                {trustlineState.issuerPublicKey && (
-                  <div className="pt-1 flex items-center justify-between gap-2 bg-white rounded-xl px-2.5 py-1.5 border border-amber-200">
-                    <span className="font-mono text-[10px] truncate">
-                      Issuer: {trustlineState.issuerPublicKey}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCopyText(trustlineState.issuerPublicKey!, 'modal-issuer')
-                      }
-                      className="text-amber-800 hover:text-amber-950 font-bold inline-flex items-center gap-1 shrink-0 cursor-pointer"
-                    >
-                      {copiedKey === 'modal-issuer' ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-                )}
               </div>
 
-              <div className="flex items-center gap-2.5 pt-1">
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setShowWalletModal(false)}
-                  className="flex-1 rounded-2xl border-2 border-slate-200 py-2.5 px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="flex-1 rounded-xl border border-slate-200 py-2.5 px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingWallet}
-                  className="flex-1 btn-3d btn-green-3d py-2.5 px-4 text-xs font-black text-white flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 px-4 text-xs font-bold text-white flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {isSavingWallet ? (
                     <>
@@ -1324,7 +923,7 @@ export const ProfileDashboard: React.FC = () => {
                       <span>Saving...</span>
                     </>
                   ) : (
-                    <span>Save Mainnet Wallet</span>
+                    <span>Save Wallet</span>
                   )}
                 </button>
               </div>
@@ -1336,7 +935,7 @@ export const ProfileDashboard: React.FC = () => {
       {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-sm rounded-3xl bg-white border-2 border-slate-200 p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-sm rounded-3xl bg-white border border-slate-200 p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
             <button
               type="button"
               onClick={() => setShowSettingsModal(false)}
@@ -1346,28 +945,16 @@ export const ProfileDashboard: React.FC = () => {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                <Settings className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-black text-slate-900 text-base">
-                  Settings & Practice State
-                </h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Adjust practice state & hearts
-                </p>
-              </div>
-            </div>
+            <h3 className="font-black text-slate-900 text-base mb-4">Settings</h3>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <button
                 type="button"
                 onClick={() => {
                   refillHearts();
                   sounds.playSuccess();
                 }}
-                className="w-full btn-3d btn-green-3d py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Heart className="h-4 w-4 fill-white" />
                 <span>Refill 5 Hearts</span>
@@ -1382,7 +969,7 @@ export const ProfileDashboard: React.FC = () => {
                     setShowSettingsModal(false);
                   }
                 }}
-                className="w-full rounded-2xl border-2 border-rose-200 py-2.5 px-4 font-bold text-rose-600 hover:bg-rose-50 text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full rounded-xl border border-rose-200 py-2.5 px-4 font-bold text-rose-600 hover:bg-rose-50 text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <RotateCcw className="h-4 w-4" />
                 <span>Reset All Progress</span>
