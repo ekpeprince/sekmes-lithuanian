@@ -104,8 +104,13 @@ export const RewardsDashboard: React.FC = () => {
   const streakDays = progress.streakDays ?? progress.streak ?? 1;
   const linkedWallet = progress.stellarPublicKey || null;
 
-  // Calculate convertible XP & $LABAS tokens (100 XP = 1 $LABAS, min 500 XP)
-  const canMeetMinThreshold = xpBalance >= MIN_CLAIM_XP;
+  // Calculate internal $LABAS balance (100 XP = 1 $LABAS, accumulated automatically)
+  const internalLabasBalance =
+    typeof progress.internalLabasBalance === 'number'
+      ? Math.max(progress.internalLabasBalance, Number((xpBalance / XP_PER_LABAS).toFixed(4)))
+      : Number((xpBalance / XP_PER_LABAS).toFixed(4));
+
+  const canMeetMinThreshold = xpBalance >= MIN_CLAIM_XP || internalLabasBalance >= MIN_CLAIM_XP / XP_PER_LABAS;
   const convertibleXp = canMeetMinThreshold
     ? Math.floor(xpBalance / XP_PER_LABAS) * XP_PER_LABAS
     : 0;
@@ -229,7 +234,7 @@ export const RewardsDashboard: React.FC = () => {
       void saveProgressToCloud(user.uid, progress, user.email);
 
       const idToken = await user.getIdToken();
-      const response = await fetch('/api/rewards/claim-xp', {
+      const response = await fetch('/api/stellar/withdraw', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,6 +244,7 @@ export const RewardsDashboard: React.FC = () => {
           stellarPublicKey: linkedWallet,
           xpToConvert: convertibleXp,
           clientXpBalance: xpBalance,
+          clientInternalLabasBalance: internalLabasBalance,
         }),
       });
 
@@ -249,7 +255,7 @@ export const RewardsDashboard: React.FC = () => {
         setClaimError({
           message:
             data.error ||
-            'Could not complete $LABAS token transfer on Stellar Mainnet. Your XP was not deducted.',
+            'Could not complete $LABAS withdrawal on Stellar Mainnet. Your balance was not deducted.',
           code: data.errorCode || null,
           issuerPublicKey: data.issuerPublicKey || trustlineState.issuerPublicKey,
           assetCode: data.assetCode || 'LABAS',
@@ -261,9 +267,11 @@ export const RewardsDashboard: React.FC = () => {
       if (data.claimRecord) {
         applyXpClaim({
           newXpBalance: data.updatedXpBalance,
+          newInternalLabasBalance: data.updatedInternalLabasBalance,
           tokensIssued: data.issuedTokenAmount,
           claimRecord: data.claimRecord,
           stellarPublicKey: linkedWallet,
+          walletActivated: true,
         });
         setClaimHistory((prev) => [data.claimRecord, ...prev].slice(0, 15));
       }
@@ -371,20 +379,20 @@ export const RewardsDashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* 2. Convertible $LABAS Equivalent */}
+        {/* 2. Internal $LABAS Balance */}
         <div className="rounded-2xl bg-emerald-50/70 border border-emerald-200/80 p-3 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[11px] font-bold text-emerald-700">
-            <span>Claimable Reward</span>
+            <span>Internal $LABAS Balance</span>
             <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-600" />
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="text-xl font-black text-emerald-900">
-              {claimableLabasTokens}
+              {internalLabasBalance.toFixed(2)}
             </span>
             <span className="text-xs font-black text-emerald-700">$LABAS</span>
           </div>
           <p className="text-[10px] font-semibold text-emerald-700/80 mt-0.5">
-            Rate: 100 XP = 1 $LABAS (Min 500 XP)
+            Auto-earned: 100 XP = 1 $LABAS
           </p>
         </div>
 

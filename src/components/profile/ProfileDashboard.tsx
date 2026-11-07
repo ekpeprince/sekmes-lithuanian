@@ -210,11 +210,13 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
  * ========================================================================== */
 interface StellarRewardsCardProps {
   xpBalance: number;
+  internalLabasBalance: number;
   claimableLabasTokens: number;
   convertibleXp: number;
   canMeetMinThreshold: boolean;
   thresholdProgressPercent: number;
   linkedWallet: string | null;
+  walletActivated: boolean;
   isClaiming: boolean;
   claimError: {
     message: string;
@@ -239,11 +241,13 @@ interface StellarRewardsCardProps {
 
 export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
   xpBalance,
+  internalLabasBalance,
   claimableLabasTokens,
   convertibleXp,
   canMeetMinThreshold,
   thresholdProgressPercent,
   linkedWallet,
+  walletActivated,
   isClaiming,
   claimError,
   claimSuccess,
@@ -254,7 +258,7 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
   onDismissError,
   onCopyText,
 }) => {
-  const isButtonEnabled = Boolean(linkedWallet && canMeetMinThreshold && !isClaiming);
+  const isWithdrawReady = Boolean(linkedWallet && canMeetMinThreshold && !isClaiming);
 
   return (
     <section
@@ -270,14 +274,14 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm sm:text-base font-black text-slate-900">
-                $LABAS Rewards
+                $LABAS Balance
               </h2>
               <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                Mainnet
+                {walletActivated ? 'Mainnet Active' : 'Gasless Hybrid'}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium">
-              100 XP = 1 $LABAS • Min. 500 XP
+              Auto-earned (100 XP = 1 $LABAS) • Withdraw at 5.00 $LABAS
             </p>
           </div>
         </div>
@@ -297,16 +301,16 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
               {linkedWallet.slice(0, 5)}...{linkedWallet.slice(-4)}
             </span>
           ) : (
-            <span>Connect Wallet</span>
+            <span>Link G-Address</span>
           )}
         </button>
       </div>
 
-      {/* Simple Balance Summary & Progress */}
+      {/* Zero-Friction Internal Balance Summary */}
       <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-semibold text-slate-400 block">
-            Available XP
+            Earned XP
           </span>
           <span className="text-2xl font-black text-slate-900 tabular-nums">
             {xpBalance.toLocaleString()}{' '}
@@ -316,25 +320,25 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
 
         <div className="text-right">
           <span className="text-[11px] font-semibold text-slate-400 block">
-            Claimable Reward
+            Internal $LABAS Balance
           </span>
           <span className="text-2xl font-black text-emerald-600 tabular-nums">
-            {claimableLabasTokens.toFixed(2)}{' '}
+            {internalLabasBalance.toFixed(2)}{' '}
             <span className="text-xs font-bold text-emerald-600">$LABAS</span>
           </span>
         </div>
       </div>
 
-      {/* Single Clean Progress Bar toward 500 XP */}
+      {/* Single Clean Progress Bar toward 500 XP (5.00 $LABAS) Withdrawal Threshold */}
       <div className="mt-4">
         <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
           <span>
             {canMeetMinThreshold
-              ? `Ready to convert ${convertibleXp} XP`
-              : `${MIN_CLAIM_XP - xpBalance} XP needed to unlock payout`}
+              ? `Ready to withdraw ${claimableLabasTokens.toFixed(2)} $LABAS (${convertibleXp} XP)`
+              : `Earn ${((MIN_CLAIM_XP - xpBalance) / XP_PER_LABAS).toFixed(2)} more $LABAS (${MIN_CLAIM_XP - xpBalance} XP) to withdraw`}
           </span>
           <span className="text-slate-600 font-bold tabular-nums">
-            {Math.min(xpBalance, MIN_CLAIM_XP)} / {MIN_CLAIM_XP} XP
+            {Math.min(internalLabasBalance, MIN_CLAIM_XP / XP_PER_LABAS).toFixed(2)} / {(MIN_CLAIM_XP / XP_PER_LABAS).toFixed(2)} $LABAS
           </span>
         </div>
         <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -411,12 +415,14 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
       {/* Action Button */}
       <button
         type="button"
-        onClick={onClaimTokens}
-        disabled={!isButtonEnabled}
+        onClick={!linkedWallet ? onOpenWalletModal : onClaimTokens}
+        disabled={Boolean(linkedWallet && (!canMeetMinThreshold || isClaiming))}
         className={`mt-4 w-full rounded-2xl py-3 px-4 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all ${
           isClaiming
             ? 'bg-amber-500 text-white cursor-wait'
-            : isButtonEnabled
+            : !linkedWallet
+            ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer shadow-xs'
+            : isWithdrawReady
             ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs'
             : 'bg-slate-100 text-slate-400 cursor-not-allowed'
         }`}
@@ -424,11 +430,16 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
         {isClaiming ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Confirming on Stellar Mainnet...</span>
+            <span>Sponsoring & Confirming on Stellar Mainnet...</span>
+          </>
+        ) : !linkedWallet ? (
+          <>
+            <Wallet className="h-4 w-4 text-emerald-400" />
+            <span>Link G-Address to Withdraw to Mainnet</span>
           </>
         ) : (
           <>
-            <span>Convert XP to $LABAS</span>
+            <span>Withdraw to Mainnet</span>
             <ArrowUpRight className="h-4 w-4" />
           </>
         )}
@@ -557,8 +568,14 @@ export const ProfileDashboard: React.FC = () => {
 
   const streakDays = progress.streakDays ?? progress.streak ?? 1;
   const linkedWallet = progress.stellarPublicKey || null;
+  const walletActivated = Boolean(progress.walletActivated || trustlineState.hasTrustline);
 
-  const canMeetMinThreshold = xpBalance >= MIN_CLAIM_XP;
+  const internalLabasBalance =
+    typeof progress.internalLabasBalance === 'number'
+      ? Math.max(progress.internalLabasBalance, Number((xpBalance / XP_PER_LABAS).toFixed(4)))
+      : Number((xpBalance / XP_PER_LABAS).toFixed(4));
+
+  const canMeetMinThreshold = xpBalance >= MIN_CLAIM_XP || internalLabasBalance >= MIN_CLAIM_XP / XP_PER_LABAS;
   const convertibleXp = canMeetMinThreshold
     ? Math.floor(xpBalance / XP_PER_LABAS) * XP_PER_LABAS
     : 0;
@@ -601,7 +618,7 @@ export const ProfileDashboard: React.FC = () => {
     setTrustlineState((prev) => ({ ...prev, checking: true }));
     try {
       const res = await fetch(
-        `/api/rewards/claim-xp?publicKey=${encodeURIComponent(pubKey.trim())}`,
+        `/api/stellar/withdraw?publicKey=${encodeURIComponent(pubKey.trim())}`,
         { cache: 'no-store' }
       );
       const data = await res.json();
@@ -674,7 +691,7 @@ export const ProfileDashboard: React.FC = () => {
       void saveProgressToCloud(user.uid, progress, user.email);
 
       const idToken = await user.getIdToken();
-      const response = await fetch('/api/rewards/claim-xp', {
+      const response = await fetch('/api/stellar/withdraw', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -684,6 +701,7 @@ export const ProfileDashboard: React.FC = () => {
           stellarPublicKey: linkedWallet,
           xpToConvert: convertibleXp,
           clientXpBalance: xpBalance,
+          clientInternalLabasBalance: internalLabasBalance,
         }),
       });
 
@@ -694,7 +712,7 @@ export const ProfileDashboard: React.FC = () => {
         setClaimError({
           message:
             data.error ||
-            'Could not complete $LABAS token transfer on Stellar Mainnet.',
+            'Could not complete $LABAS withdrawal on Stellar Mainnet.',
           code: data.errorCode || null,
           issuerPublicKey: data.issuerPublicKey || trustlineState.issuerPublicKey,
           assetCode: data.assetCode || 'LABAS',
@@ -705,9 +723,11 @@ export const ProfileDashboard: React.FC = () => {
       if (data.claimRecord) {
         applyXpClaim({
           newXpBalance: data.updatedXpBalance,
+          newInternalLabasBalance: data.updatedInternalLabasBalance,
           tokensIssued: data.issuedTokenAmount,
           claimRecord: data.claimRecord,
           stellarPublicKey: linkedWallet,
+          walletActivated: true,
         });
         setClaimHistory((prev) => [data.claimRecord, ...prev].slice(0, 15));
       }
@@ -775,11 +795,13 @@ export const ProfileDashboard: React.FC = () => {
         {/* 2. Clean $LABAS Rewards Card */}
         <StellarRewardsCard
           xpBalance={xpBalance}
+          internalLabasBalance={internalLabasBalance}
           claimableLabasTokens={claimableLabasTokens}
           convertibleXp={convertibleXp}
           canMeetMinThreshold={canMeetMinThreshold}
           thresholdProgressPercent={thresholdProgressPercent}
           linkedWallet={linkedWallet}
+          walletActivated={walletActivated}
           isClaiming={isClaiming}
           claimError={claimError}
           claimSuccess={claimSuccess}

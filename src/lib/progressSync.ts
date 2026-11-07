@@ -27,6 +27,11 @@ export async function saveProgressToCloud(
   try {
     const userRef = doc(db, 'users', userId);
     const xpBalance = typeof progress.xpBalance === 'number' ? progress.xpBalance : progress.xp;
+    const internalLabasBalance =
+      typeof progress.internalLabasBalance === 'number'
+        ? progress.internalLabasBalance
+        : Number((Math.max(0, xpBalance) / 100).toFixed(4));
+    const walletActivated = Boolean(progress.walletActivated);
     const lifetimeXpEarned = Math.max(
       progress.lifetimeXpEarned || 0,
       xpBalance,
@@ -37,6 +42,8 @@ export async function saveProgressToCloud(
       uid: userId,
       stellarPublicKey: progress.stellarPublicKey ?? null,
       xpBalance,
+      internalLabasBalance,
+      walletActivated,
       lifetimeXpEarned,
       streakDays: progress.streakDays ?? progress.streak ?? 1,
       lastClaimTimestamp: progress.lastClaimTimestamp ?? null,
@@ -45,6 +52,8 @@ export async function saveProgressToCloud(
       progress: {
         xp: xpBalance,
         xpBalance,
+        internalLabasBalance,
+        walletActivated,
         lifetimeXpEarned,
         hearts: progress.hearts,
         maxHearts: progress.maxHearts,
@@ -110,9 +119,25 @@ export async function loadProgressFromCloud(
           ? nested.lifetimeXpEarned
           : topXpBalance;
 
+      const topInternalLabas =
+        typeof data.internalLabasBalance === 'number'
+          ? data.internalLabasBalance
+          : typeof nested.internalLabasBalance === 'number'
+          ? nested.internalLabasBalance
+          : topXpBalance !== undefined
+          ? Number((Math.max(0, topXpBalance) / 100).toFixed(4))
+          : undefined;
+
+      const topWalletActivated =
+        typeof data.walletActivated === 'boolean'
+          ? data.walletActivated
+          : Boolean(nested.walletActivated);
+
       return {
         ...nested,
         ...(topXpBalance !== undefined ? { xp: topXpBalance, xpBalance: topXpBalance } : {}),
+        ...(topInternalLabas !== undefined ? { internalLabasBalance: topInternalLabas } : {}),
+        walletActivated: topWalletActivated,
         ...(topLifetimeXp !== undefined ? { lifetimeXpEarned: topLifetimeXp } : {}),
         stellarPublicKey:
           data.stellarPublicKey !== undefined

@@ -63,9 +63,11 @@ interface GameContextType {
   setStellarWallet: (stellarPublicKey: string | null) => Promise<void>;
   applyXpClaim: (params: {
     newXpBalance: number;
+    newInternalLabasBalance?: number;
     tokensIssued: number;
     claimRecord: TokenClaimRecord;
     stellarPublicKey: string;
+    walletActivated?: boolean;
   }) => void;
   recordVoiceDrill: (xpEarned?: number, phraseId?: string) => void;
 }
@@ -127,12 +129,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             mergedXpBalance
           );
 
+          const mergedInternalLabas = hasCloudClaim && typeof cloudProg.internalLabasBalance === 'number'
+            ? cloudProg.internalLabasBalance
+            : Number((Math.max(0, mergedXpBalance) / 100).toFixed(4));
+
           const mergedStreak = Math.max(prev.streak, cloudProg.streak || 0);
           const merged: UserProgress = {
             ...prev,
             ...cloudProg,
             xp: mergedXpBalance,
             xpBalance: mergedXpBalance,
+            internalLabasBalance: mergedInternalLabas,
+            walletActivated: Boolean(cloudProg.walletActivated || prev.walletActivated),
             lifetimeXpEarned: mergedLifetimeXp,
             stellarPublicKey: cloudProg.stellarPublicKey ?? prev.stellarPublicKey ?? null,
             lastClaimTimestamp: cloudProg.lastClaimTimestamp ?? prev.lastClaimTimestamp ?? null,
@@ -337,9 +345,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const applyXpClaim = (params: {
     newXpBalance: number;
+    newInternalLabasBalance?: number;
     tokensIssued: number;
     claimRecord: TokenClaimRecord;
     stellarPublicKey: string;
+    walletActivated?: boolean;
   }) => {
     const updated = applyXpClaimToStorage(params);
     setProgress(updated);

@@ -101,6 +101,8 @@ export const DEFAULT_PROGRESS: UserProgress = {
   wordsMasteredCount: 0,
   stellarPublicKey: null,
   xpBalance: 0,
+  internalLabasBalance: 0,
+  walletActivated: false,
   lifetimeXpEarned: 0,
   streakDays: 1,
   lastClaimTimestamp: null,
@@ -108,6 +110,10 @@ export const DEFAULT_PROGRESS: UserProgress = {
   voiceDrillsCompleted: 0,
   claimHistory: [],
 };
+
+export function calculateInternalLabas(xpBalance: number): number {
+  return Number((Math.max(0, xpBalance) / 100).toFixed(4));
+}
 
 export function getStoredProgress(): UserProgress {
   if (typeof window === 'undefined') {
@@ -187,6 +193,18 @@ export function getStoredProgress(): UserProgress {
       wordsMasteredCount: parsed.wordsMasteredCount || 0,
       stellarPublicKey: parsed.stellarPublicKey ?? null,
       xpBalance: typeof parsed.xpBalance === 'number' ? parsed.xpBalance : (parsed.xp || 0),
+      internalLabasBalance:
+        typeof parsed.internalLabasBalance === 'number'
+          ? Math.max(
+              parsed.internalLabasBalance,
+              calculateInternalLabas(
+                typeof parsed.xpBalance === 'number' ? parsed.xpBalance : (parsed.xp || 0)
+              )
+            )
+          : calculateInternalLabas(
+              typeof parsed.xpBalance === 'number' ? parsed.xpBalance : (parsed.xp || 0)
+            ),
+      walletActivated: Boolean(parsed.walletActivated),
       lifetimeXpEarned: Math.max(
         parsed.lifetimeXpEarned || 0,
         typeof parsed.xpBalance === 'number' ? parsed.xpBalance : (parsed.xp || 0),
@@ -302,10 +320,12 @@ export function completeLesson(lessonId: string, xpEarned: number): UserProgress
   const currentDailyXp = current.dailyXpDate === today ? (current.dailyXp || 0) : 0;
   const nextDailyXp = currentDailyXp + xpEarned;
 
+  const nextXpBalance = (current.xpBalance ?? current.xp) + xpEarned;
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + xpEarned,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + xpEarned,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
@@ -370,12 +390,14 @@ export function resolveMistake(id: string): UserProgress {
     return q;
   });
 
+  const nextXpBalance = (current.xpBalance ?? current.xp) + earnedXp;
   const updated: UserProgress = {
     ...current,
     mistakesBank: updatedBank,
     quests: updatedQuests,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + earnedXp,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + earnedXp,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
@@ -408,12 +430,14 @@ export function recordSpeedDrillScore(score: number): UserProgress {
     return q;
   });
 
+  const nextXpBalance = (current.xpBalance ?? current.xp) + earnedXp;
   const updated: UserProgress = {
     ...current,
     speedDrillHighScore: nextHigh,
     quests: updatedQuests,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + earnedXp,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + earnedXp,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
@@ -440,10 +464,12 @@ export function claimQuestReward(questId: string): UserProgress {
   });
 
   const nextXp = current.xp + xpToAdd;
+  const nextXpBalance = (current.xpBalance ?? current.xp) + xpToAdd;
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + xpToAdd,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + xpToAdd,
     gems: current.gems + gemsToAdd,
     quests: updatedQuests,
@@ -465,11 +491,13 @@ export function claimMysteryChest(): {
   const bonusGems = 25;
   const streakFreezeAwarded = true;
   const nextXp = current.xp + bonusXp;
+  const nextXpBalance = (current.xpBalance ?? current.xp) + bonusXp;
 
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + bonusXp,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + bonusXp,
     gems: current.gems + bonusGems,
     streakFreezes: (current.streakFreezes ?? 1) + 1,
@@ -521,10 +549,12 @@ export function addXpStorage(amount: number): UserProgress {
     return q;
   });
 
+  const nextXpBalance = (current.xpBalance ?? current.xp) + amount;
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + amount,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + amount,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
@@ -552,10 +582,12 @@ export function recordBattleResult(earnedXp: number, isWin: boolean): UserProgre
     return q;
   });
 
+  const nextXpBalance = (current.xpBalance ?? current.xp) + earnedXp;
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + earnedXp,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + earnedXp,
     dailyXp: nextDailyXp,
     dailyXpDate: today,
@@ -580,16 +612,24 @@ export function setStellarWalletStorage(stellarPublicKey: string | null): UserPr
 
 export function applyXpClaimToStorage(params: {
   newXpBalance: number;
+  newInternalLabasBalance?: number;
   tokensIssued: number;
   claimRecord: TokenClaimRecord;
   stellarPublicKey: string;
+  walletActivated?: boolean;
 }): UserProgress {
   const current = getStoredProgress();
   const existingHistory = Array.isArray(current.claimHistory) ? current.claimHistory : [];
+  const nextInternalLabas =
+    typeof params.newInternalLabasBalance === 'number'
+      ? params.newInternalLabasBalance
+      : calculateInternalLabas(params.newXpBalance);
   const updated: UserProgress = {
     ...current,
     xp: params.newXpBalance,
     xpBalance: params.newXpBalance,
+    internalLabasBalance: nextInternalLabas,
+    walletActivated: params.walletActivated ?? true,
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp),
     stellarPublicKey: params.stellarPublicKey,
     lastClaimTimestamp: params.claimRecord.timestamp,
@@ -607,10 +647,12 @@ export function recordVoiceDrillStorage(xpEarned: number = 15): UserProgress {
   const nextXp = current.xp + xpEarned;
   const nextDailyXp = currentDailyXp + xpEarned;
 
+  const nextXpBalance = (current.xpBalance ?? current.xp) + xpEarned;
   const updated: UserProgress = {
     ...current,
     xp: nextXp,
-    xpBalance: (current.xpBalance ?? current.xp) + xpEarned,
+    xpBalance: nextXpBalance,
+    internalLabasBalance: calculateInternalLabas(nextXpBalance),
     lifetimeXpEarned: Math.max(current.lifetimeXpEarned ?? current.xp, current.xp) + xpEarned,
     dailyXp: nextDailyXp,
     dailyXpDate: today,

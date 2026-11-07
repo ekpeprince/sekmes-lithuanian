@@ -1,6 +1,7 @@
 import {
   Asset,
   BASE_FEE,
+  Claimant,
   Horizon,
   Keypair,
   Memo,
@@ -11,6 +12,9 @@ import {
   TransactionBuilder,
   TransactionFailedError,
 } from '@stellar/stellar-sdk';
+
+export const DEFAULT_ISSUER_PUBLIC_KEY =
+  'GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND';
 
 export const STELLAR_CONFIG = {
   get network() {
@@ -26,7 +30,11 @@ export const STELLAR_CONFIG = {
     return (process.env.ASSET_CODE || 'LABAS').trim();
   },
   get issuerPublicKey() {
-    return (process.env.ISSUER_PUBLIC_KEY || '').trim();
+    const envKey = (process.env.ISSUER_PUBLIC_KEY || '').trim();
+    if (envKey && !envKey.startsWith('<')) {
+      return envKey;
+    }
+    return DEFAULT_ISSUER_PUBLIC_KEY;
   },
 };
 
@@ -539,4 +547,138 @@ export async function submitLabasPayment({ destinationPublicKey, amount, memoTex
     explorerUrl: `https://stellar.expert/explorer/public/tx/${result.hash}`,
   };
 }
+
+/**
+ * Hybrid Gasless & Sponsored Withdrawal Execution:
+ * Uses the Issuer Keypair (GBF7L...) to transfer $LABAS to the user's public G-address.
+ * - If the user's account is already funded and has an active $LABAS trustline, submits a direct Operation.payment.
+ * - If the user's account requires a trustline or initial funding on Stellar Mainnet, builds a backend-sponsored
+ *   transaction (Operation.createClaimableBalance / Sponsored Reserves) so the user receives $LABAS on-chain
+ *   with zero onboarding friction.
+ */
+export async function submitSponsoredLabasWithdrawal({
+  destinationPublicKey,
+  amount,
+  memoText,
+  signedInnerTxXdr,
+}) {
+  if (typeof window !== 'undefined') {
+    throw new Error(
+      'submitSponsoredLabasWithdrawal must only be executed in a server-side environment.'
+    );
+  }
+
+  const configCheck = validateIssuerConfig();
+  if (!configCheck.valid) {
+    const err = new Error(configCheck.message || 'Invalid Stellar issuer configuration');
+    err.code = configCheck.errorCode;
+    throw err;
+  }
+
+  const cleanDestination = (destinationPublicKey || '').trim();
+  if (!isValidStellarPublicKey(cleanDestination)) {
+    const err = new Error(
+      'Invalid destination Stellar public key. Must be a valid 56-character G... address.'
+    );
+    err.code = 'invalid_destination';
+    throw err;
+  }
+
+  const issuerSecret = (process.env.ISSUER_SECRET_KEY || '').trim();
+  const issuerKeypair = Keypair.fromSecret(issuerSecret);
+  const signingPublicKey = issuerKeypair.publicKey();
+
+  const server = getHorizonServer();
+  const labasAsset = getLabasAsset();
+  const formattedAmount = formatStellarAmount(amount);
+  const networkPassphrase = getNetworkPassphrase();
+
+  // If the client provided a user-signed inner transaction XDR, wrap it in a native Stellar Fee-Bump transaction
+  // sponsored by the Issuer Keypair (GBF7L...)
+  if (signedInnerTxXdr && typeof signedInnerTxXdr === 'string') {
+    const innerTx = TransactionBuilder.fromXDR(signedInnerTxXdr, networkPassphrase);
+    const feeBumpTx = TransactionBuilder.buildFeeBumpTransaction(
+      issuerKeypair,
+      String(Number(BASE_FEE) * 3),
+      innerTx,
+      networkPassphrase
+    );
+    feeBumpTx.sign(issuerKeypair);
+    const feeBumpResult = await server.submitTransaction(feeBumpTx);
+
+    return {
+      hash: feeBumpResult.hash,
+      ledger: feeBumpResult.ledger,
+      amount: formattedAmount,
+      assetCode: STELLAR_CONFIG.assetCode,
+      issuerPublicKey: signingPublicKey,
+      destinationPublicKey: cleanDestination,
+      transferMode: 'direct_payment',
+      walletActivated: true,
+      explorerUrl: `https://stellar.expert/explorer/public/tx/${feeBumpResult.hash}`,
+    };
+  }
+
+  // Check whether the user's G-address already has an active trustline on Stellar Mainnet
+  const trustCheck = await verifyLabasTrustline(cleanDestination);
+  const sourceAccount = await server.loadAccount(signingPublicKey);
+
+  const safeMemo = String(memoText || 'LabasApp $LABAS Withdraw')
+    .replace(/[^\x20-\x7E]/g, '')
+    .slice(0, 28);
+
+  const txBuilder = new TransactionBuilder(sourceAccount, {
+    fee: String(Number(BASE_FEE) * 2),
+    networkPassphrase,
+  });
+
+  let transferMode = 'direct_payment';
+
+  if (trustCheck.accountExists && trustCheck.hasTrustline) {
+    // Direct Mainnet payment when account is active and trusts $LABAS
+    txBuilder.addOperation(
+      Operation.payment({
+        destination: cleanDestination,
+        asset: labasAsset,
+        amount: formattedAmount,
+      })
+    );
+  } else {
+    // Gasless Issuer-Sponsored On-Chain Transfer (Operation.createClaimableBalance)
+    // Allows the user's G-address to receive $LABAS on Stellar Mainnet even before establishing a trustline
+    // or funding base XLM reserves, with reserves sponsored by the Issuer account.
+    transferMode = 'sponsored_claimable_balance';
+    txBuilder.addOperation(
+      Operation.createClaimableBalance({
+        asset: labasAsset,
+        amount: formattedAmount,
+        claimants: [
+          new Claimant(cleanDestination, Claimant.predicateUnconditional()),
+        ],
+      })
+    );
+  }
+
+  const transaction = txBuilder
+    .addMemo(Memo.text(safeMemo))
+    .setTimeout(30)
+    .build();
+
+  transaction.sign(issuerKeypair);
+
+  const result = await server.submitTransaction(transaction);
+
+  return {
+    hash: result.hash,
+    ledger: result.ledger,
+    amount: formattedAmount,
+    assetCode: STELLAR_CONFIG.assetCode,
+    issuerPublicKey: signingPublicKey,
+    destinationPublicKey: cleanDestination,
+    transferMode,
+    walletActivated: true,
+    explorerUrl: `https://stellar.expert/explorer/public/tx/${result.hash}`,
+  };
+}
+
 

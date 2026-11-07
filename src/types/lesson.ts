@@ -153,6 +153,7 @@ export interface TokenClaimRecord {
   transactionHash: string;
   ledger?: number;
   explorerUrl: string;
+  transferMode?: 'direct_payment' | 'sponsored_claimable_balance';
   timestamp: string; // ISO-8601
 }
 
@@ -191,9 +192,11 @@ export interface UserProgress {
   lastQuestResetDate?: string;
   duelsWonCount?: number;
   wordsMasteredCount?: number;
-  // Stellar Mainnet ($LABAS Token) & XP Conversion Engine fields
+  // Stellar Mainnet ($LABAS Token) & Hybrid Gasless Internal Balance Engine fields
   stellarPublicKey?: string | null;
   xpBalance?: number;
+  internalLabasBalance?: number;
+  walletActivated?: boolean;
   lifetimeXpEarned?: number;
   streakDays?: number;
   lastClaimTimestamp?: string | null;

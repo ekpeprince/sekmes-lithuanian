@@ -1,5 +1,7 @@
 import { Asset, Horizon } from '@stellar/stellar-sdk';
 
+export declare const DEFAULT_ISSUER_PUBLIC_KEY: string;
+
 export declare const STELLAR_CONFIG: {
   readonly network: string;
   readonly serverUrl: string;
@@ -50,9 +52,22 @@ export interface LabasPaymentResult {
   explorerUrl: string;
 }
 
+export interface SponsoredWithdrawalResult extends LabasPaymentResult {
+  transferMode: 'direct_payment' | 'sponsored_claimable_balance';
+  walletActivated: boolean;
+}
+
 export declare function submitLabasPayment(params: {
   destinationPublicKey: string;
   amount: number | string;
   memoText?: string;
 }): Promise<LabasPaymentResult>;
+
+export declare function submitSponsoredLabasWithdrawal(params: {
+  destinationPublicKey: string;
+  amount: number | string;
+  memoText?: string;
+  signedInnerTxXdr?: string;
+}): Promise<SponsoredWithdrawalResult>;
+
 
