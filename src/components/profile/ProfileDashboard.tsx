@@ -31,6 +31,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { NotificationModal } from '@/components/NotificationModal';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
+import StellarWalletModal from '@/components/profile/StellarWalletModal';
 import { LEAGUE_TIERS, LeagueTier, getLeagueTierByXp } from '@/lib/league';
 import { TokenClaimRecord } from '@/types/lesson';
 
@@ -638,37 +639,12 @@ export const ProfileDashboard: React.FC = () => {
     }
   };
 
-  const handleSaveWallet = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setWalletInputError(null);
-    const cleaned = walletInput.trim().toUpperCase();
-
-    if (!cleaned) {
-      setIsSavingWallet(true);
-      await setStellarWallet(null);
-      setIsSavingWallet(false);
-      setShowWalletModal(false);
-      return;
-    }
-
-    if (!STELLAR_PUBKEY_REGEX.test(cleaned)) {
-      setWalletInputError(
-        'Please enter a valid 56-character Stellar Mainnet public key starting with "G".'
-      );
-      sounds.playError();
-      return;
-    }
-
-    setIsSavingWallet(true);
-    try {
-      await setStellarWallet(cleaned);
-      await checkWalletTrustline(cleaned);
-      sounds.playSuccess();
-      setShowWalletModal(false);
-      setClaimError(null);
-    } finally {
-      setIsSavingWallet(false);
-    }
+  const handleSaveWalletAddress = async (publicKey: string) => {
+    const cleaned = publicKey.trim().toUpperCase();
+    await setStellarWallet(cleaned);
+    await checkWalletTrustline(cleaned);
+    sounds.playSuccess();
+    setClaimError(null);
   };
 
   const handleClaimTokens = async () => {
@@ -845,92 +821,11 @@ export const ProfileDashboard: React.FC = () => {
       </div>
 
       {/* Stellar Wallet Modal */}
-      {showWalletModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 shadow-xl relative animate-in zoom-in-95 duration-150">
-            <button
-              type="button"
-              onClick={() => setShowWalletModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-              aria-label="Close wallet modal"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                <StellarMark className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-black text-slate-900 text-base">
-                  Stellar Mainnet Wallet
-                </h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Enter your public G... address to receive $LABAS
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveWallet} className="space-y-4">
-              <div>
-                <input
-                  id="stellar-mainnet-wallet-input"
-                  type="text"
-                  value={walletInput}
-                  onChange={(e) => {
-                    setWalletInput(e.target.value);
-                    setWalletInputError(null);
-                  }}
-                  placeholder="G..."
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="w-full rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-none px-3.5 py-2.5 text-xs font-mono text-slate-900 bg-slate-50"
-                />
-                {walletInputError && (
-                  <p className="mt-1.5 text-xs font-semibold text-rose-600">
-                    {walletInputError}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3 text-[11px] text-slate-600 space-y-1">
-                <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Add the $LABAS Trustline in your wallet</span>
-                </div>
-                <p className="leading-relaxed text-slate-500">
-                  Make sure your Stellar wallet (Lobstr, Freighter, xBull) has a trustline for{' '}
-                  <strong>LABAS</strong>. Never enter your secret S... key.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowWalletModal(false)}
-                  className="flex-1 rounded-xl border border-slate-200 py-2.5 px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingWallet}
-                  className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 px-4 text-xs font-bold text-white flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {isSavingWallet ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>Save Wallet</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <StellarWalletModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        onSave={handleSaveWalletAddress}
+      />
 
       {/* Settings Modal */}
       {showSettingsModal && (

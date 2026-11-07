@@ -28,6 +28,7 @@ import {
 } from '@/lib/progressSync';
 import { sounds } from '@/lib/audio';
 import { AuthModal } from '@/components/AuthModal';
+import StellarWalletModal from '@/components/profile/StellarWalletModal';
 import { TokenClaimRecord } from '@/types/lesson';
 
 const XP_PER_LABAS = 100;
@@ -192,37 +193,12 @@ export const RewardsDashboard: React.FC = () => {
     }
   };
 
-  const handleSaveWallet = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setWalletInputError(null);
-    const cleaned = walletInput.trim().toUpperCase();
-
-    if (!cleaned) {
-      setIsSavingWallet(true);
-      await setStellarWallet(null);
-      setIsSavingWallet(false);
-      setShowWalletModal(false);
-      return;
-    }
-
-    if (!STELLAR_PUBKEY_REGEX.test(cleaned)) {
-      setWalletInputError(
-        'Please enter a valid 56-character Stellar Mainnet public key starting with "G". (Never enter your secret "S" key!)'
-      );
-      sounds.playError();
-      return;
-    }
-
-    setIsSavingWallet(true);
-    try {
-      await setStellarWallet(cleaned);
-      await checkWalletTrustline(cleaned);
-      sounds.playSuccess();
-      setShowWalletModal(false);
-      setClaimError(null);
-    } finally {
-      setIsSavingWallet(false);
-    }
+  const handleSaveWalletAddress = async (publicKey: string) => {
+    const cleaned = publicKey.trim().toUpperCase();
+    await setStellarWallet(cleaned);
+    await checkWalletTrustline(cleaned);
+    sounds.playSuccess();
+    setClaimError(null);
   };
 
   const handleClaimTokens = async () => {
@@ -697,120 +673,11 @@ export const RewardsDashboard: React.FC = () => {
       )}
 
       {/* Stellar Wallet Linking Modal */}
-      {showWalletModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl bg-white border-2 border-slate-200 p-5 sm:p-6 shadow-2xl relative animate-in zoom-in-95 duration-150">
-            <button
-              type="button"
-              onClick={() => setShowWalletModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-              aria-label="Close wallet modal"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 shrink-0">
-                <Wallet className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-black text-slate-900 text-base">
-                  Stellar Mainnet Wallet
-                </h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Connect your public G... address to receive $LABAS rewards
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveWallet} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="stellar-public-key-input"
-                  className="block text-xs font-extrabold text-slate-700 mb-1.5"
-                >
-                  Stellar Public Key (Mainnet Address)
-                </label>
-                <input
-                  id="stellar-public-key-input"
-                  type="text"
-                  value={walletInput}
-                  onChange={(e) => {
-                    setWalletInput(e.target.value);
-                    setWalletInputError(null);
-                  }}
-                  placeholder="G..."
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="w-full rounded-2xl border-2 border-slate-200 focus:border-emerald-500 focus:outline-none px-3.5 py-2.5 text-xs font-mono text-slate-900 bg-slate-50"
-                />
-                {walletInputError && (
-                  <p className="mt-1.5 text-xs font-bold text-rose-600">
-                    {walletInputError}
-                  </p>
-                )}
-              </div>
-
-              {/* Trustline Guidance Box */}
-              <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3 text-[11px] text-amber-950 space-y-1.5">
-                <div className="font-black text-amber-900 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Important: Add the $LABAS Trustline</span>
-                </div>
-                <p className="leading-relaxed text-amber-900/90">
-                  Stellar Mainnet requires your wallet (Lobstr, Freighter, xBull) to have an
-                  active trustline for <strong>$LABAS</strong> before receiving tokens.
-                  Never enter your secret key (starting with S).
-                </p>
-                {trustlineState.issuerPublicKey && (
-                  <div className="pt-1 flex items-center justify-between gap-2 bg-white/80 rounded-xl px-2.5 py-1.5 border border-amber-200/80">
-                    <span className="font-mono text-[10px] truncate">
-                      Issuer: {trustlineState.issuerPublicKey}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCopyText(trustlineState.issuerPublicKey!, 'modal-issuer')
-                      }
-                      className="text-amber-800 hover:text-amber-950 font-bold inline-flex items-center gap-1 shrink-0 cursor-pointer"
-                    >
-                      {copiedKey === 'modal-issuer' ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowWalletModal(false)}
-                  className="flex-1 rounded-2xl border-2 border-slate-200 py-2.5 px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingWallet}
-                  className="flex-1 btn-3d btn-green-3d py-2.5 px-4 text-xs font-black text-white flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {isSavingWallet ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <span>Save Mainnet Wallet</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <StellarWalletModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        onSave={handleSaveWalletAddress}
+      />
 
       {/* Firebase Auth Modal if user clicks claim while logged out */}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
