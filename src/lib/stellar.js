@@ -27,7 +27,7 @@ export const STELLAR_CONFIG = {
     return match ? match[1] : raw.replace(/^\[|\]$/g, '');
   },
   get assetCode() {
-    return (process.env.ASSET_CODE || 'LABAS').trim();
+    return (process.env.ASSET_CODE || 'LABASCOIN').trim();
   },
   get issuerPublicKey() {
     const envKey = (process.env.ISSUER_PUBLIC_KEY || '').trim();

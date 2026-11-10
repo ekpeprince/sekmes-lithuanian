@@ -534,7 +534,7 @@ export const ProfileDashboard: React.FC = () => {
     hasTrustline: false,
     accountExists: false,
     issuerConfigured: false,
-    assetCode: 'LABAS',
+    assetCode: 'LABASCOIN',
     issuerPublicKey: null,
     errorCode: null,
     message: null,
@@ -628,7 +628,7 @@ export const ProfileDashboard: React.FC = () => {
         hasTrustline: Boolean(data.hasTrustline),
         accountExists: Boolean(data.accountExists),
         issuerConfigured: Boolean(data.issuerConfigured),
-        assetCode: data.assetCode || 'LABAS',
+        assetCode: data.assetCode || 'LABASCOIN',
         issuerPublicKey: data.issuerPublicKey || null,
         errorCode: data.errorCode || null,
         message: data.message || null,
@@ -715,7 +715,7 @@ export const ProfileDashboard: React.FC = () => {
             'Could not complete $LABAS withdrawal on Stellar Mainnet.',
           code: data.errorCode || null,
           issuerPublicKey: data.issuerPublicKey || trustlineState.issuerPublicKey,
-          assetCode: data.assetCode || 'LABAS',
+          assetCode: data.assetCode || 'LABASCOIN',
         });
         return;
       }

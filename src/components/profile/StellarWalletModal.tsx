@@ -98,8 +98,8 @@ export default function StellarWalletModal({
         <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex items-start space-x-3">
           <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
           <div className="text-[11px] text-slate-300 leading-relaxed">
-            <span className="font-bold text-emerald-400 block mb-0.5">Add the $LABAS Trustline in your wallet</span>
-            Make sure your Stellar wallet (Lobstr, Freighter, xBull) has an active trustline for <span className="text-white font-semibold">LABAS</span>. Never enter your secret <span className="font-mono text-rose-400">S...</span> key here.
+            <span className="font-bold text-emerald-400 block mb-0.5">Add the LABASCOIN Trustline in your wallet</span>
+            Make sure your Stellar wallet (Lobstr, Freighter, xBull) has an active trustline for <span className="text-white font-semibold">LABASCOIN</span>. Never enter your secret <span className="font-mono text-rose-400">S...</span> key here.
           </div>
         </div>
 
