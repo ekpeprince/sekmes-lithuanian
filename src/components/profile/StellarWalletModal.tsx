@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Wallet, ShieldCheck, X, AlertCircle, Sparkles } from 'lucide-react';
+import { Wallet, ShieldCheck, X, AlertCircle, Sparkles, ExternalLink } from 'lucide-react';
 
 interface StellarWalletModalProps {
   isOpen: boolean;
@@ -102,6 +102,17 @@ export default function StellarWalletModal({
             Make sure your Stellar wallet (Lobstr, Freighter, xBull) has an active trustline for <span className="text-white font-semibold">LABASCOIN</span>. Never enter your secret <span className="font-mono text-rose-400">S...</span> key here.
           </div>
         </div>
+
+        {/* 1-Click Link to Lobstr Asset Page */}
+        <a
+          href="https://lobstr.co/assets/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-xs font-bold transition flex items-center justify-center space-x-2 group"
+        >
+          <span>Add / View LABASCOIN on Lobstr</span>
+          <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </a>
 
         {/* Actions */}
         <div className="flex items-center space-x-3 pt-2">

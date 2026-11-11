@@ -445,6 +445,28 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
         )}
       </button>
 
+      {/* Direct links to view token on Lobstr and Stellar.expert */}
+      <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <a
+          href="https://lobstr.co/assets/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 hover:text-emerald-600 font-medium transition-colors"
+        >
+          <span>View LABASCOIN on Lobstr</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+        <a
+          href="https://stellar.expert/explorer/public/asset/LABASCOIN-GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 hover:text-emerald-600 font-medium transition-colors"
+        >
+          <span>Stellar.expert</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+
       {/* Compact Recent Claims (only visible if user has past claims) */}
       {claimHistory.length > 0 && (
         <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
