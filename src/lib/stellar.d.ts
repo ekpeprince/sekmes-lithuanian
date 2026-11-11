@@ -70,4 +70,25 @@ export declare function submitSponsoredLabasWithdrawal(params: {
   signedInnerTxXdr?: string;
 }): Promise<SponsoredWithdrawalResult>;
 
+export interface SponsoredTrustlineBuildResult {
+  xdr: string;
+  networkPassphrase: string;
+  sponsorPublicKey: string;
+  assetCode: string;
+}
+
+export interface SponsoredTrustlineSubmitResult {
+  hash: string;
+  ledger: number;
+  explorerUrl: string;
+}
+
+export declare function buildSponsoredTrustlineTransaction(
+  userPublicKey: string
+): Promise<SponsoredTrustlineBuildResult>;
+
+export declare function submitSponsoredTrustlineTransaction(
+  signedXdr: string
+): Promise<SponsoredTrustlineSubmitResult>;
+
 

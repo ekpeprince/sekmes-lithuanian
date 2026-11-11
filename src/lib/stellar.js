@@ -681,4 +681,121 @@ export async function submitSponsoredLabasWithdrawal({
   };
 }
 
+/**
+ * Zero-Stress User Onboarding: Sponsored Trustline Sandwich Transaction
+ * Builds a Stellar transaction where the Treasury/Issuer sponsors both the XLM base fee
+ * and the 0.5 XLM trustline reserve for the user's G-address.
+ *
+ * Sandwich structure:
+ * 1. Operation.beginSponsoringFutureReserves({ sponsoredId: userPublicKey })
+ * 2. Operation.changeTrust({ asset: labasAsset, source: userPublicKey })
+ * 3. Operation.endSponsoringFutureReserves({ source: userPublicKey })
+ *
+ * Pre-signed by the Sponsor/Treasury account, returned as XDR for client signature.
+ *
+ * @param {string} userPublicKey
+ * @returns {Promise<{ xdr: string; networkPassphrase: string; sponsorPublicKey: string; assetCode: string }>}
+ */
+export async function buildSponsoredTrustlineTransaction(userPublicKey) {
+  if (typeof window !== 'undefined') {
+    throw new Error('buildSponsoredTrustlineTransaction must only execute on the server.');
+  }
+
+  const cleanUserKey = (userPublicKey || '').trim();
+  if (!isValidStellarPublicKey(cleanUserKey)) {
+    const err = new Error('Invalid Stellar user public key. Must be a valid 56-character G... address.');
+    err.code = 'invalid_destination';
+    throw err;
+  }
+
+  const configCheck = validateIssuerConfig();
+  if (!configCheck.valid) {
+    const err = new Error(configCheck.message || 'Invalid Stellar issuer configuration.');
+    err.code = configCheck.errorCode;
+    throw err;
+  }
+
+  const server = getHorizonServer();
+  const issuerSecret = (process.env.ISSUER_SECRET_KEY || '').trim();
+  const sponsorKeypair = Keypair.fromSecret(issuerSecret);
+  const sponsorPublicKey = sponsorKeypair.publicKey();
+  const networkPassphrase = getNetworkPassphrase();
+  const labasAsset = getLabasAsset();
+
+  // Load the sponsor account to pay transaction fees (Zero fee for student)
+  const sponsorAccount = await server.loadAccount(sponsorPublicKey);
+
+  const transaction = new TransactionBuilder(sponsorAccount, {
+    fee: String(Number(BASE_FEE) * 2), // 200 stroops paid entirely by Treasury
+    networkPassphrase,
+  })
+    .addOperation(
+      Operation.beginSponsoringFutureReserves({
+        sponsoredId: cleanUserKey,
+      })
+    )
+    .addOperation(
+      Operation.changeTrust({
+        asset: labasAsset,
+        source: cleanUserKey,
+      })
+    )
+    .addOperation(
+      Operation.endSponsoringFutureReserves({
+        source: cleanUserKey,
+      })
+    )
+    .addMemo(Memo.text('LabasApp Trustline Sponsor'))
+    .setTimeout(180) // 3 minute window for user wallet prompt
+    .build();
+
+  // Sign by sponsor/treasury
+  transaction.sign(sponsorKeypair);
+
+  return {
+    xdr: transaction.toXDR(),
+    networkPassphrase,
+    sponsorPublicKey,
+    assetCode: STELLAR_CONFIG.assetCode,
+  };
+}
+
+/**
+ * Submits a dual-signed (Sponsor + User) sponsored trustline transaction to Horizon.
+ *
+ * @param {string} signedXdr
+ * @returns {Promise<{ hash: string; ledger: number; explorerUrl: string }>}
+ */
+export async function submitSponsoredTrustlineTransaction(signedXdr) {
+  if (typeof window !== 'undefined') {
+    throw new Error('submitSponsoredTrustlineTransaction must only execute on the server.');
+  }
+
+  if (!signedXdr || typeof signedXdr !== 'string') {
+    const err = new Error('Missing or invalid signed transaction XDR string.');
+    err.code = 'invalid_xdr';
+    throw err;
+  }
+
+  const server = getHorizonServer();
+  const networkPassphrase = getNetworkPassphrase();
+
+  let transaction;
+  try {
+    transaction = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
+  } catch (parseErr) {
+    const err = new Error('Failed to parse Stellar transaction XDR: ' + (parseErr?.message || 'Invalid format'));
+    err.code = 'invalid_xdr';
+    throw err;
+  }
+
+  const result = await server.submitTransaction(transaction);
+
+  return {
+    hash: result.hash,
+    ledger: result.ledger,
+    explorerUrl: `https://stellar.expert/explorer/public/tx/${result.hash}`,
+  };
+}
+
 
