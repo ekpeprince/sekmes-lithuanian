@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Sparkles, Dumbbell, Trophy, User } from 'lucide-react';
+import { BookOpen, Sparkles, Dumbbell, Trophy, User, Coins } from 'lucide-react';
 
 export interface NavItem {
   href: string;
@@ -38,6 +38,12 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
     icon: Trophy,
     // Nest 1v1 Battles inside the League hub
     matches: (pathname: string) => pathname.startsWith('/leaderboard') || pathname.startsWith('/league') || pathname.startsWith('/battle'),
+  },
+  {
+    href: '/token',
+    label: '$LABAS',
+    icon: Coins,
+    matches: (pathname: string) => pathname.startsWith('/token'),
   },
   {
     href: '/profile',

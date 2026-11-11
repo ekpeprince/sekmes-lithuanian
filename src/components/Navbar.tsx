@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, User as UserIcon, LogOut, Cloud, ChevronDown, Bell } from 'lucide-react';
+import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, User as UserIcon, LogOut, Cloud, ChevronDown, Bell, Coins } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { sounds } from '@/lib/audio';
@@ -178,6 +178,15 @@ export const Navbar: React.FC = () => {
                         <span>Pažanga debesyje aktyvi • Cloud sync</span>
                       </div>
                     </div>
+
+                    <Link
+                      href="/token"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors mb-1"
+                    >
+                      <Coins className="h-4 w-4 text-emerald-600" />
+                      <span>$LABASCOIN Portal</span>
+                    </Link>
 
                     <button
                       type="button"
