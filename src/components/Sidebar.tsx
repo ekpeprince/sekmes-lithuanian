@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Dumbbell, User, Sparkles, Trophy } from 'lucide-react';
+import { BookOpen, Dumbbell, User, Sparkles, Trophy, Coins } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
 
@@ -31,6 +31,12 @@ const DESKTOP_NAV_ITEMS = [
     label: 'League',
     icon: Trophy,
     matches: (pathname: string) => pathname.startsWith('/leaderboard') || pathname.startsWith('/league') || pathname.startsWith('/battle'),
+  },
+  {
+    href: '/token',
+    label: '$LABAS Token',
+    icon: Coins,
+    matches: (pathname: string) => pathname.startsWith('/token'),
   },
   {
     href: '/profile',
