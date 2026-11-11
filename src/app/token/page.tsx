@@ -19,7 +19,8 @@ import {
   CheckCircle2,
   ArrowUpRight,
   Sparkles,
-  BookOpen,
+  Code2,
+  Database,
 } from 'lucide-react';
 import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
 
@@ -66,7 +67,7 @@ export default function TokenPortalPage() {
       <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-28 md:pb-20 space-y-12">
         
         {/* =====================================================================
-         * 1. ORGANIC HERO SECTION: LABASAPP EMERALD & BALTIC AMBER
+         * 1. CLEAN HERO SECTION: TWO PRIMARY ACTIONS ONLY
          * =================================================================== */}
         <section className="relative rounded-3xl bg-gradient-to-br from-[#064e3b] via-[#047857] to-[#059669] text-white p-6 sm:p-10 lg:p-14 shadow-xl shadow-emerald-950/15 border-2 border-emerald-600/30 overflow-hidden">
           {/* Subtle Warm Amber Micro-Glow Accents */}
@@ -74,7 +75,7 @@ export default function TokenPortalPage() {
           <div className="absolute -bottom-12 left-10 w-64 h-64 bg-emerald-400/15 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Value Pitch */}
+            {/* Left Column: Focused Value Proposition & 2 Primary Actions */}
             <div className="lg:col-span-8 space-y-5">
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2">
@@ -88,53 +89,52 @@ export default function TokenPortalPage() {
                 </span>
               </div>
 
-              {/* Title & Tagline */}
+              {/* Title & Concise Professional Description */}
               <div className="space-y-2">
                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
                   Meet <span className="text-[#FDB913] drop-shadow-sm">$LABASCOIN</span>
                 </h1>
                 <p className="text-sm sm:text-base text-emerald-50 max-w-2xl leading-relaxed font-normal">
-                  The native micro-reward and liquidity token of LabasApp. Earned organically by mastering Lithuanian vocabulary and pronunciation, traded freely on the Stellar Decentralized Exchange.
+                  The native micro-reward and liquidity token of LabasApp. Earned organically through verified Lithuanian vocabulary mastery and AI voice drills, settled with instant finality on the Stellar network.
                 </p>
               </div>
 
-              {/* Action Buttons */}
+              {/* STRICT TWO PRIMARY ACTIONS ONLY */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
+                {/* Action 1: Trade on SDEX / LOBSTR */}
                 <a
                   href="https://lobstr.co/assets/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3.5 rounded-2xl bg-[#FDB913] hover:bg-[#f5b002] text-slate-950 text-xs sm:text-sm font-black inline-flex items-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
+                  className="px-6 py-3.5 rounded-2xl bg-[#FDB913] hover:bg-[#f5b002] text-slate-950 text-xs sm:text-sm font-black inline-flex items-center gap-2 shadow-md hover:scale-[1.01] active:scale-[0.99] transition cursor-pointer"
                 >
                   <Coins className="w-4 h-4 text-slate-950" />
-                  <span>Trade on Lobstr</span>
+                  <span>Trade on SDEX / LOBSTR</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </a>
 
-                <a
-                  href="https://stellar.expert/explorer/public/asset/LABASCOIN-GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                {/* Action 2: Copy Asset Key */}
+                <button
+                  type="button"
+                  onClick={() => handleCopy(ISSUER_ADDRESS, 'issuer')}
                   className="px-5 py-3.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/20 text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition cursor-pointer backdrop-blur-sm"
                 >
-                  <BarChart3 className="w-4 h-4 text-[#FDB913]" />
-                  <span>Stellar.expert</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-emerald-200" />
-                </a>
-
-                <a
-                  href="https://labasapp.com/.well-known/stellar.toml"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-emerald-100 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
-                >
-                  <Globe className="w-4 h-4 text-emerald-200" />
-                  <span>stellar.toml</span>
-                </a>
+                  {copiedIssuer ? (
+                    <>
+                      <Check className="w-4 h-4 text-[#FDB913]" />
+                      <span className="text-white font-black">Copied Asset Key!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-emerald-200" />
+                      <span>Copy Asset Key</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Right Official Emblem Badge */}
+            {/* Right Column: Official Brand Emblem */}
             <div className="lg:col-span-4 flex justify-center lg:justify-end">
               <div className="relative p-6 sm:p-7 rounded-3xl bg-white/10 backdrop-blur-md border border-white/25 shadow-xl flex flex-col items-center text-center w-full max-w-[280px]">
                 {/* Official Logo Frame with Amber Border */}
@@ -172,7 +172,7 @@ export default function TokenPortalPage() {
 
 
         {/* =====================================================================
-         * 2. CLEAN ON-CHAIN METRICS (LABASAPP WHITE & SLATE)
+         * 2. ON-CHAIN METRICS SUMMARY
          * =================================================================== */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-3xl border-2 border-slate-200 shadow-xs relative overflow-hidden">
@@ -230,17 +230,17 @@ export default function TokenPortalPage() {
 
 
         {/* =====================================================================
-         * 3. VERIFIED SMART LEDGER PARAMETERS
+         * 3. VERIFIED ON-CHAIN PARAMETERS
          * =================================================================== */}
         <section className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                <span>Verified Asset Contract Coordinates</span>
+                <span>Verified Asset Coordinates</span>
               </h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Public parameters published under SEP-0001 at <span className="font-mono text-emerald-700">labasapp.com/.well-known/stellar.toml</span>.
+                Official issuer key and parameters published under SEP-0001 standards.
               </p>
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold self-start sm:self-auto">
@@ -322,7 +322,7 @@ export default function TokenPortalPage() {
 
 
         {/* =====================================================================
-         * 4. TWO-SIDED MARKET: STUDY DEMAND vs LIQUIDITY SUPPLY
+         * 4. TWO-SIDED MARKET MECHANICS
          * =================================================================== */}
         <section className="space-y-6">
           <div className="text-center max-w-xl mx-auto space-y-1.5">
@@ -407,7 +407,7 @@ export default function TokenPortalPage() {
 
 
         {/* =====================================================================
-         * 5. TOKENOMICS & UTILITY (ORGANIC CARDS)
+         * 5. SUSTAINABLE TOKENOMICS & UTILITY
          * =================================================================== */}
         <section className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-xs space-y-6">
           <div className="space-y-1">
@@ -464,82 +464,96 @@ export default function TokenPortalPage() {
 
 
         {/* =====================================================================
-         * 6. TRADING HUBS & LEDGER EXPLORER GATEWAYS
+         * 6. TECHNICAL METADATA FOOTER & DEVELOPER RESOURCES
+         * (Moved raw technical links: stellar.toml, analytics, API down here)
          * =================================================================== */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+        <section className="bg-slate-900 text-white rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-5">
             <div>
-              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Public DEX Gateways</span>
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-0.5">
-                Trade & Inspect on Stellar
+              <span className="text-xs font-bold text-[#FDB913] uppercase tracking-wider">Protocol Specifications</span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
+                Technical Metadata & Verification Endpoints
               </h2>
             </div>
             <span className="text-xs font-semibold text-slate-400">
-              Non-Custodial &bull; No Centralized Intermediary
+              Deterministic Public Ledger
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Lobstr */}
-            <a
-              href="https://lobstr.co/assets/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 border-2 border-slate-200 hover:border-emerald-300 transition-all flex flex-col justify-between space-y-3 group"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors">
-                  Lobstr Wallet & DEX
-                </span>
-                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors" />
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                Mobile & web interface for adding trustlines, swaps, and SDEX orderbook trading.
-              </p>
-              <span className="text-xs font-bold text-emerald-700 block">
-                Open Lobstr &rarr;
-              </span>
-            </a>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+            All cryptographic assets, home domain affiliations, and smart ledger proofs are open and programmatically auditable through Stellar Ecosystem Proposals (SEP) and public Horizon endpoints.
+          </p>
 
-            {/* Stellar.expert */}
-            <a
-              href="https://stellar.expert/explorer/public/asset/LABASCOIN-GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 border-2 border-slate-200 hover:border-emerald-300 transition-all flex flex-col justify-between space-y-3 group"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors">
-                  Stellar.expert Ledger
-                </span>
-                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors" />
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                Public blockchain ledger explorer tracking transactions, volume, and supply.
-              </p>
-              <span className="text-xs font-bold text-emerald-700 block">
-                View Ledger &rarr;
-              </span>
-            </a>
-
-            {/* stellar.toml */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            {/* SEP-0001 TOML Link */}
             <a
               href="https://labasapp.com/.well-known/stellar.toml"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-5 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 border-2 border-slate-200 hover:border-emerald-300 transition-all flex flex-col justify-between space-y-3 group"
+              className="p-5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-3 group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors">
-                  SEP-0001 Manifest
-                </span>
-                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-black text-white group-hover:text-emerald-300 transition-colors">
+                    stellar.toml (SEP-0001)
+                  </span>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                Cryptographic metadata linking the labasapp.com domain to on-chain credentials.
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Cryptographic metadata linking labasapp.com to the on-chain issuer account.
               </p>
-              <span className="text-xs font-bold text-emerald-700 block">
-                Read TOML &rarr;
+              <span className="text-xs font-bold text-emerald-400 block pt-1">
+                View Raw TOML Spec &rarr;
+              </span>
+            </a>
+
+            {/* Stellar.expert Analytics */}
+            <a
+              href="https://stellar.expert/explorer/public/asset/LABASCOIN-GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-3 group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-[#FDB913]" />
+                  <span className="text-sm font-black text-white group-hover:text-[#FDB913] transition-colors">
+                    Stellar.expert Analytics
+                  </span>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-slate-500 group-hover:text-[#FDB913] transition-colors" />
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Public blockchain ledger explorer tracking transactions, volume, and holders.
+              </p>
+              <span className="text-xs font-bold text-[#FDB913] block pt-1">
+                Inspect Ledger Analytics &rarr;
+              </span>
+            </a>
+
+            {/* Horizon Asset Endpoint */}
+            <a
+              href="https://horizon.stellar.org/assets?asset_code=LABASCOIN&asset_issuer=GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-3 group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Database className="w-4 h-4 text-teal-400" />
+                  <span className="text-sm font-black text-white group-hover:text-teal-300 transition-colors">
+                    Horizon Asset JSON API
+                  </span>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400 transition-colors" />
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Direct live JSON endpoint from the Stellar Horizon Mainnet validator nodes.
+              </p>
+              <span className="text-xs font-bold text-teal-400 block pt-1">
+                Query Horizon Node &rarr;
               </span>
             </a>
           </div>
@@ -558,7 +572,7 @@ export default function TokenPortalPage() {
               Earn $LABASCOIN While Learning
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
-              Join thousands of students mastering Lithuanian. Complete lessons, maintain streaks, and claim your rewards on Stellar Mainnet.
+              Join students mastering Lithuanian on LabasApp. Complete lessons, maintain streaks, and claim your rewards on Stellar Mainnet.
             </p>
           </div>
 
