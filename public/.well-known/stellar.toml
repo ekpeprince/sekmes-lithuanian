@@ -1,8 +1,10 @@
 # Stellar SEP-0001 Configuration for LabasApp
 # https://labasapp.com/.well-known/stellar.toml
 
+VERSION = "2.0.0"
 NETWORK_PASSPHRASE = "Public Global Stellar Network ; September 2015"
 HORIZON_URL = "https://horizon.stellar.org"
+SIGNING_KEY = "GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
 
 ACCOUNTS = [
   "GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND",
@@ -11,10 +13,13 @@ ACCOUNTS = [
 
 [DOCUMENTATION]
 ORG_NAME = "LabasApp"
+ORG_DBA = "LabasApp - Learn Lithuanian"
 ORG_URL = "https://labasapp.com"
 ORG_LOGO = "https://labasapp.com/logo.png"
 ORG_DESCRIPTION = "LabasApp is an AI-powered Lithuanian language learning platform rewarding learners with real Stellar Mainnet micro-rewards and decentralized AMM liquidity."
 ORG_OFFICIAL_EMAIL = "contact@labasapp.com"
+ORG_SUPPORT_EMAIL = "contact@labasapp.com"
+ORG_GITHUB = "https://github.com/ekpeprince/sekmes-lithuanian"
 
 [[CURRENCIES]]
 code = "LABASCOIN"
@@ -28,3 +33,5 @@ fixed_number = 100000000000
 is_asset_anchored = false
 anchor_asset_type = "other"
 status = "live"
+regulated = false
+is_unlimited = false

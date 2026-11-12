@@ -1,0 +1,37 @@
+# Stellar SEP-0001 Configuration for LabasApp
+# https://labasapp.com/.well-known/stellar.toml
+
+VERSION = "2.0.0"
+NETWORK_PASSPHRASE = "Public Global Stellar Network ; September 2015"
+HORIZON_URL = "https://horizon.stellar.org"
+SIGNING_KEY = "GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+
+ACCOUNTS = [
+  "GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND",
+  "GAPNDHNHEWNMKY7N4Q6E3PNVIW36KZ6PDKAOPAEOH73W2YOAPOWYWTFO"
+]
+
+[DOCUMENTATION]
+ORG_NAME = "LabasApp"
+ORG_DBA = "LabasApp - Learn Lithuanian"
+ORG_URL = "https://labasapp.com"
+ORG_LOGO = "https://labasapp.com/logo.png"
+ORG_DESCRIPTION = "LabasApp is an AI-powered Lithuanian language learning platform rewarding learners with real Stellar Mainnet micro-rewards and decentralized AMM liquidity."
+ORG_OFFICIAL_EMAIL = "contact@labasapp.com"
+ORG_SUPPORT_EMAIL = "contact@labasapp.com"
+ORG_GITHUB = "https://github.com/ekpeprince/sekmes-lithuanian"
+
+[[CURRENCIES]]
+code = "LABASCOIN"
+issuer = "GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+display_decimals = 2
+name = "LabasApp Coin"
+desc = "Utility and micro-reward asset of LabasApp. Traded 24/7 on Stellar DEX and AMM liquidity pools, or earned gasless by students mastering Lithuanian."
+conditions = "Traded openly on Stellar DEX & AMM liquidity pools. Also distributed to learners for milestone mastery on LabasApp."
+image = "https://labasapp.com/logo.png"
+fixed_number = 100000000000
+is_asset_anchored = false
+anchor_asset_type = "other"
+status = "live"
+regulated = false
+is_unlimited = false

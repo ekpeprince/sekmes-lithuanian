@@ -40,6 +40,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/stellar.toml',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Content-Type',
+            value: 'text/plain; charset=utf-8',
+          },
+        ],
+      },
+      {
         source: '/sw.js',
         headers: [
           {
