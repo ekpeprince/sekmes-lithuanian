@@ -4,6 +4,7 @@ import {
   validateIssuerConfig,
   buildSponsoredTrustlineTransaction,
   submitSponsoredTrustlineTransaction,
+  ensureLobstrMinimumBalance,
   parseStellarError,
 } from '@/lib/stellar';
 
@@ -127,8 +128,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (action === 'topup' || action === 'activate') {
+      const userPublicKey = (body.userPublicKey || '').trim();
+      if (!isValidStellarPublicKey(userPublicKey)) {
+        return NextResponse.json(
+          {
+            error: 'Invalid Stellar user public key. Must be a valid 56-character G... address.',
+            errorCode: 'invalid_destination',
+          },
+          { status: 400 }
+        );
+      }
+
+      const topUpResult = await ensureLobstrMinimumBalance(userPublicKey);
+      return NextResponse.json(topUpResult);
+    }
+
     return NextResponse.json(
-      { error: `Unknown action: "${action}". Supported actions are "build" and "submit".` },
+      { error: `Unknown action: "${action}". Supported actions are "topup", "activate", "build", and "submit".` },
       { status: 400 }
     );
   } catch (err: unknown) {

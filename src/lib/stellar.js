@@ -634,6 +634,16 @@ export async function submitSponsoredLabasWithdrawal({
 
   let transferMode = 'direct_payment';
 
+  // LOBSTR mobile app enforces a strict 5.0 XLM balance requirement before allowing users to claim
+  let currentXlm = 0;
+  try {
+    const acc = await server.loadAccount(cleanDestination);
+    const nativeBal = acc.balances.find((b) => b.asset_type === 'native');
+    if (nativeBal) currentXlm = Number(nativeBal.balance);
+  } catch {
+    currentXlm = 0;
+  }
+
   if (trustCheck.accountExists && trustCheck.hasTrustline) {
     // Direct Mainnet payment when account is active and trusts $LABAS
     txBuilder.addOperation(
@@ -646,15 +656,27 @@ export async function submitSponsoredLabasWithdrawal({
   } else {
     // Zero-Stress Learner Onboarding:
     // If the learner's destination wallet does not exist on Stellar yet (e.g. brand new LOBSTR wallet),
-    // automatically activate it by funding 1.5 XLM from the Treasury account.
-    // This permanently prevents LOBSTR's "Activate wallet by funding 5 XLM" blocking modal!
+    // automatically activate it by funding 5.0000000 XLM from the Treasury account so LOBSTR's
+    // 5 XLM minimum balance check is 100% satisfied.
     if (!trustCheck.accountExists) {
       txBuilder.addOperation(
         Operation.createAccount({
           destination: cleanDestination,
-          startingBalance: '1.5000000',
+          startingBalance: '5.0000000',
         })
       );
+    } else if (currentXlm < 5.0) {
+      // If account exists but has less than 5 XLM (e.g. partial balance), top up the difference
+      const diff = Number((5.0001 - currentXlm).toFixed(7));
+      if (diff > 0.0001) {
+        txBuilder.addOperation(
+          Operation.payment({
+            destination: cleanDestination,
+            asset: Asset.native(),
+            amount: diff.toFixed(7),
+          })
+        );
+      }
     }
 
     // Gasless Issuer-Sponsored On-Chain Transfer (Operation.createClaimableBalance)
@@ -808,6 +830,105 @@ export async function submitSponsoredTrustlineTransaction(signedXdr) {
     hash: result.hash,
     ledger: result.ledger,
     explorerUrl: `https://stellar.expert/explorer/public/tx/${result.hash}`,
+  };
+}
+
+/**
+ * Ensures a learner's Stellar account meets LOBSTR's proprietary 5.0 XLM minimum balance
+ * requirement so they can claim tokens or add trustlines without being blocked.
+ * If the account does not exist, creates it with 5.0000000 XLM.
+ * If the account exists with less than 5.0 XLM, tops up the difference from Treasury.
+ *
+ * @param {string} userPublicKey
+ * @returns {Promise<{ success: boolean; funded: boolean; hash?: string; ledger?: number; explorerUrl?: string; newBalance: number; message?: string }>}
+ */
+export async function ensureLobstrMinimumBalance(userPublicKey) {
+  if (typeof window !== 'undefined') {
+    throw new Error('ensureLobstrMinimumBalance must only execute on the server.');
+  }
+
+  const cleanUserKey = (userPublicKey || '').trim();
+  if (!isValidStellarPublicKey(cleanUserKey)) {
+    const err = new Error('Invalid Stellar user public key.');
+    err.code = 'invalid_destination';
+    throw err;
+  }
+
+  const configCheck = validateIssuerConfig();
+  if (!configCheck.valid) {
+    const err = new Error(configCheck.message || 'Invalid Stellar issuer configuration.');
+    err.code = configCheck.errorCode;
+    throw err;
+  }
+
+  const server = getHorizonServer();
+  const issuerSecret = (process.env.ISSUER_SECRET_KEY || '').trim();
+  const issuerKeypair = Keypair.fromSecret(issuerSecret);
+  const signingPublicKey = issuerKeypair.publicKey();
+  const networkPassphrase = getNetworkPassphrase();
+
+  let accountExists = false;
+  let currentXlm = 0;
+
+  try {
+    const acc = await server.loadAccount(cleanUserKey);
+    accountExists = true;
+    const nativeBal = acc.balances.find((b) => b.asset_type === 'native');
+    if (nativeBal) {
+      currentXlm = Number(nativeBal.balance);
+    }
+  } catch {
+    accountExists = false;
+    currentXlm = 0;
+  }
+
+  if (currentXlm >= 5.0) {
+    return {
+      success: true,
+      funded: false,
+      newBalance: currentXlm,
+      message: 'Account already meets the 5.0 XLM LOBSTR threshold.',
+    };
+  }
+
+  const sourceAccount = await server.loadAccount(signingPublicKey);
+  const txBuilder = new TransactionBuilder(sourceAccount, {
+    fee: String(Number(BASE_FEE) * 2),
+    networkPassphrase,
+  });
+
+  if (!accountExists) {
+    txBuilder.addOperation(
+      Operation.createAccount({
+        destination: cleanUserKey,
+        startingBalance: '5.0000000',
+      })
+    );
+  } else {
+    const diff = Number((5.0001 - currentXlm).toFixed(7));
+    if (diff > 0.0001) {
+      txBuilder.addOperation(
+        Operation.payment({
+          destination: cleanUserKey,
+          asset: Asset.native(),
+          amount: diff.toFixed(7),
+        })
+      );
+    }
+  }
+
+  const tx = txBuilder.addMemo(Memo.text('LabasApp LOBSTR Activation')).setTimeout(30).build();
+  tx.sign(issuerKeypair);
+
+  const result = await server.submitTransaction(tx);
+
+  return {
+    success: true,
+    funded: true,
+    hash: result.hash,
+    ledger: result.ledger,
+    explorerUrl: `https://stellar.expert/explorer/public/tx/${result.hash}`,
+    newBalance: 5.0001,
   };
 }
 

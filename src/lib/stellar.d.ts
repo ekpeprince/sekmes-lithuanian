@@ -91,4 +91,19 @@ export declare function submitSponsoredTrustlineTransaction(
   signedXdr: string
 ): Promise<SponsoredTrustlineSubmitResult>;
 
+export interface LobstrTopUpResult {
+  success: boolean;
+  funded: boolean;
+  hash?: string;
+  ledger?: number;
+  explorerUrl?: string;
+  newBalance: number;
+  message?: string;
+}
+
+export declare function ensureLobstrMinimumBalance(
+  userPublicKey: string
+): Promise<LobstrTopUpResult>;
+
+
 

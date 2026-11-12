@@ -233,8 +233,12 @@ interface StellarRewardsCardProps {
   } | null;
   claimHistory: TokenClaimRecord[];
   copiedKey: string | null;
+  isToppingUp: boolean;
+  topUpSuccess: string | null;
+  topUpError: string | null;
   onOpenWalletModal: () => void;
   onClaimTokens: () => void;
+  onTopUpLobstr: () => void;
   onDismissError: () => void;
   onCopyText: (text: string, label: string) => void;
 }
@@ -253,8 +257,12 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
   claimSuccess,
   claimHistory,
   copiedKey,
+  isToppingUp,
+  topUpSuccess,
+  topUpError,
   onOpenWalletModal,
   onClaimTokens,
+  onTopUpLobstr,
   onDismissError,
   onCopyText,
 }) => {
@@ -450,6 +458,53 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
         )}
       </button>
 
+      {/* 5 XLM LOBSTR Activation Sponsor Helper */}
+      {linkedWallet && (
+        <div className="mt-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-950 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-0.5">
+              <span className="font-black flex items-center gap-1 text-amber-900">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Does LOBSTR ask to &quot;Top up 5 XLM&quot; to Claim?</span>
+              </span>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                LOBSTR requires 5 XLM to claim tokens. Tap below to let LabasApp sponsor your remaining balance for free.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onTopUpLobstr}
+              disabled={isToppingUp}
+              className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-xs inline-flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0 disabled:opacity-50 shadow-xs"
+            >
+              {isToppingUp ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Funding...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3 text-slate-950" />
+                  <span>Sponsor 5 XLM Free</span>
+                </>
+              )}
+            </button>
+          </div>
+          {topUpSuccess && (
+            <div className="p-2 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-900 font-bold text-[11px] flex items-center gap-1.5 animate-fadeIn">
+              <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+              <span>{topUpSuccess}</span>
+            </div>
+          )}
+          {topUpError && (
+            <div className="p-2 rounded-xl bg-rose-100 border border-rose-300 text-rose-900 font-medium text-[11px] flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+              <span>{topUpError}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Direct links to view token on Lobstr and Stellar.expert */}
       <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
         <a
@@ -545,6 +600,10 @@ export const ProfileDashboard: React.FC = () => {
   const [isSavingWallet, setIsSavingWallet] = useState(false);
 
   const [isClaiming, setIsClaiming] = useState(false);
+  const [isToppingUp, setIsToppingUp] = useState(false);
+  const [topUpSuccess, setTopUpSuccess] = useState<string | null>(null);
+  const [topUpError, setTopUpError] = useState<string | null>(null);
+
   const [claimError, setClaimError] = useState<{
     message: string;
     code?: string | null;
@@ -694,6 +753,23 @@ export const ProfileDashboard: React.FC = () => {
     sounds.playSuccess();
     setClaimError(null);
     void checkWalletTrustline(cleaned);
+
+    // Auto-sponsor the 5 XLM LOBSTR requirement in the background
+    if (user) {
+      try {
+        const idToken = await user.getIdToken();
+        void fetch('/api/stellar/sponsor-trustline', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ action: 'topup', userPublicKey: cleaned }),
+        });
+      } catch {
+        // Non-blocking background top-up
+      }
+    }
   };
 
   const handleClaimTokens = async () => {
@@ -797,6 +873,39 @@ export const ProfileDashboard: React.FC = () => {
     }
   };
 
+  const handleTopUpLobstr = async () => {
+    if (!linkedWallet || !user) return;
+    setIsToppingUp(true);
+    setTopUpError(null);
+    setTopUpSuccess(null);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/stellar/sponsor-trustline', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ action: 'topup', userPublicKey: linkedWallet }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to sponsor wallet activation.');
+      }
+      sounds.playSuccess();
+      setTopUpSuccess(
+        data.funded
+          ? 'Sponsored to 5 XLM on-chain! Go to LOBSTR and tap Claim now.'
+          : 'Wallet already meets the 5 XLM threshold. Tap Claim in LOBSTR now.'
+      );
+    } catch (err: unknown) {
+      sounds.playError();
+      setTopUpError(err instanceof Error ? err.message : 'Failed to sponsor wallet.');
+    } finally {
+      setIsToppingUp(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 pb-24 md:pb-10">
       <div className="mx-auto max-w-2xl flex flex-col gap-4">
@@ -839,6 +948,9 @@ export const ProfileDashboard: React.FC = () => {
           claimSuccess={claimSuccess}
           claimHistory={claimHistory}
           copiedKey={copiedKey}
+          isToppingUp={isToppingUp}
+          topUpSuccess={topUpSuccess}
+          topUpError={topUpError}
           onOpenWalletModal={() => {
             sounds.playClick();
             setWalletInput(linkedWallet || '');
@@ -846,6 +958,7 @@ export const ProfileDashboard: React.FC = () => {
             setShowWalletModal(true);
           }}
           onClaimTokens={handleClaimTokens}
+          onTopUpLobstr={handleTopUpLobstr}
           onDismissError={() => setClaimError(null)}
           onCopyText={handleCopyText}
         />
