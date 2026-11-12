@@ -233,3 +233,4 @@ export const LabasPerksModal: React.FC<LabasPerksModalProps> = ({ isOpen, onClos
     </div>
   );
 };
+

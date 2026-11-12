@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, User as UserIcon, LogOut, Cloud, ChevronDown, Bell, Coins } from 'lucide-react';
+import { Flame, Zap, Heart, Volume2, VolumeX, PlusCircle, Sparkles, Bell, Coins } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { sounds } from '@/lib/audio';
 import { AuthModal } from '@/components/AuthModal';
 import { NotificationModal } from '@/components/NotificationModal';
@@ -14,24 +13,11 @@ import { LabasPerksModal } from '@/components/LabasPerksModal';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { progress, refillHearts, spendLabas, toggleSound, setVoiceGender } = useGame();
-  const { user, signOut } = useAuth();
+  const { progress, refillHearts, spendLabas, toggleSound } = useGame();
   const [showHeartModal, setShowHeartModal] = useState(false);
   const [showPerksModal, setShowPerksModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // During active lesson or isolated full-page views (/admin, /blog), hide global Navbar
   if (pathname.startsWith('/lesson/') || pathname.startsWith('/admin') || pathname.startsWith('/blog')) {
@@ -146,98 +132,12 @@ export const Navbar: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowPerksModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-amber-300/90 bg-gradient-to-r from-amber-50 to-amber-100/70 hover:from-amber-100 hover:to-amber-200 text-amber-950 text-xs font-black transition-all cursor-pointer shadow-2xs shrink-0 group"
+              className="flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full border border-amber-300/90 bg-gradient-to-r from-amber-50 to-amber-100/80 hover:from-amber-100 hover:to-amber-200 text-amber-950 text-xs font-black transition-all cursor-pointer shadow-2xs shrink-0 group select-none"
               title="Spend $LABAS &amp; Stellar Perks Store"
             >
               <Coins className="h-3.5 w-3.5 text-amber-600 group-hover:rotate-12 transition-transform shrink-0" />
               <span>$LABAS</span>
             </button>
-
-            {/* User Account / Sign In */}
-            {user ? (
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowProfileMenu((prev) => !prev)}
-                  className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full sm:rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 transition-all cursor-pointer shadow-2xs shrink-0"
-                  title="Paskyros nustatymai"
-                >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
-                    {user.photoURL ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={user.photoURL} alt="User" className="h-6 w-6 rounded-full" />
-                    ) : (
-                      (user.displayName || user.email || 'U').charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  <span className="hidden sm:inline max-w-[100px] truncate">
-                    {user.displayName || user.email?.split('@')[0]}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-emerald-600 hidden sm:inline" />
-                </button>
-
-                {/* Profile Dropdown */}
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white p-3 shadow-xl border-2 border-slate-100 animate-pop z-50">
-                    <div className="border-b border-slate-100 pb-2.5 mb-2 px-1">
-                      <p className="text-xs font-black text-slate-800 truncate">
-                        {user.displayName || 'Vartotojas'}
-                      </p>
-                      <p className="text-[11px] font-medium text-slate-400 truncate">
-                        {user.email}
-                      </p>
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-emerald-600">
-                        <Cloud className="h-3 w-3" />
-                        <span>Pažanga debesyje aktyvi • Cloud sync</span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        setShowPerksModal(true);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-800 transition-colors mb-1 cursor-pointer"
-                    >
-                      <Sparkles className="h-4 w-4 text-amber-500" />
-                      <span>$LABAS Perks &amp; Store</span>
-                    </button>
-
-                    <Link
-                      href="/token"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors mb-1"
-                    >
-                      <Coins className="h-4 w-4 text-emerald-600" />
-                      <span>$LABASCOIN Portal</span>
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        signOut();
-                        setShowProfileMenu(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Atsijungti • Sign Out</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowAuthModal(true)}
-                className="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                title="Log In to save progress"
-              >
-                <UserIcon className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden min-[360px]:inline">Log In</span>
-              </button>
-            )}
           </div>
         </div>
       </header>

@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
-import { Zap, Heart, Flame, ArrowRight, Home } from 'lucide-react';
+import { Zap, Heart, Flame, ArrowRight, Home, Coins, Sparkles } from 'lucide-react';
 import { sounds } from '@/lib/audio';
 
 interface LessonCompleteModalProps {
@@ -21,6 +21,8 @@ export const LessonCompleteModal: React.FC<LessonCompleteModalProps> = ({
   streak,
   nextLessonId,
 }) => {
+  const labasEarned = Number((xpEarned / 100).toFixed(2));
+
   useEffect(() => {
     // Play celebratory sound
     sounds.playLevelComplete();
@@ -68,8 +70,32 @@ export const LessonCompleteModal: React.FC<LessonCompleteModalProps> = ({
           Lesson Completed • Puikus darbas!
         </p>
 
+        {/* $LABAS Token Reward Highlight Banner */}
+        <div className="mt-5 mb-4 overflow-hidden rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/90 p-3.5 shadow-xs">
+          <div className="flex items-center justify-between gap-3 text-left">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 font-black shadow-inner">
+                <Coins className="h-6 w-6 text-amber-950 animate-bounce" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-base font-black text-amber-950">
+                    +{labasEarned.toFixed(2)} $LABASCOIN
+                  </span>
+                  <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase text-white tracking-wider">
+                    On-Chain Micro-Reward
+                  </span>
+                </div>
+                <p className="text-[11px] font-semibold text-amber-900/80 leading-tight mt-0.5">
+                  Added to your wallet • Spend on perks or cash out on Stellar DEX
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Grid */}
-        <div className="my-6 grid grid-cols-3 gap-3">
+        <div className="my-5 grid grid-cols-3 gap-2.5">
           {/* XP Card */}
           <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-3 flex flex-col items-center">
             <span className="text-[11px] font-black uppercase tracking-wider text-amber-700">Total XP</span>
@@ -104,7 +130,7 @@ export const LessonCompleteModal: React.FC<LessonCompleteModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           {nextLessonId ? (
             <Link
               href={`/lesson/${nextLessonId}`}
@@ -115,13 +141,22 @@ export const LessonCompleteModal: React.FC<LessonCompleteModalProps> = ({
             </Link>
           ) : null}
 
-          <Link
-            href="/"
-            className="btn-3d btn-blue-3d w-full py-3.5 text-center text-base font-extrabold flex items-center justify-center gap-2"
-          >
-            <Home className="h-5 w-5" />
-            <span>RETURN TO DASHBOARD</span>
-          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href="/token"
+              className="rounded-2xl border-2 border-amber-300 bg-amber-50 hover:bg-amber-100 py-3 font-extrabold text-xs text-amber-900 flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Coins className="h-4 w-4 text-amber-600" />
+              <span>$LABAS Portal</span>
+            </Link>
+            <Link
+              href="/"
+              className="rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-slate-100 py-3 font-extrabold text-xs text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Home className="h-4 w-4 text-slate-500" />
+              <span>Dashboard</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -16,6 +16,7 @@ import {
   Mic,
   BookOpen,
   ChevronLeft,
+  Coins,
 } from 'lucide-react';
 import { UNITS } from '@/data/curriculum';
 import { useGame } from '@/context/GameContext';
@@ -659,15 +660,23 @@ export default function PracticePage() {
                   You completed the 60-second speed blitz.
                 </p>
 
-                <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto mb-8">
-                  <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100">
-                    <span className="text-xs font-bold text-sky-600 uppercase">Final Score</span>
-                    <p className="text-3xl font-black text-sky-900">{drillScore}</p>
+                <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto mb-4">
+                  <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-100">
+                    <span className="text-[11px] font-black text-sky-600 uppercase tracking-wider">Final Score</span>
+                    <p className="text-2xl sm:text-3xl font-black text-sky-900">{drillScore}</p>
                   </div>
-                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100">
-                    <span className="text-xs font-bold text-amber-600 uppercase">XP Awarded</span>
-                    <p className="text-3xl font-black text-amber-900">+{Math.round(drillScore / 2)}</p>
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+                    <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">XP Awarded</span>
+                    <p className="text-2xl sm:text-3xl font-black text-amber-900">+{Math.round(drillScore / 2)}</p>
                   </div>
+                </div>
+
+                {/* $LABAS Token Reward Badge */}
+                <div className="mb-6 max-w-sm mx-auto p-3 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/80 flex items-center justify-center gap-2">
+                  <Coins className="w-5 h-5 text-amber-600 shrink-0" />
+                  <span className="text-xs font-black text-amber-950">
+                    +{((Math.round(drillScore / 2)) / 100).toFixed(2)} $LABASCOIN Earned!
+                  </span>
                 </div>
 
                 <button
