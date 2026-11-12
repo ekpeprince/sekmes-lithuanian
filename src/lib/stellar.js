@@ -644,6 +644,19 @@ export async function submitSponsoredLabasWithdrawal({
       })
     );
   } else {
+    // Zero-Stress Learner Onboarding:
+    // If the learner's destination wallet does not exist on Stellar yet (e.g. brand new LOBSTR wallet),
+    // automatically activate it by funding 1.5 XLM from the Treasury account.
+    // This permanently prevents LOBSTR's "Activate wallet by funding 5 XLM" blocking modal!
+    if (!trustCheck.accountExists) {
+      txBuilder.addOperation(
+        Operation.createAccount({
+          destination: cleanDestination,
+          startingBalance: '1.5000000',
+        })
+      );
+    }
+
     // Gasless Issuer-Sponsored On-Chain Transfer (Operation.createClaimableBalance)
     // Allows the user's G-address to receive $LABAS on Stellar Mainnet even before establishing a trustline
     // or funding base XLM reserves, with reserves sponsored by the Issuer account.

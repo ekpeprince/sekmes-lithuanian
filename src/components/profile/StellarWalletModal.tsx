@@ -94,25 +94,31 @@ export default function StellarWalletModal({
           )}
         </div>
 
-        {/* Security Warning Notice */}
-        <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex items-start space-x-3">
+        {/* Zero-Cost Sponsored Notice */}
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-start space-x-3">
           <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
           <div className="text-[11px] text-slate-300 leading-relaxed">
-            <span className="font-bold text-emerald-400 block mb-0.5">Add the LABASCOIN Trustline in your wallet</span>
-            Make sure your Stellar wallet (Lobstr, Freighter, xBull) has an active trustline for <span className="text-white font-semibold">LABASCOIN</span>. Never enter your secret <span className="font-mono text-rose-400">S...</span> key here.
+            <span className="font-bold text-emerald-400 block mb-0.5">100% Free & Sponsored by LabasApp</span>
+            You do <strong>not</strong> need to buy XLM or activate trustlines in LOBSTR. LabasApp automatically sponsors your transaction and delivers your $LABASCOIN rewards on-chain.
           </div>
         </div>
 
-        {/* 1-Click Link to Lobstr Asset Page */}
-        <a
-          href="https://lobstr.co/assets/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-xs font-bold transition flex items-center justify-center space-x-2 group"
-        >
-          <span>Add / View LABASCOIN on Lobstr</span>
-          <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-        </a>
+        {/* 3-Step Simple Guide */}
+        <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
+          <span className="font-bold text-slate-200 block text-xs">How to get your address in LOBSTR:</span>
+          <div className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+            <span>Open LOBSTR and tap <strong>Receive</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+            <span>Copy your Stellar public address (starts with <strong>G</strong>)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+            <span>Paste it above and tap <strong>Save Wallet</strong></span>
+          </div>
+        </div>
 
         {/* Actions */}
         <div className="flex items-center space-x-3 pt-2">
