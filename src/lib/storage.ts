@@ -683,6 +683,48 @@ export function formatTimeLearned(seconds: number): string {
   return `${Math.max(1, minutes)}m`;
 }
 
+/**
+ * Deducts $LABAS from internalLabasBalance to unlock in-app perks (e.g. hearts, streak freezes).
+ */
+export function spendInternalLabasStorage(
+  amount: number,
+  perk: 'hearts' | 'streak_freeze'
+): { success: boolean; progress: UserProgress; error?: string } {
+  const current = getStoredProgress();
+  const currentBalance =
+    typeof current.internalLabasBalance === 'number'
+      ? current.internalLabasBalance
+      : calculateInternalLabas(current.xpBalance ?? current.xp ?? 0);
+
+  if (currentBalance < amount) {
+    return {
+      success: false,
+      progress: current,
+      error: `Insufficient $LABAS balance. You need ${amount.toFixed(2)} $LABAS, but only have ${currentBalance.toFixed(2)} $LABAS.`,
+    };
+  }
+
+  const updatedBalance = Number(Math.max(0, currentBalance - amount).toFixed(4));
+  let updatedHearts = current.hearts;
+  let updatedFreezes = current.streakFreezes ?? 1;
+
+  if (perk === 'hearts') {
+    updatedHearts = current.maxHearts || 5;
+  } else if (perk === 'streak_freeze') {
+    updatedFreezes = updatedFreezes + 1;
+  }
+
+  const updated: UserProgress = {
+    ...current,
+    internalLabasBalance: updatedBalance,
+    hearts: updatedHearts,
+    streakFreezes: updatedFreezes,
+  };
+
+  saveProgress(updated);
+  return { success: true, progress: updated };
+}
+
 export function resetAllProgress(): UserProgress {
   const reset = { ...DEFAULT_PROGRESS };
   saveProgress(reset);

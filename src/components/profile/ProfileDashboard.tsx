@@ -32,6 +32,7 @@ import { NotificationModal } from '@/components/NotificationModal';
 import { OfflineAudioPackCard } from '@/components/OfflineAudioPackCard';
 import { LithuanianFlagEmblem } from '@/components/LithuanianFlagEmblem';
 import StellarWalletModal from '@/components/profile/StellarWalletModal';
+import { LabasPerksModal } from '@/components/LabasPerksModal';
 import { LEAGUE_TIERS, LeagueTier, getLeagueTierByXp } from '@/lib/league';
 import { TokenClaimRecord } from '@/types/lesson';
 
@@ -237,6 +238,7 @@ interface StellarRewardsCardProps {
   topUpSuccess: string | null;
   topUpError: string | null;
   onOpenWalletModal: () => void;
+  onOpenPerksModal: () => void;
   onClaimTokens: () => void;
   onTopUpLobstr: () => void;
   onDismissError: () => void;
@@ -261,6 +263,7 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
   topUpSuccess,
   topUpError,
   onOpenWalletModal,
+  onOpenPerksModal,
   onClaimTokens,
   onTopUpLobstr,
   onDismissError,
@@ -326,7 +329,7 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
           </span>
         </div>
 
-        <div className="text-right">
+        <div className="text-right flex flex-col items-end">
           <span className="text-[11px] font-semibold text-slate-400 block">
             Internal $LABAS Balance
           </span>
@@ -334,6 +337,14 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
             {internalLabasBalance.toFixed(2)}{' '}
             <span className="text-xs font-bold text-emerald-600">$LABAS</span>
           </span>
+          <button
+            type="button"
+            onClick={onOpenPerksModal}
+            className="mt-1 inline-flex items-center gap-1 text-[11px] font-black text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/90 px-2 py-0.5 rounded-lg transition cursor-pointer"
+          >
+            <Sparkles className="w-3 h-3 text-amber-600" />
+            <span>Spend in Store &rarr;</span>
+          </button>
         </div>
       </div>
 
@@ -591,6 +602,7 @@ export const ProfileDashboard: React.FC = () => {
   const { user } = useAuth();
 
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showPerksModal, setShowPerksModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -957,6 +969,7 @@ export const ProfileDashboard: React.FC = () => {
             setWalletInputError(null);
             setShowWalletModal(true);
           }}
+          onOpenPerksModal={() => setShowPerksModal(true)}
           onClaimTokens={handleClaimTokens}
           onTopUpLobstr={handleTopUpLobstr}
           onDismissError={() => setClaimError(null)}
@@ -993,6 +1006,12 @@ export const ProfileDashboard: React.FC = () => {
         onClose={() => setShowWalletModal(false)}
         onSave={handleSaveWalletAddress}
         initialAddress={linkedWallet}
+      />
+
+      {/* $LABAS In-App Perks & Power-Ups Store Modal */}
+      <LabasPerksModal
+        isOpen={showPerksModal}
+        onClose={() => setShowPerksModal(false)}
       />
 
       {/* Settings Modal */}

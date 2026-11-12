@@ -10,12 +10,14 @@ import { sounds } from '@/lib/audio';
 import { AuthModal } from '@/components/AuthModal';
 import { NotificationModal } from '@/components/NotificationModal';
 import { LabasAppLogo } from '@/components/LabasAppLogo';
+import { LabasPerksModal } from '@/components/LabasPerksModal';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { progress, refillHearts, toggleSound, setVoiceGender } = useGame();
+  const { progress, refillHearts, spendLabas, toggleSound, setVoiceGender } = useGame();
   const { user, signOut } = useAuth();
   const [showHeartModal, setShowHeartModal] = useState(false);
+  const [showPerksModal, setShowPerksModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -140,15 +142,16 @@ export const Navbar: React.FC = () => {
               <span>Leonas</span>
             </button>
 
-            {/* $LABAS Token & Trade Portal for Traders & Learners */}
-            <Link
-              href="/token"
+            {/* $LABAS Token & Perks Portal for Traders & Learners */}
+            <button
+              type="button"
+              onClick={() => setShowPerksModal(true)}
               className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-amber-300/90 bg-gradient-to-r from-amber-50 to-amber-100/70 hover:from-amber-100 hover:to-amber-200 text-amber-950 text-xs font-black transition-all cursor-pointer shadow-2xs shrink-0 group"
-              title="Trade $LABASCOIN & Stellar AMM Portal"
+              title="Spend $LABAS &amp; Stellar Perks Store"
             >
               <Coins className="h-3.5 w-3.5 text-amber-600 group-hover:rotate-12 transition-transform shrink-0" />
               <span>$LABAS</span>
-            </Link>
+            </button>
 
             {/* User Account / Sign In */}
             {user ? (
@@ -188,6 +191,18 @@ export const Navbar: React.FC = () => {
                         <span>Pažanga debesyje aktyvi • Cloud sync</span>
                       </div>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setShowPerksModal(true);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-800 transition-colors mb-1 cursor-pointer"
+                    >
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      <span>$LABAS Perks &amp; Store</span>
+                    </button>
 
                     <Link
                       href="/token"
@@ -246,25 +261,51 @@ export const Navbar: React.FC = () => {
                 Wrong answers cost 1 heart. Practice to regain hearts or refill them anytime!
               </p>
 
-              <div className="mt-6 flex flex-col gap-3">
+              <div className="mt-6 flex flex-col gap-2.5">
                 {progress.hearts < 5 ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      refillHearts();
-                      setShowHeartModal(false);
-                    }}
-                    className="btn-3d btn-green-3d w-full py-3 text-center flex items-center justify-center gap-2"
-                  >
-                    <Sparkles className="h-5 w-5" />
-                    Refill 5 Hearts Now (Free)
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        refillHearts();
+                        setShowHeartModal(false);
+                      }}
+                      className="btn-3d btn-green-3d w-full py-3 text-center flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Sparkles className="h-5 w-5" />
+                      Refill 5 Hearts Now (Free)
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        spendLabas(0.5, 'hearts');
+                        setShowHeartModal(false);
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
+                    >
+                      <Coins className="h-4 w-4" />
+                      <span>Instant Refill (0.50 $LABAS)</span>
+                    </button>
+                  </>
                 ) : null}
 
                 <button
                   type="button"
+                  onClick={() => {
+                    setShowHeartModal(false);
+                    setShowPerksModal(true);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  <span>Open $LABAS Store &amp; Perks</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setShowHeartModal(false)}
-                  className="rounded-xl border-2 border-slate-200 py-2.5 font-bold text-slate-500 hover:bg-slate-50"
+                  className="rounded-xl border-2 border-slate-200 py-2 font-bold text-xs text-slate-500 hover:bg-slate-50 cursor-pointer"
                 >
                   Close
                 </button>
@@ -273,6 +314,12 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* $LABAS In-App Perks & Power-Ups Store Modal */}
+      <LabasPerksModal
+        isOpen={showPerksModal}
+        onClose={() => setShowPerksModal(false)}
+      />
 
       {/* Notifications Pop-up Modal */}
       <NotificationModal

@@ -20,6 +20,7 @@ import {
   setStellarWalletStorage,
   applyXpClaimToStorage,
   recordVoiceDrillStorage,
+  spendInternalLabasStorage,
   formatTimeLearned,
   DEFAULT_PROGRESS,
   getLocalDateString,
@@ -70,6 +71,7 @@ interface GameContextType {
     walletActivated?: boolean;
   }) => void;
   recordVoiceDrill: (xpEarned?: number, phraseId?: string) => void;
+  spendLabas: (amount: number, perk: 'hearts' | 'streak_freeze') => { success: boolean; error?: string };
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -371,6 +373,21 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const spendLabas = (
+    amount: number,
+    perk: 'hearts' | 'streak_freeze'
+  ): { success: boolean; error?: string } => {
+    const result = spendInternalLabasStorage(amount, perk);
+    if (result.success) {
+      setProgress(result.progress);
+      sounds.playSuccess();
+      syncToCloudIfUser(result.progress);
+    } else {
+      sounds.playError();
+    }
+    return { success: result.success, error: result.error };
+  };
+
   const today = typeof window !== 'undefined' ? getLocalDateString() : '';
   const dailyXp = progress.dailyXpDate === today ? (progress.dailyXp || 0) : 0;
   const activeMinutesToday = progress.activeMinutesDate === today ? (progress.activeMinutesToday || 0) : 0;
@@ -414,6 +431,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setStellarWallet,
         applyXpClaim,
         recordVoiceDrill,
+        spendLabas,
       }}
     >
       {children}
