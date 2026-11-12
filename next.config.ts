@@ -5,6 +5,25 @@ const nextConfig: NextConfig = {
   experimental: {
     cpus: 1,
   },
+  async redirects() {
+    return [
+      {
+        source: '/trade',
+        destination: '/token',
+        permanent: false,
+      },
+      {
+        source: '/lobstr',
+        destination: 'https://lobstr.co/assets/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND',
+        permanent: false,
+      },
+      {
+        source: '/swap',
+        destination: 'https://lobstr.co/trade/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

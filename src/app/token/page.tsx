@@ -260,6 +260,75 @@ export default function TokenPortalPage() {
 
 
         {/* =====================================================================
+         * 5. TRADER QUICK-ACCESS: FIND & SWAP ON LOBSTR (NO LANGUAGE LESSONS NEEDED)
+         * =================================================================== */}
+        <section className="bg-white rounded-2xl border-2 border-emerald-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md inline-block mb-1 border border-emerald-200/50">
+                Direct Trading Guide
+              </span>
+              <h2 className="text-base font-black text-slate-900 tracking-tight">
+                How to Find & Swap $LABASCOIN on LOBSTR
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href="https://lobstr.co/trade/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition shrink-0 cursor-pointer"
+              >
+                <span>Instant Swap</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-amber-400" />
+              </a>
+              <a
+                href="https://stellar.expert/explorer/public/liquidity-pool/1a886a34bc7712a9691692b5da494d092ae84f5d0e0804d8baa46c9fbdc214f3"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 transition shrink-0 cursor-pointer"
+              >
+                <span>Live AMM Pool</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+              <div className="font-black text-slate-900 flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                <span>Open LOBSTR</span>
+              </div>
+              <p className="text-slate-500 text-[11px] leading-relaxed">
+                Log into LOBSTR (web or mobile app) and navigate directly to the <strong>Swap</strong> tab.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+              <div className="font-black text-slate-900 flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                <span>Search by Domain</span>
+              </div>
+              <p className="text-slate-500 text-[11px] leading-relaxed">
+                In asset search, type <code className="font-mono bg-white px-1 py-0.5 rounded border border-slate-200 text-emerald-700 font-bold">labasapp.com</code> or paste the issuer key to instantly resolve verified details.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+              <div className="font-black text-slate-900 flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">3</span>
+                <span>Instant AMM Execution</span>
+              </div>
+              <p className="text-slate-500 text-[11px] leading-relaxed">
+                Swap XLM for $LABASCOIN with 3-second settlement routed through the on-chain liquidity pool.
+              </p>
+            </div>
+          </div>
+        </section>
+
+
+        {/* =====================================================================
          * 5. DEVELOPER & VERIFICATION METADATA FOOTER (MINIMALIST INLINE ROW)
          * =================================================================== */}
         <footer className="pt-2 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">

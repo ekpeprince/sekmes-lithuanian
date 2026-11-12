@@ -140,6 +140,16 @@ export const Navbar: React.FC = () => {
               <span>Leonas</span>
             </button>
 
+            {/* $LABAS Token & Trade Portal for Traders & Learners */}
+            <Link
+              href="/token"
+              className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-amber-300/90 bg-gradient-to-r from-amber-50 to-amber-100/70 hover:from-amber-100 hover:to-amber-200 text-amber-950 text-xs font-black transition-all cursor-pointer shadow-2xs shrink-0 group"
+              title="Trade $LABASCOIN & Stellar AMM Portal"
+            >
+              <Coins className="h-3.5 w-3.5 text-amber-600 group-hover:rotate-12 transition-transform shrink-0" />
+              <span>$LABAS</span>
+            </Link>
+
             {/* User Account / Sign In */}
             {user ? (
               <div className="relative" ref={profileMenuRef}>
