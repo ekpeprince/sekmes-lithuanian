@@ -392,19 +392,24 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
       {claimSuccess && (
         <div
           role="status"
-          className="mt-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5 text-xs text-emerald-950 flex items-center justify-between gap-3"
+          className="mt-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5 text-xs text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-            <span className="font-bold truncate">
-              Sent +{claimSuccess.issuedTokenAmount} $LABAS to your wallet!
-            </span>
+          <div className="flex items-start gap-2.5 min-w-0">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold block">
+                Sent +{claimSuccess.issuedTokenAmount} $LABAS to your wallet!
+              </span>
+              <p className="text-[11px] text-emerald-800 font-medium leading-relaxed">
+                In LOBSTR, tap <strong>Menu (☰) &rarr; Pending &rarr; Accept</strong> to view your tokens in My Assets.
+              </p>
+            </div>
           </div>
           <a
             href={claimSuccess.explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-900 shrink-0"
+            className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-900 shrink-0 self-end sm:self-center"
           >
             <span>Explorer</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -469,10 +474,15 @@ export const StellarRewardsCard: React.FC<StellarRewardsCardProps> = ({
 
       {/* Compact Recent Claims (only visible if user has past claims) */}
       {claimHistory.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
-          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            <History className="w-3 h-3" />
-            <span>Recent Claims</span>
+        <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-1">
+            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <History className="w-3 h-3" />
+              <span>Recent Claims</span>
+            </div>
+            <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-medium border border-emerald-200/60">
+              LOBSTR: Tap Menu (☰) &rarr; Pending to Accept
+            </span>
           </div>
           {claimHistory.slice(0, 2).map((item) => (
             <div
