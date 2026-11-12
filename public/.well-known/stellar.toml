@@ -16,8 +16,8 @@ ORG_DBA = "LabasApp - Learn Lithuanian"
 ORG_URL = "https://labasapp.com"
 ORG_LOGO = "https://labasapp.com/logo.png"
 ORG_DESCRIPTION = "LabasApp is an AI-powered Lithuanian language learning platform rewarding learners with real Stellar Mainnet micro-rewards and decentralized AMM liquidity."
-ORG_OFFICIAL_EMAIL = "contact@labasapp.com"
-ORG_SUPPORT_EMAIL = "contact@labasapp.com"
+ORG_OFFICIAL_EMAIL = "info@labasapp.com"
+ORG_SUPPORT_EMAIL = "info@labasapp.com"
 ORG_GITHUB = "https://github.com/ekpeprince/sekmes-lithuanian"
 
 [[CURRENCIES]]
