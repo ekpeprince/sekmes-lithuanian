@@ -18,7 +18,7 @@ import {
 
 const ISSUER_ADDRESS = 'GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND';
 const ASSET_CODE = 'LABASCOIN';
-const TOTAL_SUPPLY = '100,000,000,000';
+const TOTAL_SUPPLY = '100,000,000';
 
 const StellarMark: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg
@@ -141,7 +141,7 @@ export default function TokenPortalPage() {
               Fixed Supply
             </span>
             <span className="text-lg font-black text-slate-900 tracking-tight block mt-0.5">
-              100,000,000,000
+              {TOTAL_SUPPLY}
             </span>
             <span className="text-[10px] text-emerald-700 font-bold block">
               Hard-Capped • 0 Inflation
@@ -272,24 +272,42 @@ export default function TokenPortalPage() {
                 How to Find & Swap $LABASCOIN on LOBSTR
               </h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <a
-                href="https://lobstr.co/trade/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
+                href="https://lobstr.co/swap/XLM/LABASCOIN:GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition shrink-0 cursor-pointer"
               >
-                <span>Instant Swap</span>
+                <span>LOBSTR Swap</span>
                 <ArrowUpRight className="w-3.5 h-3.5 text-amber-400" />
+              </a>
+              <a
+                href="https://stellarterm.com/exchange/LABASCOIN-GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND/XLM-native"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 transition shrink-0 cursor-pointer"
+              >
+                <span>StellarTerm</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+              <a
+                href="https://scopuly.com/trade/LABASCOIN-XLM/GBF7L4AEFZPSWZA3DMQBPCS3FK533FRLAM3SG4UUUMOCZBSR3BHMTZND/native"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 transition shrink-0 cursor-pointer"
+              >
+                <span>Scopuly</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
               </a>
               <a
                 href="https://stellar.expert/explorer/public/liquidity-pool/1a886a34bc7712a9691692b5da494d092ae84f5d0e0804d8baa46c9fbdc214f3"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 transition shrink-0 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/60 text-xs font-bold inline-flex items-center gap-1.5 transition shrink-0 cursor-pointer"
               >
-                <span>Live AMM Pool</span>
-                <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+                <span>AMM Pool</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
               </a>
             </div>
           </div>
